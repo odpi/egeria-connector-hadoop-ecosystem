@@ -1,0 +1,130 @@
+[
+  {
+    "atlas": "Referenceable",
+    "omrs": "Referenceable",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossary",
+    "omrs": "Glossary",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "longDescription",
+        "omrs": "description"
+      },
+      {
+        "atlas": "language",
+        "omrs": "language"
+      },
+      {
+        "atlas": "usage",
+        "omrs": "usage"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryCategory",
+    "omrs": "GlossaryCategory"
+  },
+  {
+    "atlas": "AtlasGlossaryCategoryAnchor",
+    "omrs": "CategoryAnchor"
+  },
+  {
+    "atlas": "AtlasGlossaryCategoryHierarchyLink",
+    "omrs": "CategoryHierarchyLink"
+  },
+  {
+    "atlas": "AtlasGlossaryTerm",
+    "omrs": "GlossaryTerm",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "shortDescription",
+        "omrs": "summary"
+      },
+      {
+        "atlas": "longDescription",
+        "omrs": "description"
+      },
+      {
+        "atlas": "examples",
+        "omrs": "examples"
+      },
+      {
+        "atlas": "abbreviation",
+        "omrs": "abbreviation"
+      },
+      {
+        "atlas": "usage",
+        "omrs": "usage"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryTermAnchor",
+    "omrs": "TermAnchor"
+  },
+  {
+    "atlas": "AtlasGlossaryTermCategorization",
+    "omrs": "TermCategorization"
+  },
+  {
+    "atlas": "AtlasGlossaryTermRelationshipStatus",
+    "omrs": "TermRelationshipStatus"
+  },
+  {
+    "atlas": "AtlasGlossaryTermAssignmentStatus",
+    "omrs": "TermAssignmentStatus"
+  },
+  {
+    "atlas": "AtlasGlossarySemanticAssignment",
+    "omrs": "SemanticAssignment",
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "confidence",
+        "omrs": "confidence"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  }
+]
