@@ -118,13 +118,28 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
     }
 
     /**
+     * Retrieves an Apache Atlas Entity instance by its GUID, including all of its relationships.
+     *
+     * @param guid the GUID of the entity instance to retrieve
+     * @return EntityInstance
+     */
+    public EntityInstance getEntityByGUID(String guid) {
+        return getEntityByGUID(guid, true);
+    }
+
+    /**
      * Retrieve an Apache Atlas Entity instance by its GUID.
      *
      * @param guid the GUID of the entity instance to retrieve
-     * @return
+     * @param ignoreRelationships if true, will return only the entity (none of its relationships)
+     * @return EntityInstance
      */
-    public EntityInstance getEntityByGUID(String guid) {
-        String entity = makeRequest(EP_ENTITY + guid, HttpMethod.GET, null, null);
+    public EntityInstance getEntityByGUID(String guid, boolean ignoreRelationships) {
+        String endpoint = EP_ENTITY + guid;
+        if (ignoreRelationships) {
+            endpoint = endpoint + "?ignoreRelationships=true";
+        }
+        String entity = makeRequest(endpoint, HttpMethod.GET, null, null);
         EntityResponse entityResponse = null;
         try {
             entityResponse = objectMapper.readValue(entity, EntityResponse.class);
