@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown=true)
@@ -22,7 +23,8 @@ public class EntityInstance {
     private Date createTime;
     private Date updateTime;
     private long version;
-    // TODO: relationshipAttributes
+    private Map<String, List<RelationshipAssignment>> relationshipAttributes;
+    private List<ClassificationAssignment> classifications;
 
     @JsonProperty("typeName") public String getTypeName() { return this.typeName; }
     @JsonProperty("typeName") public void setTypeName(String typeName) { this.typeName = typeName; }
@@ -50,5 +52,11 @@ public class EntityInstance {
 
     @JsonProperty("version") public long getVersion() { return this.version; }
     @JsonProperty("version") public void setVersion(long version) { this.version = version; }
+
+    @JsonProperty("relationshipAttributes") public Map<String, List<RelationshipAssignment>> getRelationshipAttributes() { return this.relationshipAttributes; }
+    @JsonProperty("relationshipAttributes") public void setRelationshipAttributes(Map<String, List<RelationshipAssignment>> relationshipAttributes) { this.relationshipAttributes = relationshipAttributes; }
+
+    @JsonProperty("classifications") public List<ClassificationAssignment> getClassifications() { return this.classifications; }
+    @JsonProperty("classifications") public void setClassifications(List<ClassificationAssignment> classifications) { this.classifications = classifications; }
 
 }
