@@ -2,16 +2,16 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.ClassificationDefMapping;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMapping;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.EntityInstance;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.instances.EntityInstance;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.AttributeDef;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.ClassificationTypeDef;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.TypeDefHeader;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollectionBase;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.EntityDetail;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceProvenanceType;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceStatus;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryValidator;
 import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
@@ -91,8 +91,28 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         if (log.isDebugEnabled()) { log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, typeDefCategory.getName()); }
 
         if (typeDefStore.isTypeDefMapped(omrsTypeDefName)) {
+
+            // If it is a mapped TypeDef, add it to our store
             typeDefStore.addTypeDef(newTypeDef);
+
+        } else if (newTypeDef.getCategory().equals(TypeDefCategory.CLASSIFICATION_DEF)) {
+
+            TypeDefHeader atlasTypeDef = atlasRepositoryConnector.getTypeDefByName(omrsTypeDefName);
+            if (atlasTypeDef != null) {
+                // If the TypeDef already exists in Atlas, add it to our store
+                // TODO: should really still verify it, in case TypeDef changes
+                typeDefStore.addTypeDef(newTypeDef);
+            } else {
+                // Otherwise, if it is a Classification, we'll add it to Atlas itself
+                ClassificationDefMapping.addClassificationToAtlas(
+                        (ClassificationDef) newTypeDef,
+                        typeDefStore,
+                        atlasRepositoryConnector
+                );
+            }
+
         } else {
+            // Otherwise, we'll drop it as unimplemented
             typeDefStore.addUnimplementedTypeDef(newTypeDef);
             throw new TypeDefNotSupportedException(
                     404,

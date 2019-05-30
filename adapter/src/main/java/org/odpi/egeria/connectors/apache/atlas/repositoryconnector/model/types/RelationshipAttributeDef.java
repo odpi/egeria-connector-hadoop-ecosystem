@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright Contributors to the ODPi Egeria project. */
-package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model;
+package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.AttributeDef;
 
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonTypeName("RelationshipAttributeDef")

@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright Contributors to the ODPi Egeria project. */
-package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model;
+package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types;
 
 import com.fasterxml.jackson.annotation.*;
+
+import java.util.Date;
 
 /**
  * Represents a single TypeDef header from Apache Atlas.
@@ -40,8 +42,8 @@ public class TypeDefHeader {
 
     private String createdBy;
     private String updatedBy;
-    private long createTime;
-    private long updateTime;
+    private Date createTime;
+    private Date updateTime;
     private long version;
     private String description;
     private String typeVersion;
@@ -64,11 +66,11 @@ public class TypeDefHeader {
     @JsonProperty("updatedBy") public String getUpdatedBy() { return this.updatedBy; }
     @JsonProperty("updatedBy") public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
 
-    @JsonProperty("createTime") public long getCreateTime() { return this.createTime; }
-    @JsonProperty("createTime") public void setCreateTime(long createTime) { this.createTime = createTime; }
+    @JsonProperty("createTime") public Date getCreateTime() { return this.createTime; }
+    @JsonProperty("createTime") public void setCreateTime(Date createTime) { this.createTime = createTime; }
 
-    @JsonProperty("updateTime") public long getUpdateTime() { return this.updateTime; }
-    @JsonProperty("updateTime") public void setUpdateTime(long updateTime) { this.updateTime = updateTime; }
+    @JsonProperty("updateTime") public Date getUpdateTime() { return this.updateTime; }
+    @JsonProperty("updateTime") public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
 
     @JsonProperty("version") public long getVersion() { return this.version; }
     @JsonProperty("version") public void setVersion(long version) { this.version = version; }

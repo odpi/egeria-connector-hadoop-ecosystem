@@ -3,8 +3,8 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.ClassificationAssignment;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.EntityInstance;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.instances.ClassificationAssignment;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.instances.EntityInstance;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;

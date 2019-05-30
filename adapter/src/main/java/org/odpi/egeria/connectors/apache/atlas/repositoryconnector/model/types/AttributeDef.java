@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright Contributors to the ODPi Egeria project. */
-package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model;
+package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,6 +19,9 @@ public class AttributeDef {
     private boolean isUnique;
     private boolean isIndexable;
     private boolean includeInNotification;
+
+    private String defaultValue;
+    private String description;
 
     @JsonProperty("name") public String getName() { return this.name; }
     @JsonProperty("name") public void setName(String name) { this.name = name; }
@@ -46,5 +49,11 @@ public class AttributeDef {
 
     @JsonProperty("includeInNotification") public boolean includeInNotification() { return this.includeInNotification; }
     @JsonProperty("includeInNotification") public void setIncludeInNotification(boolean includeInNotification) { this.includeInNotification = includeInNotification; }
+
+    @JsonProperty("defaultValue") public String getDefaultValue() { return this.defaultValue; }
+    @JsonProperty("defaultValue") public void setDefaultValue(String defaultValue) { this.defaultValue = defaultValue; }
+
+    @JsonProperty("description") public String getDescription() { return this.description; }
+    @JsonProperty("description") public void setDescription(String description) { this.description = description; }
 
 }
