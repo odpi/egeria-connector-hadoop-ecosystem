@@ -3,14 +3,15 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.ClassificationAssignment;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.EntityInstance;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.EntityDetail;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceProperties;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceProvenanceType;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceStatus;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
+import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class EntityMapping {
      *
      * @return EntityDetail
      */
-    public EntityDetail getEntityDetail() {
+    public EntityDetail getEntityDetail() throws RepositoryErrorException {
 
         final String methodName = "getEntityDetail";
         String atlasTypeDefName = atlasEntityInstance.getTypeName();
@@ -116,8 +117,86 @@ public class EntityMapping {
             }
 
             detail.setProperties(instanceProperties);
+
             // TODO: detail.setReplicatedBy();
-            // TODO: detail.setClassifications();
+
+            // Setup any classifications: since Atlas does not come with any pre-defined Classifications we will
+            // assume that any that exist are OMRS-created and therefore are one-to-one mappings to OMRS classifications
+            // (but we will check that the classification is a known OMRS classification before proceeding)
+            List<Classification> classifications = new ArrayList<>();
+            List<ClassificationAssignment> classificationAssignments = atlasEntityInstance.getClassifications();
+            if (classificationAssignments != null) {
+
+                for (ClassificationAssignment classificationAssignment : classificationAssignments) {
+
+                    String atlasClassificationName = classificationAssignment.getTypeName();
+                    TypeDef classificationDef = typeDefStore.getTypeDefByName(atlasClassificationName);
+
+                    if (classificationDef != null) {
+                        Map<String, String> atlasClassificationProperties = classificationAssignment.getAttributes();
+                        Map<String, TypeDefAttribute> classificationAttributeMap = typeDefStore.getAllTypeDefAttributesForName(atlasClassificationName);
+                        InstanceProperties omrsClassificationProperties = new InstanceProperties();
+                        if (atlasClassificationProperties != null) {
+
+                            for (Map.Entry<String, String> property : atlasClassificationProperties.entrySet()) {
+                                String propertyName = property.getKey();
+                                String propertyValue = property.getValue();
+                                if (classificationAttributeMap.containsKey(propertyName)) {
+                                    TypeDefAttribute typeDefAttribute = omrsAttributeMap.get(propertyName);
+                                    omrsClassificationProperties = AttributeMapping.addPrimitivePropertyToInstance(
+                                            omrsRepositoryHelper,
+                                            repositoryName,
+                                            omrsClassificationProperties,
+                                            typeDefAttribute,
+                                            propertyValue,
+                                            methodName
+                                    );
+                                } else {
+                                    if (log.isWarnEnabled()) { log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", propertyName, atlasClassificationName); }
+                                }
+                            }
+
+                        }
+                        try {
+                            // TODO: currently hard-coded to ASSIGNED classifications, need to also handle PROPAGATED
+                            Classification classification = atlasRepositoryConnector.getRepositoryHelper().getNewClassification(
+                                    repositoryName,
+                                    userId,
+                                    atlasClassificationName,
+                                    omrsTypeDefName,
+                                    ClassificationOrigin.ASSIGNED,
+                                    null,
+                                    omrsClassificationProperties
+                            );
+                            // Setting classification mod details based on the overall entity (nothing more fine-grained in Atlas)
+                            classification.setCreatedBy(detail.getCreatedBy());
+                            classification.setCreateTime(detail.getCreateTime());
+                            classification.setUpdatedBy(detail.getUpdatedBy());
+                            classification.setUpdateTime(detail.getUpdateTime());
+                            classification.setVersion(detail.getUpdateTime().getTime());
+                            classifications.add(classification);
+                        } catch (TypeErrorException e) {
+                            log.error("Unable to create a new classification.", e);
+                            OMRSErrorCode errorCode = OMRSErrorCode.INVALID_CLASSIFICATION_FOR_ENTITY;
+                            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                                    atlasClassificationName,
+                                    omrsTypeDefName);
+                            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                                    EntityMapping.class.getName(),
+                                    methodName,
+                                    errorMessage,
+                                    errorCode.getSystemAction(),
+                                    errorCode.getUserAction());
+                        }
+                    } else {
+                        log.warn("Classification {} unknown to repository -- skipping.", atlasClassificationName);
+                    }
+                }
+            }
+            if (!classifications.isEmpty()) {
+                detail.setClassifications(classifications);
+            }
+
         }
 
         return detail;

@@ -14,6 +14,7 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollec
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryValidator;
+import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,6 +188,59 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             // It is completely unknown to us, so go ahead and try to addTypeDef
             return false;
         }
+
+    }
+
+    /**
+     * Return the TypeDef identified by the unique name.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param name String name of the TypeDef.
+     * @return TypeDef structure describing its category and properties.
+     * @throws InvalidParameterException the name is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws TypeDefNotKnownException the requested TypeDef is not found in the metadata collection.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public TypeDef getTypeDefByName(String    userId,
+                                    String    name) throws InvalidParameterException,
+            RepositoryErrorException,
+            TypeDefNotKnownException,
+            UserNotAuthorizedException {
+        final String  methodName = "getTypeDefByName";
+        final String  nameParameterName = "name";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        repositoryValidator.validateUserId(repositoryName, userId, methodName);
+        repositoryValidator.validateTypeName(repositoryName, nameParameterName, name, methodName);
+
+        /*
+         * Perform operation
+         */
+        TypeDef found = typeDefStore.getTypeDefByName(name);
+
+        if (found == null) {
+            OMRSErrorCode errorCode = OMRSErrorCode.TYPEDEF_NAME_NOT_KNOWN;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    name,
+                    methodName,
+                    repositoryName);
+            throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+
+        return found;
 
     }
 
