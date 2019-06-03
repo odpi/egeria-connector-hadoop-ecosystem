@@ -154,6 +154,294 @@
     ]
   },
   {
+    "atlas": "AtlasGlossaryIsARelationship",
+    "omrs": "ISARelationship",
+    "endpointMappings": [
+      {
+        "atlas": "classifies",
+        "omrs": "classifies"
+      },
+      {
+        "atlas": "isA",
+        "omrs": "isA"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryTranslation",
+    "omrs": "Translation",
+    "endpointMappings": [
+      {
+        "atlas": "translatedTerms",
+        "omrs": "translations"
+      },
+      {
+        "atlas": "translationTerms",
+        "omrs": "translations"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryValidValue",
+    "omrs": "ValidValue",
+    "endpointMappings": [
+      {
+        "atlas": "validValuesFor",
+        "omrs": "validValueFor"
+      },
+      {
+        "atlas": "validValues",
+        "omrs": "validValues"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryAntonym",
+    "omrs": "Antonym",
+    "endpointMappings": [
+      {
+        "atlas": "antonyms",
+        "omrs": "antonyms"
+      },
+      {
+        "atlas": "antonyms",
+        "omrs": "antonyms"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryPreferredTerm",
+    "omrs": "PreferredTerm",
+    "endpointMappings": [
+      {
+        "atlas": "preferredTerms",
+        "omrs": "preferredTerms"
+      },
+      {
+        "atlas": "preferredToTerms",
+        "omrs": "alternateTerms"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossarySynonym",
+    "omrs": "Synonym",
+    "endpointMappings": [
+      {
+        "atlas": "synonyms",
+        "omrs": "synonyms"
+      },
+      {
+        "atlas": "synonyms",
+        "omrs": "synonyms"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryReplacementTerm",
+    "omrs": "ReplacementTerm",
+    "endpointMappings": [
+      {
+        "atlas": "replacedBy",
+        "omrs": "replacedTerms"
+      },
+      {
+        "atlas": "replacementTerms",
+        "omrs": "replacementTerms"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryRelatedTerm",
+    "omrs": "RelatedTerm",
+    "endpointMappings": [
+      {
+        "atlas": "seeAlso",
+        "omrs": "seeAlso"
+      },
+      {
+        "atlas": "seeAlso",
+        "omrs": "seeAlso"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "expression",
+        "omrs": "expression"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      },
+      {
+        "atlas": "steward",
+        "omrs": "steward"
+      },
+      {
+        "atlas": "source",
+        "omrs": "source"
+      }
+    ]
+  },
+  {
     "atlas": "AtlasGlossarySemanticAssignment",
     "omrs": "SemanticAssignment",
     "endpointMappings": [
@@ -192,5 +480,31 @@
         "omrs": "source"
       }
     ]
+  },
+  {
+    "atlas": "Asset",
+    "omrs": "Asset",
+    "propertyMappings": [
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
+  },
+  {
+    "atlas": "DataSet",
+    "omrs": "DataSet"
+  },
+  {
+    "atlas": "Process",
+    "omrs": "Process"
   }
 ]
