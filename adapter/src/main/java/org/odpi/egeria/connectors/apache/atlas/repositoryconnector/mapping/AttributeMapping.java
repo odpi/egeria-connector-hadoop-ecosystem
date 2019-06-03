@@ -2,6 +2,8 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.EnumPropertyValue;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceProperties;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
@@ -9,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The base class for all mappings between OMRS AttributeTypeDefs and Apache Atlas properties.
@@ -16,6 +20,56 @@ import java.util.Date;
 public abstract class AttributeMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AttributeMapping.class);
+
+    /**
+     * Add the provided property value to the set of instance properties.
+     *
+     * @param repositoryHelper the OMRS repository helper
+     * @param repositoryName name of caller
+     * @param property the property
+     * @param properties properties object to add property to (may be null)
+     * @param attributeDefStore store of attribute definition mappings
+     * @param propertyValue value of property
+     * @param methodName calling method
+     * @return InstanceProperties
+     */
+    public static InstanceProperties addPropertyToInstance(OMRSRepositoryHelper repositoryHelper,
+                                                           String repositoryName,
+                                                           TypeDefAttribute property,
+                                                           InstanceProperties properties,
+                                                           AttributeTypeDefStore attributeDefStore,
+                                                           Object propertyValue,
+                                                           String methodName) {
+
+        InstanceProperties resultingProperties = properties;
+
+        switch (property.getAttributeType().getCategory()) {
+            case ENUM_DEF:
+                resultingProperties = AttributeMapping.addEnumPropertyToInstance(
+                        resultingProperties,
+                        property,
+                        attributeDefStore.getElementMappingsForOMRSTypeDef(property.getAttributeName()),
+                        propertyValue
+                );
+                break;
+            case PRIMITIVE:
+                resultingProperties = AttributeMapping.addPrimitivePropertyToInstance(
+                        repositoryHelper,
+                        repositoryName,
+                        resultingProperties,
+                        property,
+                        propertyValue,
+                        methodName
+                );
+                break;
+            default:
+                log.warn("Unhandled type for mapping: {}", property);
+                break;
+        }
+
+        return resultingProperties;
+
+    }
 
     /**
      * Add the supplied property to an instance properties object.  If the instance property object
@@ -36,7 +90,7 @@ public abstract class AttributeMapping {
                                                                     Object propertyValue,
                                                                     String methodName) {
 
-        InstanceProperties  resultingProperties = properties;
+        InstanceProperties resultingProperties = properties;
 
         if (propertyValue != null) {
             String propertyName = property.getAttributeName();
@@ -151,6 +205,66 @@ public abstract class AttributeMapping {
             } else {
                 if (log.isErrorEnabled()) { log.error("Cannot translate non-primitive property {} this way.", propertyName); }
             }
+        } else {
+            if (log.isDebugEnabled()) { log.debug("Null property"); }
+        }
+
+        return resultingProperties;
+
+    }
+
+    /**
+     * Add the supplied property to an instance properties object.  If the instance property object
+     * supplied is null, a new instance properties object is created.
+     *
+     * @param properties properties object to add property to may be null.
+     * @param property the property
+     * @param atlasElementValueToOmrsElementValue mapping from Atlas enumeration values to OMRS enumeration values
+     * @param propertyValue value of property
+     * @return InstanceProperties
+     */
+    public static InstanceProperties addEnumPropertyToInstance(InstanceProperties properties,
+                                                               TypeDefAttribute property,
+                                                               Map<String, String> atlasElementValueToOmrsElementValue,
+                                                               Object propertyValue) {
+
+        String propertyName = property.getAttributeName();
+        InstanceProperties resultingProperties = properties;
+
+        if (propertyValue != null) {
+
+            String omrsValue = null;
+            for (Map.Entry<String, String> entry : atlasElementValueToOmrsElementValue.entrySet()) {
+                String cAtlas = entry.getKey();
+                if (cAtlas.equals(propertyValue)) {
+                    omrsValue = entry.getKey();
+                    break;
+                }
+            }
+            if (omrsValue != null) {
+                EnumDef omrsEnumProperty = (EnumDef) property.getAttributeType();
+                List<EnumElementDef> omrsElements = omrsEnumProperty.getElementDefs();
+                EnumElementDef omrsEnumValue = null;
+                for (EnumElementDef omrsElement : omrsElements) {
+                    String cOmrs = omrsElement.getValue();
+                    if (cOmrs.equals(omrsValue)) {
+                        omrsEnumValue = omrsElement;
+                        break;
+                    }
+                }
+                if (omrsEnumValue != null) {
+                    EnumPropertyValue enumPropertyValue = new EnumPropertyValue();
+                    enumPropertyValue.setDescription(omrsEnumValue.getDescription());
+                    enumPropertyValue.setOrdinal(omrsEnumValue.getOrdinal());
+                    enumPropertyValue.setSymbolicName(omrsEnumValue.getValue());
+                    resultingProperties.setProperty(propertyName, enumPropertyValue);
+                } else {
+                    if (log.isWarnEnabled()) { log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue); }
+                }
+            } else {
+                if (log.isWarnEnabled()) { log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue); }
+            }
+
         } else {
             if (log.isDebugEnabled()) { log.debug("Null property"); }
         }

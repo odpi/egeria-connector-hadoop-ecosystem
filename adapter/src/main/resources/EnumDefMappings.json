@@ -1,0 +1,62 @@
+[
+  {
+    "atlas": "AtlasGlossaryTermRelationshipStatus",
+    "omrs": "TermRelationshipStatus",
+    "propertyMappings": [
+      {
+        "atlas": "DRAFT",
+        "omrs": "Draft"
+      },
+      {
+        "atlas": "ACTIVE",
+        "omrs": "Active"
+      },
+      {
+        "atlas": "DEPRECATED",
+        "omrs": "Deprecated"
+      },
+      {
+        "atlas": "OBSOLETE",
+        "omrs": "Obsolete"
+      },
+      {
+        "atlas": "OTHER",
+        "omrs": "Other"
+      }
+    ]
+  },
+  {
+    "atlas": "AtlasGlossaryTermAssignmentStatus",
+    "omrs": "TermAssignmentStatus",
+    "propertyMappings": [
+      {
+        "atlas": "DISCOVERED",
+        "omrs": "Discovered"
+      },
+      {
+        "atlas": "PROPOSED",
+        "omrs": "Proposed"
+      },
+      {
+        "atlas": "IMPORTED",
+        "omrs": "Imported"
+      },
+      {
+        "atlas": "VALIDATED",
+        "omrs": "Validated"
+      },
+      {
+        "atlas": "DEPRECATED",
+        "omrs": "Deprecated"
+      },
+      {
+        "atlas": "OBSOLETE",
+        "omrs": "Obsolete"
+      },
+      {
+        "atlas": "OTHER",
+        "omrs": "Other"
+      }
+    ]
+  }
+]

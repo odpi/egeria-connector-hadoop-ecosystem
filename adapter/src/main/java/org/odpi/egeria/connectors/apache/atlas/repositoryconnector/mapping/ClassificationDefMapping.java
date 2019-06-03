@@ -158,7 +158,7 @@ public abstract class ClassificationDefMapping {
             typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
             throw new TypeDefNotSupportedException(
                     404,
-                    ApacheAtlasOMRSMetadataCollection.class.getName(),
+                    ClassificationDefMapping.class.getName(),
                     methodName,
                     omrsTypeDefName + " is not supported.",
                     "",
