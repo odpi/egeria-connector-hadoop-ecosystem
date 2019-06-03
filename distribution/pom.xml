@@ -40,6 +40,20 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.odpi.egeria:egeria-connector-apache-atlas-adapter</include>
+                                    <include>org.apache.atlas:atlas-client-common</include>
+                                    <include>org.apache.atlas:atlas-client-v1</include>
+                                    <include>org.apache.atlas:atlas-client-v2</include>
+                                    <include>org.apache.atlas:atlas-intg</include>
+                                    <include>org.apache.hadoop:hadoop-auth</include>
+                                    <include>org.apache.hadoop:hadoop-common</include>
+                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
+                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
+                                    <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
+                                    <include>com.sun.jersey:jersey-client</include>
+                                    <include>com.sun.jersey:jersey-core</include>
+                                    <include>com.sun.jersey:jersey-json</include>
+                                    <include>com.sun.jersey.contribs:jersey-multipart</include>
+                                    <include>javax.ws.rs:jsr311-api</include>
                                 </includes>
                             </artifactSet>
                         </configuration>

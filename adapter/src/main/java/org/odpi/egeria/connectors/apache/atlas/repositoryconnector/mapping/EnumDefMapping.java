@@ -2,9 +2,10 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
+import org.apache.atlas.model.typedef.AtlasEnumDef;
+import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.EnumElementDef;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.EnumTypeDef;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumDef;
 import org.slf4j.Logger;
@@ -28,31 +29,32 @@ public abstract class EnumDefMapping {
         String omrsTypeDefName = omrsEnumDef.getName();
 
         // Map base properties
-        EnumTypeDef enumTypeDef = new EnumTypeDef();
+        AtlasEnumDef enumTypeDef = new AtlasEnumDef();
         enumTypeDef.setGuid(omrsEnumDef.getGUID());
         enumTypeDef.setName(omrsTypeDefName);
         enumTypeDef.setServiceType("omrs");
-        enumTypeDef.setCategory("ENUM");
         enumTypeDef.setCreatedBy("ODPi Egeria (OMRS)");
         enumTypeDef.setCreateTime(new Date());
         enumTypeDef.setVersion(omrsEnumDef.getVersion());
-        enumTypeDef.setTypeVersion("1.1");
         enumTypeDef.setDescription(omrsEnumDef.getDescription());
 
-        List<EnumElementDef> atlasElements = new ArrayList<>();
-        List<org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef> omrsElements = omrsEnumDef.getElementDefs();
+        List<EnumElementDef> omrsElements = omrsEnumDef.getElementDefs();
         if (omrsElements != null) {
-            for (org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef omrsElement : omrsElements) {
-                EnumElementDef atlasElement = new EnumElementDef();
+            for (EnumElementDef omrsElement : omrsElements) {
+                AtlasEnumDef.AtlasEnumElementDef atlasElement = new AtlasEnumDef.AtlasEnumElementDef();
                 atlasElement.setValue(omrsElement.getValue());
                 atlasElement.setDescription(omrsElement.getDescription());
                 atlasElement.setOrdinal(omrsElement.getOrdinal());
-                atlasElements.add(atlasElement);
+                enumTypeDef.addElement(atlasElement);
             }
         }
-        enumTypeDef.setElementDefs(atlasElements);
 
-        atlasRepositoryConnector.createTypeDef(enumTypeDef);
+        AtlasTypesDef atlasTypesDef = new AtlasTypesDef();
+        List<AtlasEnumDef> enumList = new ArrayList<>();
+        enumList.add(enumTypeDef);
+        atlasTypesDef.setEnumDefs(enumList);
+
+        atlasRepositoryConnector.createTypeDef(atlasTypesDef);
         attributeDefStore.addTypeDef(omrsEnumDef);
 
     }
