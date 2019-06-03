@@ -37,15 +37,49 @@
   },
   {
     "atlas": "AtlasGlossaryCategory",
-    "omrs": "GlossaryCategory"
+    "omrs": "GlossaryCategory",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "longDescription",
+        "omrs": "description"
+      }
+    ]
   },
   {
     "atlas": "AtlasGlossaryCategoryAnchor",
-    "omrs": "CategoryAnchor"
+    "omrs": "CategoryAnchor",
+    "endpointMappings": [
+      {
+        "atlas": "categories",
+        "omrs": "categories"
+      },
+      {
+        "atlas": "anchor",
+        "omrs": "anchor"
+      }
+    ]
   },
   {
     "atlas": "AtlasGlossaryCategoryHierarchyLink",
-    "omrs": "CategoryHierarchyLink"
+    "omrs": "CategoryHierarchyLink",
+    "endpointMappings": [
+      {
+        "atlas": "childrenCategories",
+        "omrs": "subcategories"
+      },
+      {
+        "atlas": "parentCategory",
+        "omrs": "superCategory"
+      }
+    ]
   },
   {
     "atlas": "AtlasGlossaryTerm",
@@ -83,23 +117,55 @@
   },
   {
     "atlas": "AtlasGlossaryTermAnchor",
-    "omrs": "TermAnchor"
+    "omrs": "TermAnchor",
+    "endpointMappings": [
+      {
+        "atlas": "terms",
+        "omrs": "terms"
+      },
+      {
+        "atlas": "anchor",
+        "omrs": "anchor"
+      }
+    ]
   },
   {
     "atlas": "AtlasGlossaryTermCategorization",
-    "omrs": "TermCategorization"
-  },
-  {
-    "atlas": "AtlasGlossaryTermRelationshipStatus",
-    "omrs": "TermRelationshipStatus"
-  },
-  {
-    "atlas": "AtlasGlossaryTermAssignmentStatus",
-    "omrs": "TermAssignmentStatus"
+    "omrs": "TermCategorization",
+    "endpointMappings": [
+      {
+        "atlas": "terms",
+        "omrs": "terms"
+      },
+      {
+        "atlas": "categories",
+        "omrs": "categories"
+      }
+    ],
+    "propertyMappings": [
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "status",
+        "omrs": "status"
+      }
+    ]
   },
   {
     "atlas": "AtlasGlossarySemanticAssignment",
     "omrs": "SemanticAssignment",
+    "endpointMappings": [
+      {
+        "atlas": "assignedEntities",
+        "omrs": "assignedElements"
+      },
+      {
+        "atlas": "meanings",
+        "omrs": "meaning"
+      }
+    ],
     "propertyMappings": [
       {
         "atlas": "description",

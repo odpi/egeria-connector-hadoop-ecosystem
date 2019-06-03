@@ -13,7 +13,7 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonTypeName("TypeDefMapping")
-public class TypeDefMapping {
+public class MappingFromFile {
 
     /**
      * The name of the TypeDef within Apache Atlas.
@@ -28,7 +28,13 @@ public class TypeDefMapping {
     /**
      * An array of mappings between Apache Atlas and OMRS property names for the TypeDef.
      */
-    private List<TypeDefMapping> propertyMappings;
+    private List<MappingFromFile> propertyMappings;
+
+    /**
+     * An array of mappings between Apache Atlas endpoint property names and OMRS endpoing property names,
+     * for any relationship TypeDefs
+     */
+    private List<MappingFromFile> endpointMappings;
 
     @JsonProperty("atlas") public String getAtlasName() { return this.atlas; }
     @JsonProperty("atlas") public void setAtlasName(String atlas) { this.atlas = atlas; }
@@ -36,7 +42,10 @@ public class TypeDefMapping {
     @JsonProperty("omrs") public String getOMRSName() { return this.omrs; }
     @JsonProperty("omrs") public void setOMRSName(String omrs) { this.omrs = omrs; }
 
-    @JsonProperty("propertyMappings") public List<TypeDefMapping> getPropertyMappings() { return this.propertyMappings; }
-    @JsonProperty("propertyMappings") public void setPropertyMappings(List<TypeDefMapping> propertyMappings) { this.propertyMappings = propertyMappings; }
+    @JsonProperty("propertyMappings") public List<MappingFromFile> getPropertyMappings() { return this.propertyMappings; }
+    @JsonProperty("propertyMappings") public void setPropertyMappings(List<MappingFromFile> propertyMappings) { this.propertyMappings = propertyMappings; }
+
+    @JsonProperty("endpointMappings") public List<MappingFromFile> getEndpointMappings() { return this.endpointMappings; }
+    @JsonProperty("endpointMappings") public void setEndpointMappings(List<MappingFromFile> endpointMappings) { this.endpointMappings = endpointMappings; }
 
 }

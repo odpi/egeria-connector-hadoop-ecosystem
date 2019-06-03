@@ -3,11 +3,13 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.api.TypeDefUpsertRequest;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.instances.EntityInstance;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.api.EntityResponse;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.ClassificationTypeDef;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.EnumTypeDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.TypeDefHeader;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
@@ -64,7 +66,9 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         if (log.isDebugEnabled()) { log.debug("Initializing ApacheAtlasOMRSRepositoryConnector..."); }
 
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
+        // We must allow single values to be interpreted as arrays for RelationshipAssignments to work properly
+        // (without needing to implement a separate bean for every single underlying instance)
+        this.objectMapper = new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
         // Retrieve connection details
         Map<String, Object> proxyProperties = this.connectionBean.getConfigurationProperties();
@@ -198,12 +202,17 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         TypeDefUpsertRequest upsertRequest = new TypeDefUpsertRequest();
         switch (typeDef.getCategory()) {
             case "CLASSIFICATION":
-                ArrayList<ClassificationTypeDef> one = new ArrayList<>();
-                one.add((ClassificationTypeDef)typeDef);
-                upsertRequest.setClassificationDefs(one);
+                ArrayList<ClassificationTypeDef> classification = new ArrayList<>();
+                classification.add((ClassificationTypeDef)typeDef);
+                upsertRequest.setClassificationDefs(classification);
+                break;
+            case "ENUM":
+                ArrayList<EnumTypeDef> enumeration = new ArrayList<>();
+                enumeration.add((EnumTypeDef)typeDef);
+                upsertRequest.setEnumDefs(enumeration);
                 break;
             default:
-                log.warn("Requested TypeDef for addition is not a Classification -- skipping: {}", typeDef);
+                log.warn("Requested TypeDef for addition is not (yet) handled -- skipping: {}", typeDef);
                 break;
         }
 

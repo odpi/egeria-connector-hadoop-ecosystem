@@ -4,13 +4,16 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.ClassificationDefMapping;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMapping;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EnumDefMapping;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.instances.EntityInstance;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.AttributeDef;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.ClassificationTypeDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.types.TypeDefHeader;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollectionBase;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.SequencingOrder;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.EntityDetail;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.InstanceStatus;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.Relationship;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryValidator;
@@ -27,6 +30,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
+    private AttributeTypeDefStore attributeTypeDefStore;
 
     /**
      * @param parentConnector      connector that this metadata collection supports.
@@ -46,6 +50,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         parentConnector.setRepositoryName(repositoryName);
         this.atlasRepositoryConnector = parentConnector;
         this.typeDefStore = new TypeDefStore();
+        this.attributeTypeDefStore = new AttributeTypeDefStore();
     }
 
     /**
@@ -114,6 +119,86 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         } else {
             // Otherwise, we'll drop it as unimplemented
             typeDefStore.addUnimplementedTypeDef(newTypeDef);
+            throw new TypeDefNotSupportedException(
+                    404,
+                    ApacheAtlasOMRSMetadataCollection.class.getName(),
+                    methodName,
+                    omrsTypeDefName + " is not supported.",
+                    "",
+                    "Request support through Egeria GitHub issue."
+            );
+        }
+
+    }
+
+    /**
+     * Create a definition of a new AttributeTypeDef.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param newAttributeTypeDef TypeDef structure describing the new TypeDef.
+     * @throws InvalidParameterException the new TypeDef is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws TypeDefNotSupportedException the repository is not able to support this TypeDef.
+     * @throws TypeDefKnownException the TypeDef is already stored in the repository.
+     * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
+     * @throws InvalidTypeDefException the new TypeDef has invalid contents.
+     * @throws FunctionNotSupportedException the repository does not support this call.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public  void addAttributeTypeDef(String             userId,
+                                     AttributeTypeDef   newAttributeTypeDef) throws InvalidParameterException,
+            RepositoryErrorException,
+            TypeDefNotSupportedException,
+            TypeDefKnownException,
+            TypeDefConflictException,
+            InvalidTypeDefException,
+            FunctionNotSupportedException,
+            UserNotAuthorizedException {
+        final String  methodName           = "addAttributeTypeDef";
+        final String  typeDefParameterName = "newAttributeTypeDef";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        repositoryValidator.validateUserId(repositoryName, userId, methodName);
+        repositoryValidator.validateAttributeTypeDef(repositoryName, typeDefParameterName, newAttributeTypeDef, methodName);
+        repositoryValidator.validateUnknownAttributeTypeDef(repositoryName, typeDefParameterName, newAttributeTypeDef, methodName);
+
+        // Note this is only implemented for Enums, support for other types is indicated directly
+        // in the verifyAttributeTypeDef method
+        AttributeTypeDefCategory attributeTypeDefCategory = newAttributeTypeDef.getCategory();
+        String omrsTypeDefName = newAttributeTypeDef.getName();
+        if (log.isDebugEnabled()) { log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, attributeTypeDefCategory.getName()); }
+
+        if (attributeTypeDefStore.isTypeDefMapped(omrsTypeDefName)) {
+
+            // If it is a mapped TypeDef, add it to our store
+            attributeTypeDefStore.addTypeDef(newAttributeTypeDef);
+
+        } else if (newAttributeTypeDef.getCategory().equals(AttributeTypeDefCategory.ENUM_DEF)) {
+
+            TypeDefHeader atlasTypeDef = atlasRepositoryConnector.getTypeDefByName(omrsTypeDefName);
+            if (atlasTypeDef != null) {
+                // If the TypeDef already exists in Atlas, add it to our store
+                // TODO: should really still verify it, in case TypeDef changes
+                attributeTypeDefStore.addTypeDef(newAttributeTypeDef);
+            } else {
+                // Otherwise, if it is a Classification, we'll add it to Atlas itself
+                EnumDefMapping.addEnumToAtlas(
+                        (EnumDef) newAttributeTypeDef,
+                        attributeTypeDefStore,
+                        atlasRepositoryConnector
+                );
+            }
+
+        } else {
+            // Otherwise, we'll drop it as unimplemented
+            attributeTypeDefStore.addUnimplementedTypeDef(newAttributeTypeDef);
             throw new TypeDefNotSupportedException(
                     404,
                     ApacheAtlasOMRSMetadataCollection.class.getName(),
@@ -212,6 +297,58 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
+     * Verify that a definition of an AttributeTypeDef is either new or matches the definition already stored.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param attributeTypeDef TypeDef structure describing the TypeDef to test.
+     * @return boolean where true means the TypeDef matches the local definition where false means the TypeDef is not known.
+     * @throws InvalidParameterException the TypeDef is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws TypeDefNotSupportedException the repository is not able to support this TypeDef.
+     * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
+     * @throws InvalidTypeDefException the new TypeDef has invalid contents.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public boolean verifyAttributeTypeDef(String            userId,
+                                           AttributeTypeDef  attributeTypeDef) throws InvalidParameterException,
+            RepositoryErrorException,
+            TypeDefNotSupportedException,
+            TypeDefConflictException,
+            InvalidTypeDefException,
+            UserNotAuthorizedException {
+        final String  methodName           = "verifyAttributeTypeDef";
+        final String  typeDefParameterName = "attributeTypeDef";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        repositoryValidator.validateUserId(repositoryName, userId, methodName);
+        repositoryValidator.validateAttributeTypeDef(repositoryName, typeDefParameterName, attributeTypeDef, methodName);
+
+        boolean bImplemented;
+        switch (attributeTypeDef.getCategory()) {
+            case PRIMITIVE:
+            case COLLECTION:
+                bImplemented = true;
+                break;
+            case ENUM_DEF:
+                bImplemented = attributeTypeDefStore.isTypeDefMapped(attributeTypeDef.getName());
+                break;
+            default:
+                bImplemented = false;
+                break;
+        }
+
+        return bImplemented;
+
+    }
+
+    /**
      * Return the TypeDef identified by the unique name.
      *
      * @param userId unique identifier for requesting user.
@@ -265,6 +402,46 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
+     * Returns the entity if the entity is stored in the metadata collection, otherwise null.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param guid String unique identifier for the entity
+     * @return the entity details if the entity is found in the metadata collection; otherwise return null
+     * @throws InvalidParameterException the guid is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public EntityDetail isEntityKnown(String     userId,
+                                      String     guid) throws InvalidParameterException,
+            RepositoryErrorException,
+            UserNotAuthorizedException {
+        final String  methodName = "isEntityKnown";
+        final String  guidParameterName = "guid";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        repositoryValidator.validateUserId(repositoryName, userId, methodName);
+        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
+
+        /*
+         * Perform operation
+         */
+        EntityDetail detail = null;
+        try {
+            detail = getEntityDetail(userId, guid);
+        } catch (EntityNotKnownException | EntityProxyOnlyException e) {
+            if (log.isInfoEnabled()) { log.info("Entity {} not known to the repository, or only a proxy.", guid, e); }
+        }
+        return detail;
+    }
+
+    /**
      * Return the header, classifications and properties of a specific entity.
      *
      * @param userId unique identifier for requesting user.
@@ -302,8 +479,136 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Lookup the basic asset based on the RID (strip off prefix (indicating a generated type), if there)
         EntityInstance entity = this.atlasRepositoryConnector.getEntityByGUID(guid);
-        EntityMapping mapping = new EntityMapping(atlasRepositoryConnector, typeDefStore, entity, userId);
+        EntityMapping mapping = new EntityMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
         return mapping.getEntityDetail();
+
+    }
+
+    /**
+     * Return the relationships for a specific entity.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param entityGUID String unique identifier for the entity.
+     * @param relationshipTypeGUID String GUID of the the type of relationship required (null for all).
+     * @param fromRelationshipElement the starting element number of the relationships to return.
+     *                                This is used when retrieving elements
+     *                                beyond the first page of results. Zero means start from the first element.
+     * @param limitResultsByStatus Not implemented for Apache Atlas -- will only retrieve ACTIVE entities.
+     * @param asOfTime Must be null (history not implemented for Apache Atlas).
+     * @param sequencingProperty String name of the property that is to be used to sequence the results.
+     *                           Null means do not sequence on a property name (see SequencingOrder).
+     * @param sequencingOrder Enum defining how the results should be ordered.
+     * @param pageSize -- the maximum number of result classifications that can be returned on this request.  Zero means
+     *                 unrestricted return results size.
+     * @return Relationships list.  Null means no relationships associated with the entity.
+     * @throws InvalidParameterException a parameter is invalid or null.
+     * @throws TypeErrorException the type guid passed on the request is not known by the
+     *                              metadata collection.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
+     * @throws PropertyErrorException the sequencing property is not valid for the attached classifications.
+     * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
+     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public List<Relationship> getRelationshipsForEntity(String                     userId,
+                                                        String                     entityGUID,
+                                                        String                     relationshipTypeGUID,
+                                                        int                        fromRelationshipElement,
+                                                        List<InstanceStatus>       limitResultsByStatus,
+                                                        Date                       asOfTime,
+                                                        String                     sequencingProperty,
+                                                        SequencingOrder            sequencingOrder,
+                                                        int                        pageSize) throws InvalidParameterException,
+            TypeErrorException,
+            RepositoryErrorException,
+            EntityNotKnownException,
+            PropertyErrorException,
+            PagingErrorException,
+            FunctionNotSupportedException,
+            UserNotAuthorizedException {
+        final String  methodName = "getRelationshipsForEntity";
+        final String  guidParameterName = "entityGUID";
+        final String  typeGUIDParameter = "relationshipTypeGUID";
+        final String  asOfTimeParameter = "asOfTime";
+        final String  pageSizeParameter = "pageSize";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        repositoryValidator.validateUserId(repositoryName, userId, methodName);
+        repositoryValidator.validateGUID(repositoryName, guidParameterName, entityGUID, methodName);
+        repositoryValidator.validateAsOfTime(repositoryName, asOfTimeParameter, asOfTime, methodName);
+        repositoryValidator.validateOptionalTypeGUID(repositoryName, typeGUIDParameter, relationshipTypeGUID, methodName);
+        repositoryValidator.validatePageSize(repositoryName, pageSizeParameter, pageSize, methodName);
+
+        /*
+         * Perform operation
+         */
+        List<Relationship> alRelationships = null;
+
+        // Immediately throw unimplemented exception if trying to retrieve historical view or sequence by property
+        if (asOfTime != null) {
+            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                    this.getClass().getName(),
+                    repositoryName);
+            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        } else if (limitResultsByStatus == null
+                || (limitResultsByStatus.size() == 1 && limitResultsByStatus.contains(InstanceStatus.ACTIVE))) {
+
+            // Otherwise, only bother searching if we are after ACTIVE (or "all") entities -- non-ACTIVE means we
+            // will just return an empty list
+
+            // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
+            EntityInstance asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false);
+
+            // Ensure the entity actually exists (if not, throw error to that effect)
+            if (asset == null) {
+                OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
+                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                        this.getClass().getName(),
+                        repositoryName);
+                throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                        this.getClass().getName(),
+                        methodName,
+                        errorMessage,
+                        errorCode.getSystemAction(),
+                        errorCode.getUserAction());
+            } else {
+
+                EntityMapping entityMap = new EntityMapping(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        attributeTypeDefStore,
+                        asset,
+                        userId
+                );
+
+                // 2. Apply the mapping to the object, and retrieve the resulting relationships
+                alRelationships = entityMap.getRelationships(
+                        relationshipTypeGUID,
+                        fromRelationshipElement,
+                        sequencingProperty,
+                        sequencingOrder,
+                        pageSize
+                );
+
+            }
+
+        }
+
+        return alRelationships;
 
     }
 

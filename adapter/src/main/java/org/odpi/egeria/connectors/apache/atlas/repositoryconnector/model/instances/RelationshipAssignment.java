@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
-import java.util.Map;
-
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonTypeName("RelationshipAssignment")
 public class RelationshipAssignment {
@@ -19,7 +17,7 @@ public class RelationshipAssignment {
     private String relationshipType;
     private String relationshipGuid;
     private String relationshipStatus;
-    private Map<String, String> relationshipAttributes;
+    private RelationshipAssignmentAttributes relationshipAttributes;
 
     @JsonProperty("guid") public String getGuid() { return this.guid; }
     @JsonProperty("guid") public void setGuid(String guid) { this.guid = guid; }
@@ -42,7 +40,7 @@ public class RelationshipAssignment {
     @JsonProperty("relationshipStatus") public String getRelationshipStatus() { return this.relationshipStatus; }
     @JsonProperty("relationshipStatus") public void setRelationshipStatus(String relationshipStatus) { this.relationshipStatus = relationshipStatus; }
 
-    @JsonProperty("relationshipAttributes") public Map<String, String> getRelationshipAttributes() { return this.relationshipAttributes; }
-    @JsonProperty("relationshipAttributes") public void setRelationshipAttributes(Map<String, String> relationshipAttributes) { this.relationshipAttributes = relationshipAttributes; }
+    @JsonProperty("relationshipAttributes") public RelationshipAssignmentAttributes getRelationshipAttributes() { return this.relationshipAttributes; }
+    @JsonProperty("relationshipAttributes") public void setRelationshipAttributes(RelationshipAssignmentAttributes relationshipAttributes) { this.relationshipAttributes = relationshipAttributes; }
 
 }
