@@ -12,6 +12,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,63 @@ public class AttributeTypeDefStore {
      */
     public boolean isTypeDefMapped(String omrsName) {
         return omrsNameToAtlasName.containsKey(omrsName);
+    }
+
+    /**
+     * Retrieves an implemented AttributeTypeDef by its GUID.
+     *
+     * @param guid of the type definition
+     * @return AttributeTypeDef
+     */
+    public AttributeTypeDef getAttributeTypeDefByGUID(String guid) {
+        return getAttributeTypeDefByGUID(guid, true);
+    }
+
+    /**
+     * Retrieves an implemented AttributeTypeDef by its GUID.
+     *
+     * @param guid of the type definition
+     * @param warnIfNotFound whether to log a warning if GUID is not known (true) or not (false).
+     * @return AttributeTypeDef
+     */
+    private AttributeTypeDef getAttributeTypeDefByGUID(String guid, boolean warnIfNotFound) {
+        if (omrsGuidToTypeDef.containsKey(guid)) {
+            return omrsGuidToTypeDef.get(guid);
+        } else {
+            if (warnIfNotFound) {
+                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS AttributeTypeDef by GUID: {}", guid); }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves an implemented AttributeTypeDef by its name.
+     *
+     * @param name of the type definition
+     * @return AttributeTypeDef
+     */
+    public AttributeTypeDef getAttributeTypeDefByName(String name) {
+        return getAttributeTypeDefByName(name, true);
+    }
+
+    /**
+     * Retrieves an implemented AttributeTypeDef by its name.
+     *
+     * @param name of the type definition
+     * @param warnIfNotFound whether to log a warning if name is not known (true) or not (false).
+     * @return AttributeTypeDef
+     */
+    private AttributeTypeDef getAttributeTypeDefByName(String name, boolean warnIfNotFound) {
+        if (omrsNameToGuid.containsKey(name)) {
+            String guid = omrsNameToGuid.get(name);
+            return getAttributeTypeDefByGUID(guid, warnIfNotFound);
+        } else {
+            if (warnIfNotFound) {
+                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS AttributeTypeDef by Name: {}", name); }
+            }
+            return null;
+        }
     }
 
     /**
@@ -173,6 +231,15 @@ public class AttributeTypeDefStore {
     public void addUnimplementedTypeDef(AttributeTypeDef typeDef) {
         String guid = typeDef.getGUID();
         unimplementedTypeDefs.put(guid, typeDef);
+    }
+
+    /**
+     * Retrieves a listing of all of the implemented type definitions for this repository.
+     *
+     * @return {@code List<TypeDef>}
+     */
+    public List<AttributeTypeDef> getAllAttributeTypeDefs() {
+        return new ArrayList<>(omrsGuidToTypeDef.values());
     }
 
 }
