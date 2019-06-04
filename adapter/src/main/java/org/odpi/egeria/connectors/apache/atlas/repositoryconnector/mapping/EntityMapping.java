@@ -368,7 +368,7 @@ public class EntityMapping {
                             if (p2 != null) {
                                 v2 = p2.getPropertyValue(sequencingProperty);
                             }
-                            return compareInstanceProperty(v1, v2);
+                            return AttributeMapping.compareInstanceProperty(v1, v2);
                         };
                     }
                     break;
@@ -385,7 +385,7 @@ public class EntityMapping {
                             if (p2 != null) {
                                 v2 = p2.getPropertyValue(sequencingProperty);
                             }
-                            return compareInstanceProperty(v1, v2);
+                            return AttributeMapping.compareInstanceProperty(v1, v2);
                         };
                     }
                     break;
@@ -476,83 +476,6 @@ public class EntityMapping {
         }
 
         return entityProxy;
-
-    }
-
-    /**
-     * Comparator input for sorting based on an InstancePropertyValue. Note that this will assume that both v1 and v2
-     * are the same type of property value (eg. both same type of primitive)
-     *
-     * @param v1 first value to compare
-     * @param v2 second value to compare
-     * @return int
-     */
-    private int compareInstanceProperty(InstancePropertyValue v1, InstancePropertyValue v2) {
-
-        int result = 0;
-        if (v1 == v2) {
-            result = 0;
-        } else if (v1 == null) {
-            result = -1;
-        } else if (v2 == null) {
-            result = 1;
-        } else {
-
-            InstancePropertyCategory category = v1.getInstancePropertyCategory();
-            switch (category) {
-                case PRIMITIVE:
-                    PrimitivePropertyValue pv1 = (PrimitivePropertyValue) v1;
-                    PrimitivePropertyValue pv2 = (PrimitivePropertyValue) v2;
-                    PrimitiveDefCategory primitiveCategory = pv1.getPrimitiveDefCategory();
-                    switch (primitiveCategory) {
-                        case OM_PRIMITIVE_TYPE_INT:
-                            result = ((Integer) pv1.getPrimitiveValue() - (Integer) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BYTE:
-                            result = ((Byte) pv1.getPrimitiveValue()).compareTo((Byte) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_CHAR:
-                            result = ((Character) pv1.getPrimitiveValue()).compareTo((Character) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_STRING:
-                            result = ((String) pv1.getPrimitiveValue()).compareTo((String) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_DATE:
-                            result = ((Date) pv1.getPrimitiveValue()).compareTo((Date) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_LONG:
-                            result = ((Long) pv1.getPrimitiveValue()).compareTo((Long) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_FLOAT:
-                            result = ((Float) pv1.getPrimitiveValue()).compareTo((Float) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_SHORT:
-                            result = ((Short) pv1.getPrimitiveValue()).compareTo((Short) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_DOUBLE:
-                            result = ((Double) pv1.getPrimitiveValue()).compareTo((Double) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BOOLEAN:
-                            result = ((Boolean) pv1.getPrimitiveValue()).compareTo((Boolean) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BIGDECIMAL:
-                            result = ((BigDecimal) pv1.getPrimitiveValue()).compareTo((BigDecimal) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BIGINTEGER:
-                            result = ((BigInteger) pv1.getPrimitiveValue()).compareTo((BigInteger) pv2.getPrimitiveValue());
-                            break;
-                        default:
-                            result = pv1.getPrimitiveValue().toString().compareTo(pv2.getPrimitiveValue().toString());
-                            break;
-                    }
-                    break;
-                default:
-                    log.warn("Unhandled instance value type for comparison: {}", category);
-                    break;
-            }
-
-        }
-        return result;
 
     }
 
