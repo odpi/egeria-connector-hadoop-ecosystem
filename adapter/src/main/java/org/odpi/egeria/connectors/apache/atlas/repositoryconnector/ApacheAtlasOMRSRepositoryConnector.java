@@ -4,6 +4,8 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
+import org.apache.atlas.model.discovery.AtlasSearchResult;
+import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
@@ -158,6 +160,40 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             result = atlasClient.createAtlasTypeDefs(typeDefs);
         } catch (AtlasServiceException e) {
             log.error("Unable to create provided TypeDefs: {}", typeDefs, e);
+        }
+        return result;
+    }
+
+    /**
+     * Search for entities based on the provided parameters.
+     *
+     * @param searchParameters the criteria by which to search
+     * @return AtlasSearchResult
+     */
+    public AtlasSearchResult searchForEntities(SearchParameters searchParameters) {
+        AtlasSearchResult result = null;
+        try {
+            if (log.isInfoEnabled()) { log.info("Searching Atlas with: {}", searchParameters); }
+            result = atlasClient.facetedSearch(searchParameters);
+        } catch (AtlasServiceException e) {
+            log.error("Unable to search based on parameters: {}", searchParameters, e);
+        }
+        return result;
+    }
+
+    /**
+     * Search for entities based one provided DSL query string.
+     *
+     * @param dslQuery the query to use for the search
+     * @return AtlasSearchResult
+     */
+    public AtlasSearchResult searchWithDSL(String dslQuery) {
+        AtlasSearchResult result = null;
+        try {
+            if (log.isInfoEnabled()) { log.info("Searching Atlas with: {}", dslQuery); }
+            result = atlasClient.dslSearch(dslQuery);
+        } catch (AtlasServiceException e) {
+            log.error("Unable to search based on DSL query: {}", dslQuery, e);
         }
         return result;
     }
