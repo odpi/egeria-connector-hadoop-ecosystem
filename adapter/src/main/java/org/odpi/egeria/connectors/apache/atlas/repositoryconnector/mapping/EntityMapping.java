@@ -112,7 +112,7 @@ public class EntityMapping {
                             attributeDefStore,
                             atlasProperties.get(atlasProperty),
                             methodName);
-                    if (instanceProperties.getPropertyValue(atlasProperty) != null) {
+                    if (instanceProperties.getPropertyValue(omrsProperty) != null) {
                         alreadyMapped.add(atlasProperty);
                     }
                 } else {
