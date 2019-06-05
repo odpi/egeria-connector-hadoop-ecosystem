@@ -8,7 +8,6 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.Attrib
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.SequencingOrder;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.PrimitiveDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
@@ -19,8 +18,6 @@ import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeErrorExceptio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -218,7 +215,11 @@ public class EntityMapping {
                     // Only include the relationship if we are including all or those that match this type GUID
                     if (relationshipTypeGUID == null || omrsTypeDefGuid.equals(relationshipTypeGUID)) {
 
-                        Relationship omrsRelationship = getSkeletonRelationship((RelationshipDef) omrsTypeDef);
+                        // TODO: see about incorporating into / re-using RelationshipMapping.getRelationship (heavy overlap)
+                        Relationship omrsRelationship = RelationshipMapping.getSkeletonRelationship(
+                                atlasRepositoryConnector,
+                                (RelationshipDef) omrsTypeDef
+                        );
                         omrsRelationship.setGUID(relationshipAssignment.getRelationshipGuid());
                         omrsRelationship.setMetadataCollectionId(atlasRepositoryConnector.getMetadataCollectionId());
                         switch (relationshipAssignment.getRelationshipStatus()) {
@@ -243,7 +244,7 @@ public class EntityMapping {
 
                         TypeDefStore.Endpoint endpoint = typeDefStore.getMappedEndpointFromAtlasName(atlasRelationshipType, atlasPropertyName);
 
-                        EntityProxy epSelf = EntityMapping.getEntityProxyForObject(
+                        EntityProxy epSelf = RelationshipMapping.getEntityProxyForObject(
                                 atlasRepositoryConnector,
                                 typeDefStore,
                                 atlasEntityWithExtInfo,
@@ -252,7 +253,7 @@ public class EntityMapping {
 
                         String otherEndGuid = relationshipAssignment.getGuid();
 
-                        EntityProxy epOther = EntityMapping.getEntityProxyForObject(
+                        EntityProxy epOther = RelationshipMapping.getEntityProxyForObject(
                                 atlasRepositoryConnector,
                                 typeDefStore,
                                 atlasRepositoryConnector.getEntityByGUID(otherEndGuid, true, true),
@@ -409,77 +410,6 @@ public class EntityMapping {
     }
 
     /**
-     * Retrieves an EntityProxy object for the provided Apache Atlas object.
-     *
-     * @param atlasRepositoryConnector OMRS connector to the Apache Atlas repository
-     * @param typeDefStore store of mapped TypeDefs
-     * @param fullAtlasObj the Apache Atlas object for which to retrieve an EntityProxy
-     * @param userId the user through which to retrieve the EntityProxy (unused)
-     * @return EntityProxy
-     */
-    public static EntityProxy getEntityProxyForObject(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
-                                                      TypeDefStore typeDefStore,
-                                                      AtlasEntity.AtlasEntityWithExtInfo fullAtlasObj,
-                                                      String userId) {
-
-        final String methodName = "getEntityProxyForObject";
-        AtlasEntity atlasObj = fullAtlasObj.getEntity();
-
-        EntityProxy entityProxy = null;
-        if (atlasObj != null) {
-
-            String repositoryName = atlasRepositoryConnector.getRepositoryName();
-            OMRSRepositoryHelper repositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
-            String metadataCollectionId = atlasRepositoryConnector.getMetadataCollectionId();
-
-            String atlasTypeName = atlasObj.getTypeName();
-            String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeName);
-
-            String qualifiedName = null;
-            Map<String, Object> attributes = atlasObj.getAttributes();
-            if (attributes.containsKey("qualifiedName")) {
-                qualifiedName = (String) attributes.get("qualifiedName");
-            } else {
-                log.error("No qualifiedName found for object -- cannot create EntityProxy: {}", atlasObj);
-                throw new NullPointerException("No qualifiedName found for object -- cannot create EntityProxy.");
-            }
-
-            InstanceProperties uniqueProperties = repositoryHelper.addStringPropertyToInstance(
-                    repositoryName,
-                    null,
-                    "qualifiedName",
-                    qualifiedName,
-                    methodName
-            );
-
-            try {
-                entityProxy = repositoryHelper.getNewEntityProxy(
-                        repositoryName,
-                        metadataCollectionId,
-                        InstanceProvenanceType.LOCAL_COHORT,
-                        userId,
-                        omrsTypeDefName,
-                        uniqueProperties,
-                        null
-                );
-                entityProxy.setCreatedBy(atlasObj.getCreatedBy());
-                entityProxy.setCreateTime(atlasObj.getCreateTime());
-                entityProxy.setUpdatedBy(atlasObj.getUpdatedBy());
-                entityProxy.setUpdateTime(atlasObj.getUpdateTime());
-                entityProxy.setVersion(atlasObj.getVersion());
-            } catch (TypeErrorException e) {
-                log.error("Unable to create new EntityProxy.", e);
-            }
-
-        } else {
-            if (log.isErrorEnabled()) { log.error("No Apache Atlas object provided (was null)."); }
-        }
-
-        return entityProxy;
-
-    }
-
-    /**
      * Create the base skeleton of an EntitySummary, irrespective of the specific Apache Atlas object.
      *
      * @return EntitySummary
@@ -529,41 +459,6 @@ public class EntityMapping {
         }
 
         return detail;
-
-    }
-
-    /**
-     * Create the base skeleton of a Relationship, irrespective of the specific Apache Atlas object.
-     *
-     * @param omrsRelationshipDef the OMRS RelationshipDef for which to create a skeleton Relationship
-     * @return Relatoinship
-     * @throws RepositoryErrorException
-     */
-    private Relationship getSkeletonRelationship(RelationshipDef omrsRelationshipDef) throws RepositoryErrorException {
-
-        final String methodName = "getSkeletonRelationship";
-        Relationship relationship = new Relationship();
-
-        try {
-            InstanceType instanceType = atlasRepositoryConnector.getRepositoryHelper().getNewInstanceType(
-                    atlasRepositoryConnector.getRepositoryName(),
-                    omrsRelationshipDef
-            );
-            relationship.setType(instanceType);
-        } catch (TypeErrorException e) {
-            if (log.isErrorEnabled()) { log.error("Unable to construct and set InstanceType -- skipping relationship: {}", omrsRelationshipDef.getName()); }
-            OMRSErrorCode errorCode = OMRSErrorCode.INVALID_INSTANCE;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    omrsRelationshipDef.getName());
-            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                    EntityMapping.class.getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
-        }
-
-        return relationship;
 
     }
 

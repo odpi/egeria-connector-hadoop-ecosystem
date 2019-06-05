@@ -7,6 +7,7 @@ import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
@@ -146,6 +147,33 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             log.error("Unable to retrieve entity by GUID: {}", guid, e);
         }
         return entity;
+    }
+
+    /**
+     * Retrieves an Apache Atlas Relationship instance by its GUID.
+     *
+     * @param guid the GUID of the relationship instance to retrieve
+     * @return AtlasRelationshipWithExtInfo
+     */
+    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid) {
+        return getRelationshipByGUID(guid, false);
+    }
+
+    /**
+     * Retrieves an Apache Atlas Relationship instance by its GUID.
+     *
+     * @param guid the GUID of the relationship instance to retrieve
+     * @param extendedInfo if true, will include extended info in the result
+     * @return AtlasRelationshipWithExtInfo
+     */
+    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid, boolean extendedInfo) {
+        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
+        try {
+            relationship = atlasClient.getRelationshipByGuid(guid, extendedInfo);
+        } catch (AtlasServiceException e) {
+            log.error("Unable to retrieve relationship by GUID: {}", guid, e);
+        }
+        return relationship;
     }
 
     /**

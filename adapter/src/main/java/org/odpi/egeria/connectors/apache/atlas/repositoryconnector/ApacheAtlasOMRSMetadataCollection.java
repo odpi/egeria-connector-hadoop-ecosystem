@@ -7,10 +7,8 @@ import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.AttributeMapping;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.ClassificationDefMapping;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMapping;
-import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EnumDefMapping;
+import org.apache.atlas.model.instance.AtlasRelationship;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollectionBase;
@@ -1207,6 +1205,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
                     matchProperties,
                     matchCriteria,
+                    null,
                     fromEntityElement,
                     limitResultsByStatus,
                     pageSize
@@ -1229,7 +1228,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param entityTypeGUID unique identifier for the type of entity requested.  Null means any type of entity
      *                       (but could be slow so not recommended.
      * @param classificationName name of the classification, note a null is not valid.
-     * @param matchClassificationProperties Optional list of entity properties to match (contains wildcards).
+     * @param matchClassificationProperties Optional list of classification properties to match (contains wildcards).
      * @param matchCriteria Enum defining how the match properties should be matched to the classifications in the repository.
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
@@ -1238,7 +1237,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                             to specify a list of statuses (eg ACTIVE) to restrict the results to.  Null means all
      *                             status values.
      * @param asOfTime Requests a historical query of the entity.  Null means return the present values.
-     * @param sequencingProperty String name of the entity property that is to be used to sequence the results.
+     * @param sequencingProperty String name of the classification property that is to be used to sequence the results.
      *                           Null means do not sequence on a property name (see SequencingOrder).
      * @param sequencingOrder Enum defining how the results should be ordered.
      * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
@@ -1311,6 +1310,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             List<String> limitResultsByClassification = new ArrayList<>();
             limitResultsByClassification.add(classificationName);
 
+            // TODO: need a further check whether we are being asked to sequence by property: if so,
+            //  it is the _classification_ property not the _entity_ property, so we need a post-search-sorting
+
             // Run the base search first (and if we need to match on classification properties, increase pageSize
             // so there is buffer to cull later)
             results = buildAndRunDSLSearch(
@@ -1337,6 +1339,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     classificationName,
                     null,
                     matchCriteria,
+                    null,
                     fromEntityElement,
                     limitResultsByStatus,
                     matchClassificationProperties == null ? pageSize : pageSize * 2
@@ -1352,46 +1355,48 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             Map<String, InstancePropertyValue> propertiesToMatch = matchClassificationProperties.getInstanceProperties();
 
             List<AtlasEntityHeader> candidateEntities = results.getEntities();
-            // For each entity we've preliminarily identified...
-            for (AtlasEntityHeader candidateEntity : candidateEntities) {
-                List<AtlasClassification> classificationsForEntity = candidateEntity.getClassifications();
-                // ... iterate through each of its classifications to narrow in on only the one of interest
-                for (AtlasClassification candidateClassification : classificationsForEntity) {
-                    if (candidateClassification.getTypeName().equals(classificationName)) {
-                        // ... then iterate through the properties of that classification we're trying to match
-                        boolean bMatchesAny = false;
-                        boolean bMatchesAll = true;
-                        for (Map.Entry<String, InstancePropertyValue> propertyToMatch : propertiesToMatch.entrySet()) {
-                            String propertyName = propertyToMatch.getKey();
-                            InstancePropertyValue omrsPropertyValueToMatch = propertyToMatch.getValue();
-                            // Remember that classifications (and their properties) are one-to-one with Egeria (no mapping needed)
-                            Object atlasClassificationValue = candidateClassification.getAttribute(propertyName);
-                            boolean bMatchesThisOne = AttributeMapping.valuesMatch(omrsPropertyValueToMatch, atlasClassificationValue);
-                            bMatchesAll = bMatchesAll && bMatchesThisOne;
-                            bMatchesAny = bMatchesAny || bMatchesThisOne;
-                        }
-                        if (matchCriteria != null) {
-                            switch (matchCriteria) {
-                                case NONE:
-                                    if (!bMatchesAny) {
-                                        atlasEntities.add(candidateEntity);
-                                    }
-                                    break;
-                                case ALL:
-                                    if (bMatchesAll) {
-                                        atlasEntities.add(candidateEntity);
-                                    }
-                                    break;
-                                case ANY:
-                                    if (bMatchesAny) {
-                                        atlasEntities.add(candidateEntity);
-                                    }
-                                    break;
+            if (candidateEntities != null) {
+                // For each entity we've preliminarily identified...
+                for (AtlasEntityHeader candidateEntity : candidateEntities) {
+                    List<AtlasClassification> classificationsForEntity = candidateEntity.getClassifications();
+                    // ... iterate through each of its classifications to narrow in on only the one of interest
+                    for (AtlasClassification candidateClassification : classificationsForEntity) {
+                        if (candidateClassification.getTypeName().equals(classificationName)) {
+                            // ... then iterate through the properties of that classification we're trying to match
+                            boolean bMatchesAny = false;
+                            boolean bMatchesAll = true;
+                            for (Map.Entry<String, InstancePropertyValue> propertyToMatch : propertiesToMatch.entrySet()) {
+                                String propertyName = propertyToMatch.getKey();
+                                InstancePropertyValue omrsPropertyValueToMatch = propertyToMatch.getValue();
+                                // Remember that classifications (and their properties) are one-to-one with Egeria (no mapping needed)
+                                Object atlasClassificationValue = candidateClassification.getAttribute(propertyName);
+                                boolean bMatchesThisOne = AttributeMapping.valuesMatch(omrsPropertyValueToMatch, atlasClassificationValue);
+                                bMatchesAll = bMatchesAll && bMatchesThisOne;
+                                bMatchesAny = bMatchesAny || bMatchesThisOne;
                             }
-                        } else if (bMatchesAll) {
-                            atlasEntities.add(candidateEntity);
-                        } else if (log.isDebugEnabled()) {
-                            log.debug("Unable to match properties '{}' for entity, dropping from results: {}", matchClassificationProperties, candidateEntity);
+                            if (matchCriteria != null) {
+                                switch (matchCriteria) {
+                                    case NONE:
+                                        if (!bMatchesAny) {
+                                            atlasEntities.add(candidateEntity);
+                                        }
+                                        break;
+                                    case ALL:
+                                        if (bMatchesAll) {
+                                            atlasEntities.add(candidateEntity);
+                                        }
+                                        break;
+                                    case ANY:
+                                        if (bMatchesAny) {
+                                            atlasEntities.add(candidateEntity);
+                                        }
+                                        break;
+                                }
+                            } else if (bMatchesAll) {
+                                atlasEntities.add(candidateEntity);
+                            } else if (log.isDebugEnabled()) {
+                                log.debug("Unable to match properties '{}' for entity, dropping from results: {}", matchClassificationProperties, candidateEntity);
+                            }
                         }
                     }
                 }
@@ -1411,6 +1416,269 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = getEntityDetailsFromAtlasResults(atlasEntities, userId);
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
+
+    }
+
+    /**
+     * Return a list of entities whose string based property values match the search criteria.  The
+     * search criteria may include regex style wild cards.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param entityTypeGUID GUID of the type of entity to search for. Null means all types will
+     *                       be searched (could be slow so not recommended).
+     * @param searchCriteria String expression contained in any of the property values within the entities
+     *                       of the supplied type. (Retrieve all entities of the supplied type if this is either null
+     *                       or an empty string.)
+     * @param fromEntityElement the starting element number of the entities to return.
+     *                                This is used when retrieving elements
+     *                                beyond the first page of results. Zero means start from the first element.
+     * @param limitResultsByStatus By default, entities in all statuses are returned.  However, it is possible
+     *                             to specify a list of statuses (eg ACTIVE) to restrict the results to.  Null means all
+     *                             status values.
+     * @param limitResultsByClassification List of classifications that must be present on all returned entities.
+     * @param asOfTime Must be null (history not implemented for Apache Atlas).
+     * @param sequencingProperty String name of the property that is to be used to sequence the results.
+     *                           Null means do not sequence on a property name (see SequencingOrder).
+     * @param sequencingOrder Enum defining how the results should be ordered.
+     * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
+     *                 unrestricted return results size.
+     * @return a list of entities matching the supplied criteria; null means no matching entities in the metadata
+     * collection.
+     * @throws InvalidParameterException a parameter is invalid or null.
+     * @throws TypeErrorException the type guid passed on the request is not known by the
+     *                              metadata collection.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                    the metadata collection is stored.
+     * @throws PropertyErrorException the sequencing property specified is not valid for any of the requested types of
+     *                                  entity.
+     * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
+     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public  List<EntityDetail> findEntitiesByPropertyValue(String                userId,
+                                                           String                entityTypeGUID,
+                                                           String                searchCriteria,
+                                                           int                   fromEntityElement,
+                                                           List<InstanceStatus>  limitResultsByStatus,
+                                                           List<String>          limitResultsByClassification,
+                                                           Date                  asOfTime,
+                                                           String                sequencingProperty,
+                                                           SequencingOrder       sequencingOrder,
+                                                           int                   pageSize) throws InvalidParameterException,
+            TypeErrorException,
+            RepositoryErrorException,
+            PropertyErrorException,
+            PagingErrorException,
+            FunctionNotSupportedException,
+            UserNotAuthorizedException {
+
+        final String  methodName = "findEntitiesByPropertyValue";
+
+        findEntitiesByPropertyValueParameterValidation(
+                userId,
+                entityTypeGUID,
+                searchCriteria,
+                fromEntityElement,
+                limitResultsByStatus,
+                limitResultsByClassification,
+                asOfTime,
+                sequencingProperty,
+                sequencingOrder,
+                pageSize
+        );
+
+        AtlasSearchResult results;
+
+        // Immediately throw unimplemented exception if trying to retrieve historical view
+        if (asOfTime != null) {
+            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                    this.getClass().getName(),
+                    repositoryName);
+            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        } else if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
+
+            InstanceProperties matchProperties = null;
+
+            // Only need to setup property-based search if some criteria was provided, otherwise we will just get all
+            // entities that match the criteria (no need for matchProperties)
+            if (searchCriteria != null) {
+                matchProperties = new InstanceProperties();
+
+                // Add all textual properties of the provided entity as matchProperties,
+                //  for an OR-based search of their values
+                String omrsTypeName = "Referenceable";
+                if (entityTypeGUID != null) {
+                    TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
+                    omrsTypeName = typeDef.getName();
+                }
+                Map<String, TypeDefAttribute> typeDefAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
+
+                if (typeDefAttributeMap != null) {
+                    for (Map.Entry<String, TypeDefAttribute> attributeEntry : typeDefAttributeMap.entrySet()) {
+                        String attributeName = attributeEntry.getKey();
+                        TypeDefAttribute typeDefAttribute = attributeEntry.getValue();
+                        // Only need to retain string-based attributes for the full text search
+                        AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
+                        switch (attributeTypeDef.getCategory()) {
+                            case PRIMITIVE:
+                                PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
+                                switch (primitiveDef.getPrimitiveDefCategory()) {
+                                    case OM_PRIMITIVE_TYPE_STRING:
+                                    case OM_PRIMITIVE_TYPE_BYTE:
+                                    case OM_PRIMITIVE_TYPE_CHAR:
+                                        matchProperties = repositoryHelper.addStringPropertyToInstance(
+                                                repositoryName,
+                                                matchProperties,
+                                                attributeName,
+                                                "*" + searchCriteria + "*",
+                                                methodName
+                                        );
+                                        break;
+                                    default:
+                                        if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
+                                        break;
+                                }
+                                break;
+                            case ENUM_DEF:
+                                break;
+                        }
+                    }
+                }
+            }
+
+            results = buildAndRunDSLSearch(
+                    methodName,
+                    entityTypeGUID,
+                    limitResultsByClassification,
+                    matchProperties,
+                    MatchCriteria.ANY,
+                    fromEntityElement,
+                    limitResultsByStatus,
+                    sequencingProperty,
+                    sequencingOrder,
+                    pageSize
+            );
+
+        } else {
+
+            // If the provided criteria is null, set it to the empty string so that we get the desired behaviour
+            if (searchCriteria == null) {
+                searchCriteria = "";
+            }
+
+            // Only take the first classification for a basic search (if there were multiple, should be handled above
+            // by DSL query)
+            results = buildAndRunBasicSearch(
+                    methodName,
+                    entityTypeGUID,
+                    (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
+                    null,
+                    null,
+                    searchCriteria,
+                    fromEntityElement,
+                    limitResultsByStatus,
+                    pageSize
+            );
+
+        }
+
+        List<EntityDetail> entityDetails = null;
+        if (results != null) {
+            entityDetails = getEntityDetailsFromAtlasResults(results.getEntities(), userId);
+        }
+        return entityDetails.isEmpty() ? null : entityDetails;
+
+    }
+
+    /**
+     * Returns the Relationship if stored in the metadata collection, otherwise null.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param guid String unique identifier for the relationship.
+     * @return relationship details if the relationship is found in the metadata collection; otherwise return null.
+     * @throws InvalidParameterException the guid is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    public Relationship  isRelationshipKnown(String     userId,
+                                             String     guid) throws InvalidParameterException,
+            RepositoryErrorException,
+            UserNotAuthorizedException {
+
+        final String  methodName = "isRelationshipKnown";
+
+        /*
+         * Validate parameters
+         */
+        this.getInstanceParameterValidation(userId, guid, methodName);
+
+        /*
+         * Process operation
+         */
+        Relationship relationship = null;
+        try {
+            relationship = getRelationship(userId, guid);
+        } catch (RelationshipNotKnownException e) {
+            if (log.isInfoEnabled()) { log.info("Relationship {} not known to the repository.", guid, e); }
+        }
+        return relationship;
+
+    }
+
+
+    /**
+     * Return a requested relationship.
+     *
+     * @param userId unique identifier for requesting user.
+     * @param guid String unique identifier for the relationship.
+     * @return a relationship structure.
+     * @throws InvalidParameterException the guid is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                    the metadata collection is stored.
+     * @throws RelationshipNotKnownException the metadata collection does not have a relationship with
+     *                                         the requested GUID stored.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    public Relationship getRelationship(String    userId,
+                                        String    guid) throws InvalidParameterException,
+            RepositoryErrorException,
+            RelationshipNotKnownException,
+            UserNotAuthorizedException {
+
+        final String  methodName = "getRelationship";
+
+        /*
+         * Validate parameters
+         */
+        this.getInstanceParameterValidation(userId, guid, methodName);
+
+        /*
+         * Process operation
+         */
+
+        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = this.atlasRepositoryConnector.getRelationshipByGUID(guid);
+        if (relationship == null) {
+            OMRSErrorCode errorCode = OMRSErrorCode.RELATIONSHIP_NOT_KNOWN;
+            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
+                    methodName,
+                    repositoryName);
+            throw new RelationshipNotKnownException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+        RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, relationship, userId);
+        return mapping.getRelationship();
 
     }
 
@@ -1628,8 +1896,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param entityTypeGUID unique identifier for the type of entity requested.  Null means any type of entity
      *                       (but could be slow so not recommended.
      * @param limitResultsByClassification name of a single classification by which to limit the results.
-     * @param matchProperties Optional list of entity properties to match (contains wildcards).
+     * @param matchProperties Optional list of entity properties to match (contains wildcards), mutually-exclusive with
+     *                        fullTextQuery.
      * @param matchCriteria Enum defining how the match properties should be matched to the classifications in the repository.
+     * @param fullTextQuery Optional text that should be searched for in all text fields of the entities (mutually-exclusive
+     *                      with matchProperties)
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
      *                                beyond the first page of results. Zero means start from the first element.
@@ -1646,6 +1917,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                      String limitResultsByClassification,
                                                      InstanceProperties matchProperties,
                                                      MatchCriteria matchCriteria,
+                                                     String fullTextQuery,
                                                      int fromEntityElement,
                                                      List<InstanceStatus> limitResultsByStatus,
                                                      int pageSize) throws
@@ -1711,6 +1983,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 }
                 searchParameters.setEntityFilters(entityFilters);
             }
+        } else if (fullTextQuery != null) {
+            searchParameters.setQuery(fullTextQuery);
         }
 
         if (limitResultsByStatus != null) {
