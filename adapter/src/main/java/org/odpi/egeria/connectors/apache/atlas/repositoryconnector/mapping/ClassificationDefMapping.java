@@ -3,7 +3,6 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
-import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
@@ -21,7 +20,7 @@ import java.util.Set;
 /**
  * Class that generically handles converting between Apache Atlas and OMRS Classification TypeDefs.
  */
-public abstract class ClassificationDefMapping {
+public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
 
     private static final Logger log = LoggerFactory.getLogger(ClassificationDefMapping.class);
 
@@ -34,27 +33,19 @@ public abstract class ClassificationDefMapping {
      * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
      * @throws TypeDefNotSupportedException
      */
-    public static void addClassificationToAtlas(ClassificationDef omrsClassificationDef,
-                                                TypeDefStore typeDefStore,
-                                                AttributeTypeDefStore attributeDefStore,
-                                                ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector) throws TypeDefNotSupportedException {
+    public static void addClassificationTypeToAtlas(ClassificationDef omrsClassificationDef,
+                                                    TypeDefStore typeDefStore,
+                                                    AttributeTypeDefStore attributeDefStore,
+                                                    ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector) throws TypeDefNotSupportedException {
 
-        final String methodName = "addClassificationToAtlas";
+        final String methodName = "addClassificationTypeToAtlas";
 
         String omrsTypeDefName = omrsClassificationDef.getName();
         boolean fullyCovered = true;
 
         // Map base properties
         AtlasClassificationDef classificationTypeDef = new AtlasClassificationDef();
-        classificationTypeDef.setGuid(omrsClassificationDef.getGUID());
-        classificationTypeDef.setName(omrsTypeDefName);
-        classificationTypeDef.setServiceType("omrs");
-        classificationTypeDef.setCreatedBy(omrsClassificationDef.getCreatedBy());
-        classificationTypeDef.setUpdatedBy(omrsClassificationDef.getUpdatedBy());
-        classificationTypeDef.setCreateTime(omrsClassificationDef.getCreateTime());
-        classificationTypeDef.setUpdateTime(omrsClassificationDef.getUpdateTime());
-        classificationTypeDef.setVersion(omrsClassificationDef.getVersion());
-        classificationTypeDef.setDescription(omrsClassificationDef.getDescription());
+        setupBaseMapping(omrsClassificationDef, classificationTypeDef);
 
         // Map classification-specific properties
         Set<String> entitiesForAtlas = new HashSet<>();
@@ -72,87 +63,7 @@ public abstract class ClassificationDefMapping {
         }
         classificationTypeDef.setEntityTypes(entitiesForAtlas);
 
-        List<TypeDefAttribute> omrsProperties = omrsClassificationDef.getPropertiesDefinition();
-        if (omrsProperties != null) {
-            log.info("List of properties is not null...");
-            for (TypeDefAttribute typeDefAttribute : omrsProperties) {
-                log.info(" ... checking property: {}", typeDefAttribute);
-                AtlasStructDef.AtlasAttributeDef atlasAttribute = new AtlasStructDef.AtlasAttributeDef();
-                AttributeCardinality omrsCardinality = typeDefAttribute.getAttributeCardinality();
-                switch (omrsCardinality) {
-                    case AT_MOST_ONE:
-                    case ONE_ONLY:
-                        atlasAttribute.setCardinality(AtlasStructDef.AtlasAttributeDef.Cardinality.SINGLE);
-                        break;
-                    case ANY_NUMBER_UNORDERED:
-                    case AT_LEAST_ONE_UNORDERED:
-                        atlasAttribute.setCardinality(AtlasStructDef.AtlasAttributeDef.Cardinality.SET);
-                        break;
-                    case ANY_NUMBER_ORDERED:
-                    case AT_LEAST_ONE_ORDERED:
-                        atlasAttribute.setCardinality(AtlasStructDef.AtlasAttributeDef.Cardinality.LIST);
-                        break;
-                    default:
-                        fullyCovered = false;
-                        log.warn("Unknown cardinality for OMRS property: {}", typeDefAttribute.getAttributeName());
-                        break;
-                }
-                atlasAttribute.setDefaultValue(typeDefAttribute.getDefaultValue());
-                atlasAttribute.setDescription(typeDefAttribute.getAttributeDescription());
-                atlasAttribute.setIncludeInNotification(true);
-                atlasAttribute.setIsIndexable(typeDefAttribute.isIndexable());
-                int minValues = typeDefAttribute.getValuesMinCount();
-                if (minValues >= 1) {
-                    atlasAttribute.setIsOptional(false);
-                } else {
-                    atlasAttribute.setIsOptional(true);
-                }
-                atlasAttribute.setIsUnique(typeDefAttribute.isUnique());
-                atlasAttribute.setName(typeDefAttribute.getAttributeName());
-                AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
-                switch (attributeTypeDef.getCategory()) {
-                    case PRIMITIVE:
-                        PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
-                        PrimitiveDefCategory primitiveDefCategory = primitiveDef.getPrimitiveDefCategory();
-                        switch (primitiveDefCategory) {
-                            case OM_PRIMITIVE_TYPE_BOOLEAN:
-                            case OM_PRIMITIVE_TYPE_BYTE:
-                            case OM_PRIMITIVE_TYPE_SHORT:
-                            case OM_PRIMITIVE_TYPE_INT:
-                            case OM_PRIMITIVE_TYPE_FLOAT:
-                            case OM_PRIMITIVE_TYPE_DOUBLE:
-                            case OM_PRIMITIVE_TYPE_STRING:
-                            case OM_PRIMITIVE_TYPE_DATE:
-                                atlasAttribute.setTypeName(primitiveDefCategory.getName());
-                                break;
-                            default:
-                                fullyCovered = false;
-                                log.warn("Unhandled primitive attribute type for classification: {}", attributeTypeDef.getName());
-                                break;
-                        }
-                        break;
-                    case ENUM_DEF:
-                        // Translate OMRS enum name into a mapped one (if there is a mapped one), otherwise default to
-                        // the OMRS enum name (should have been created with the same name if it is not mapped to a
-                        // pre-existing Atlas enum)
-                        EnumDef enumDef = (EnumDef) attributeTypeDef;
-                        String omrsEnumName = enumDef.getName();
-                        String atlasEnumName = attributeDefStore.getMappedAtlasTypeDefName(omrsEnumName);
-                        if (atlasEnumName == null) {
-                            atlasEnumName = omrsEnumName;
-                        }
-                        atlasAttribute.setTypeName(atlasEnumName);
-                        break;
-                    default:
-                        fullyCovered = false;
-                        log.warn("Unhandled attribute type for classification: {}", attributeTypeDef.getName());
-                        break;
-                }
-                atlasAttribute.setValuesMinCount(minValues);
-                atlasAttribute.setValuesMaxCount(typeDefAttribute.getValuesMaxCount());
-                classificationTypeDef.addAttribute(atlasAttribute);
-            }
-        }
+        fullyCovered = fullyCovered && setupPropertyMappings(omrsClassificationDef, classificationTypeDef, attributeDefStore);
 
         if (fullyCovered) {
             // Only create the classification if we can fully model it
