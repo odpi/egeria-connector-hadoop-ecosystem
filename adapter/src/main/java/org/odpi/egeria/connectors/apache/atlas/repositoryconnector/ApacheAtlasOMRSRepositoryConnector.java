@@ -2,14 +2,18 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.typedef.AtlasRelationshipDef;
+import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.OMRSRuntimeException;
 import org.slf4j.Logger;
@@ -17,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.atlas.AtlasClientV2;
 
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.Response;
 import java.util.Map;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
@@ -119,6 +125,40 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      */
     public boolean typeDefExistsByName(String name) {
         return atlasClient.typeWithNameExists(name);
+    }
+
+    /**
+     * Retrieves the Apache Atlas typedef specified from the Apache Atlas environment.
+     *
+     * @param name the name of the TypeDef to retrieve
+     * @param typeDefCategory the type (in OMRS terms) of the TypeDef to retrieve
+     * @return AtlasStructDef
+     */
+    public AtlasStructDef getTypeDefByName(String name, TypeDefCategory typeDefCategory) {
+
+        AtlasStructDef result = null;
+        try {
+            switch(typeDefCategory) {
+                case CLASSIFICATION_DEF:
+                    result = atlasClient.getClassificationDefByName(name);
+                    break;
+                case ENTITY_DEF:
+                    result = atlasClient.getEntityDefByName(name);
+                    break;
+                case RELATIONSHIP_DEF:
+                    // For whatever reason, relationshipdef retrieval is not in the Atlas client, so writing our own
+                    // API call for this one
+                    String atlasPath = "relationshipdef";
+                    AtlasBaseClient.API api = new AtlasBaseClient.API(String.format(AtlasClientV2.TYPES_API + "%s/name/%s", atlasPath, name), HttpMethod.GET, Response.Status.OK);
+                    result = atlasClient.callAPI(api, AtlasRelationshipDef.class, null);
+                    break;
+                default:
+                    break;
+            }
+        } catch (AtlasServiceException e) {
+            log.error("Unable to retrieve type by name: {}", name, e);
+        }
+        return result;
     }
 
     /**
