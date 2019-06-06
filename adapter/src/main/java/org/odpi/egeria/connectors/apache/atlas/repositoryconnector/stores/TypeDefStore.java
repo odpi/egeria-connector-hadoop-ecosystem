@@ -5,19 +5,14 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.MappingFromFile;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefLink;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Store of implemented TypeDefs for the repository.
@@ -38,6 +33,8 @@ public class TypeDefStore {
     private Map<String, EndpointMapping> atlasNameToEndpointMap;
     private Map<String, EndpointMapping> omrsNameToEndpointMap;
 
+    private Set<String> unmappedTypes;
+
     private ObjectMapper mapper;
 
     public enum Endpoint {
@@ -55,8 +52,10 @@ public class TypeDefStore {
         atlasNameToAttributeMap = new HashMap<>();
         atlasNameToEndpointMap = new HashMap<>();
         omrsNameToEndpointMap = new HashMap<>();
+        unmappedTypes = new HashSet<>();
         mapper = new ObjectMapper();
         loadMappings();
+        loadUnmapped();
     }
 
     /**
@@ -120,6 +119,29 @@ public class TypeDefStore {
     }
 
     /**
+     * Loads TypeDef mappings that should not be created, despite not being mapped (reserved for future mapping).
+     */
+    private void loadUnmapped() {
+
+        ClassPathResource mappingResource = new ClassPathResource("Unmapped_OMRS.json");
+
+        try {
+
+            InputStream stream = mappingResource.getInputStream();
+
+            // Start with the basic mappings from type-to-type
+            List<String> omrsTypeNames = mapper.readValue(stream, new TypeReference<List<String>>(){});
+            for (String omrsTypeName : omrsTypeNames) {
+                unmappedTypes.add(omrsTypeName);
+            }
+
+        } catch (IOException e) {
+            log.error("Unable to load reserved type file Unmapped_OMRS.json from jar file -- no types will be reserved for later mapping.");
+        }
+
+    }
+
+    /**
      * Indicates whether the provided OMRS TypeDef is mapped to an Apache Atlas TypeDef.
      *
      * @param omrsName name of the OMRS TypeDef
@@ -127,6 +149,16 @@ public class TypeDefStore {
      */
     public boolean isTypeDefMapped(String omrsName) {
         return omrsNameToAtlasName.containsKey(omrsName);
+    }
+
+    /**
+     * Indicates whether the provided OMRS TypeDef is reserved for later mapping (and therefore should not be created).
+     *
+     * @param omrsName name of the OMRS TypeDef
+     * @return boolean
+     */
+    public boolean isReserved(String omrsName) {
+        return unmappedTypes.contains(omrsName);
     }
 
     /**
@@ -140,7 +172,7 @@ public class TypeDefStore {
         if (atlasNameToAttributeMap.containsKey(atlasName)) {
             return atlasNameToAttributeMap.get(atlasName);
         } else {
-            return null;
+            return getPropertyMappingsForOMRSTypeDef(atlasName);
         }
     }
 
@@ -160,7 +192,7 @@ public class TypeDefStore {
     }
 
     /**
-     * Retrieve the relationship endpiont mapped to the Apache Atlas details provided.
+     * Retrieve the relationship endpoint mapped to the Apache Atlas details provided.
      *
      * @param atlasTypeName the name of the Apache Atlas type definition
      * @param atlasRelnAttrName the name of the Apache Atlas relationship attribute
@@ -171,13 +203,27 @@ public class TypeDefStore {
         if (mapping != null) {
             return mapping.getMatchingOmrsEndpoint(atlasRelnAttrName);
         } else {
-            return Endpoint.UNDEFINED;
+            TypeDef typeDef = getTypeDefByName(atlasTypeName);
+            if (typeDef != null && typeDef instanceof RelationshipDef) {
+                RelationshipDef relationshipDef = (RelationshipDef) typeDef;
+                RelationshipEndDef end1 = relationshipDef.getEndDef1();
+                RelationshipEndDef end2 = relationshipDef.getEndDef2();
+                if (end1.getAttributeName().equals(atlasRelnAttrName)) {
+                    return Endpoint.ONE;
+                } else if (end2.getAttributeName().equals(atlasRelnAttrName)) {
+                    return Endpoint.TWO;
+                } else {
+                    return Endpoint.UNDEFINED;
+                }
+            } else {
+                return Endpoint.UNDEFINED;
+            }
         }
     }
 
     /**
-     * Retrieves the Apache Atlas TypeDef name that is mapped to the provided OMRS TypeDef name, or null if there is
-     * no mapping.
+     * Retrieves the Apache Atlas TypeDef name that is mapped to the provided OMRS TypeDef name, the same name if
+     * there is a one-to-one mapping between Atlas and OMRS TypeDefs, or null if there is no mapping.
      *
      * @param omrsName the name of the OMRS TypeDef
      * @return String
@@ -185,14 +231,16 @@ public class TypeDefStore {
     public String getMappedAtlasTypeDefName(String omrsName) {
         if (isTypeDefMapped(omrsName)) {
             return omrsNameToAtlasName.get(omrsName);
+        } else if (omrsNameToGuid.containsKey(omrsName)) {
+            return omrsName;
         } else {
             return null;
         }
     }
 
     /**
-     * Retrieves the OMRS TypeDef name that is mapped to the provided Apache Atlas TypeDef name, or null if there is
-     * no mapping.
+     * Retrieves the OMRS TypeDef name that is mapped to the provided Apache Atlas TypeDef name, the same name if
+     * there is a one-to-one mapping between Atlas and OMRS TypeDefs, or null if there is no mapping.
      *
      * @param atlasName the name of the Apache Atlas TypeDef
      * @return String
@@ -200,6 +248,8 @@ public class TypeDefStore {
     public String getMappedOMRSTypeDefName(String atlasName) {
         if (atlasNameToOmrsName.containsKey(atlasName)) {
             return atlasNameToOmrsName.get(atlasName);
+        } else if (omrsNameToGuid.containsKey(atlasName)) {
+            return atlasName;
         } else {
             return null;
         }
@@ -384,7 +434,7 @@ public class TypeDefStore {
     /**
      * For translating between relationship endpoints.
      */
-    private class EndpointMapping {
+    public final class EndpointMapping {
 
         private String atlas1;
         private String atlas2;

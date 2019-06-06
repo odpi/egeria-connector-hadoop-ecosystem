@@ -8,6 +8,7 @@ import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
@@ -580,20 +581,63 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             // If it is a mapped TypeDef, add it to our store
             typeDefStore.addTypeDef(newTypeDef);
 
-        } else if (newTypeDef.getCategory().equals(TypeDefCategory.CLASSIFICATION_DEF)) {
+        } else if (!typeDefStore.isReserved(omrsTypeDefName)) {
 
             if (atlasRepositoryConnector.typeDefExistsByName(omrsTypeDefName)) {
                 // If the TypeDef already exists in Atlas, add it to our store
-                // TODO: should really still verify it, in case TypeDef changes
-                typeDefStore.addTypeDef(newTypeDef);
+                List<String> gaps = validateTypeDefCoverage(newTypeDef, atlasRepositoryConnector.getTypeDefByName(omrsTypeDefName, newTypeDef.getCategory()));
+                if (gaps != null) {
+                    // If there were gaps, drop the typedef as unimplemented
+                    typeDefStore.addUnimplementedTypeDef(newTypeDef);
+                    throw new TypeDefNotSupportedException(
+                            404,
+                            ApacheAtlasOMRSMetadataCollection.class.getName(),
+                            methodName,
+                            omrsTypeDefName + " is not supported.",
+                            String.join(", ", gaps),
+                            "Request support through Egeria GitHub issue."
+                    );
+                } else {
+                    // Otherwise add it as implemented
+                    typeDefStore.addTypeDef(newTypeDef);
+                }
             } else {
-                // Otherwise, if it is a Classification, we'll add it to Atlas itself
-                ClassificationDefMapping.addClassificationToAtlas(
-                        (ClassificationDef) newTypeDef,
-                        typeDefStore,
-                        attributeTypeDefStore,
-                        atlasRepositoryConnector
-                );
+                switch(newTypeDef.getCategory()) {
+                    case ENTITY_DEF:
+                        EntityDefMapping.addEntityTypeToAtlas(
+                                (EntityDef) newTypeDef,
+                                typeDefStore,
+                                attributeTypeDefStore,
+                                atlasRepositoryConnector
+                        );
+                        break;
+                    case RELATIONSHIP_DEF:
+                        RelationshipDefMapping.addRelationshipTypeToAtlas(
+                                (RelationshipDef) newTypeDef,
+                                typeDefStore,
+                                attributeTypeDefStore,
+                                atlasRepositoryConnector
+                        );
+                        break;
+                    case CLASSIFICATION_DEF:
+                        ClassificationDefMapping.addClassificationTypeToAtlas(
+                                (ClassificationDef) newTypeDef,
+                                typeDefStore,
+                                attributeTypeDefStore,
+                                atlasRepositoryConnector
+                        );
+                        break;
+                    case UNKNOWN_DEF:
+                        typeDefStore.addUnimplementedTypeDef(newTypeDef);
+                        throw new TypeDefNotSupportedException(
+                                404,
+                                ApacheAtlasOMRSMetadataCollection.class.getName(),
+                                methodName,
+                                omrsTypeDefName + " is not supported.",
+                                "",
+                                "Request support through Egeria GitHub issue."
+                        );
+                }
             }
 
         } else {
@@ -738,9 +782,13 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     "Request support through Egeria GitHub issue.");
         } else if (typeDefStore.getTypeDefByGUID(guid) != null) {
 
-            // TODO: Validate that we support all of the valid InstanceStatus settings before deciding whether we fully-support the TypeDef or not
-            boolean bVerified = true;
             List<String> issues = new ArrayList<>();
+
+            Set<InstanceStatus> validStatuses = new HashSet<>(typeDef.getValidInstanceStatusList());
+            boolean bVerified = validStatuses.equals(availableStates);
+            if (!bVerified) {
+                issues.add("not all statuses supported: " + validStatuses);
+            }
 
             // Validate that we support all of the possible properties before deciding whether we
             // fully-support the TypeDef or not
@@ -766,9 +814,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         typeDef.getName() + " is not supported: " + String.join(", ", issues),
                         "",
                         "Request support through Egeria GitHub issue.");
+            } else {
+                return true;
             }
-
-            return bVerified;
 
         } else {
             // It is completely unknown to us, so go ahead and try to addTypeDef
@@ -1229,7 +1277,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                       (but could be slow so not recommended.
      * @param classificationName name of the classification, note a null is not valid.
      * @param matchClassificationProperties Optional list of classification properties to match (contains wildcards).
-     * @param matchCriteria Enum defining how the match properties should be matched to the classifications in the repository.
+     * @param matchClassificationCriteria Enum defining how the match properties should be matched to the classifications in the repository.
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
      *                                beyond the first page of results. Zero means start from the first element.
@@ -1261,7 +1309,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                             String                    entityTypeGUID,
                                                             String                    classificationName,
                                                             InstanceProperties        matchClassificationProperties,
-                                                            MatchCriteria             matchCriteria,
+                                                            MatchCriteria             matchClassificationCriteria,
                                                             int                       fromEntityElement,
                                                             List<InstanceStatus>      limitResultsByStatus,
                                                             Date                      asOfTime,
@@ -1282,7 +1330,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 entityTypeGUID,
                 classificationName,
                 matchClassificationProperties,
-                matchCriteria,
+                matchClassificationCriteria,
                 fromEntityElement,
                 limitResultsByStatus,
                 asOfTime,
@@ -1320,7 +1368,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     entityTypeGUID,
                     limitResultsByClassification,
                     null,
-                    matchCriteria,
+                    matchClassificationCriteria,
                     fromEntityElement,
                     limitResultsByStatus,
                     sequencingProperty,
@@ -1338,7 +1386,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     entityTypeGUID,
                     classificationName,
                     null,
-                    matchCriteria,
+                    matchClassificationCriteria,
                     null,
                     fromEntityElement,
                     limitResultsByStatus,
@@ -1374,8 +1422,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 bMatchesAll = bMatchesAll && bMatchesThisOne;
                                 bMatchesAny = bMatchesAny || bMatchesThisOne;
                             }
-                            if (matchCriteria != null) {
-                                switch (matchCriteria) {
+                            if (matchClassificationCriteria != null) {
+                                switch (matchClassificationCriteria) {
                                     case NONE:
                                         if (!bMatchesAny) {
                                             atlasEntities.add(candidateEntity);
@@ -2283,6 +2331,51 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         } else {
             if (log.isWarnEnabled()) { log.warn("Unable to add search condition, no OMRS property: {}", value); }
         }
+
+    }
+
+    /**
+     * Compare the provided OMRS TypeDef to the provided Apache Atlas TypeDef and ensure they fully cover each other.
+     *
+     * @param omrsTypeDef the OMRS TypeDef to compare
+     * @param atlasTypeDef the Apache Atlas TypeDef to compare
+     * @return {@code List<String>} of issues identified, or null if types have full coverage
+     */
+    private List<String> validateTypeDefCoverage(TypeDef omrsTypeDef,
+                                                 AtlasStructDef atlasTypeDef) {
+
+        List<String> issues = new ArrayList<>();
+
+        // Validate support for same statuses
+        Set<InstanceStatus> validStatuses = new HashSet<>(omrsTypeDef.getValidInstanceStatusList());
+        if (!validStatuses.equals(availableStates)) {
+            issues.add("not all statuses supported: " + validStatuses);
+        }
+
+        // Validate that we support all of the possible properties
+        String omrsTypeDefName = omrsTypeDef.getName();
+        List<TypeDefAttribute> omrsProperties = omrsTypeDef.getPropertiesDefinition();
+        if (omrsProperties != null) {
+            // This should give us back a one-to-one mapping in cases where the typedef is OMRS-created in Atlas
+            Map<String, String> mappedProperties = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeDefName);
+            for (TypeDefAttribute typeDefAttribute : omrsProperties) {
+                String omrsPropertyName = typeDefAttribute.getAttributeName();
+                if (mappedProperties != null && !mappedProperties.containsKey(omrsPropertyName)) {
+                    issues.add("property '" + omrsPropertyName + "' is not mapped");
+                } else if (mappedProperties != null) {
+                    String atlasPropertyName = mappedProperties.get(omrsPropertyName);
+                    if (atlasTypeDef.getAttribute(atlasPropertyName) == null) {
+                        issues.add("property '" + atlasPropertyName + "' not found in Atlas type definition");
+                    }
+                } else {
+                    if (atlasTypeDef.getAttribute(omrsPropertyName) == null) {
+                        issues.add("property '" + omrsPropertyName + "' not found in Atlas type definition");
+                    }
+                }
+            }
+        }
+
+        return (issues == null || issues.isEmpty()) ? null : issues;
 
     }
 
