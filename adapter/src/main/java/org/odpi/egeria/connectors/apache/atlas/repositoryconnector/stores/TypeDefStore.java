@@ -131,9 +131,7 @@ public class TypeDefStore {
 
             // Start with the basic mappings from type-to-type
             List<String> omrsTypeNames = mapper.readValue(stream, new TypeReference<List<String>>(){});
-            for (String omrsTypeName : omrsTypeNames) {
-                unmappedTypes.add(omrsTypeName);
-            }
+            unmappedTypes.addAll(omrsTypeNames);
 
         } catch (IOException e) {
             log.error("Unable to load reserved type file Unmapped_OMRS.json from jar file -- no types will be reserved for later mapping.");
@@ -184,11 +182,7 @@ public class TypeDefStore {
      * @return {@code Map<String, String>}
      */
     public Map<String, String> getPropertyMappingsForOMRSTypeDef(String omrsName) {
-        if (omrsNameToAttributeMap.containsKey(omrsName)) {
-            return omrsNameToAttributeMap.get(omrsName);
-        } else {
-            return null;
-        }
+        return omrsNameToAttributeMap.getOrDefault(omrsName, null);
     }
 
     /**
@@ -204,7 +198,7 @@ public class TypeDefStore {
             return mapping.getMatchingOmrsEndpoint(atlasRelnAttrName);
         } else {
             TypeDef typeDef = getTypeDefByName(atlasTypeName);
-            if (typeDef != null && typeDef instanceof RelationshipDef) {
+            if (typeDef instanceof RelationshipDef) {
                 RelationshipDef relationshipDef = (RelationshipDef) typeDef;
                 RelationshipEndDef end1 = relationshipDef.getEndDef1();
                 RelationshipEndDef end2 = relationshipDef.getEndDef2();
@@ -390,7 +384,7 @@ public class TypeDefStore {
      * @param guid of the type definition
      * @return {@code Map<String, TypeDefAttribute>}
      */
-    public Map<String, TypeDefAttribute> getAllTypeDefAttributesForGUID(String guid) {
+    private Map<String, TypeDefAttribute> getAllTypeDefAttributesForGUID(String guid) {
         Map<String, TypeDefAttribute> all = getTypeDefAttributesByGUID(guid);
         if (all != null) {
             TypeDef typeDef = getTypeDefByGUID(guid, false);
@@ -441,7 +435,7 @@ public class TypeDefStore {
         private String omrs1;
         private String omrs2;
 
-        protected EndpointMapping(String atlas1, String omrs1, String atlas2, String omrs2) {
+        EndpointMapping(String atlas1, String omrs1, String atlas2, String omrs2) {
             this.atlas1 = atlas1;
             this.atlas2 = atlas2;
             this.omrs1 = omrs1;
@@ -454,7 +448,7 @@ public class TypeDefStore {
          * @param atlasEndpointName the Apache Atlas endpoint attribute name
          * @return Endpoint
          */
-        public Endpoint getMatchingOmrsEndpoint(String atlasEndpointName) {
+        Endpoint getMatchingOmrsEndpoint(String atlasEndpointName) {
             if (atlasEndpointName != null) {
                 if (atlasEndpointName.equals(atlas1)) {
                     return Endpoint.ONE;
@@ -471,7 +465,7 @@ public class TypeDefStore {
          * @param omrsEndpointName the OMRS endpoint attribute name
          * @return Endpoint
          */
-        public Endpoint getMatchingAtlasEndpoint(String omrsEndpointName) {
+        Endpoint getMatchingAtlasEndpoint(String omrsEndpointName) {
             if (omrsEndpointName != null) {
                 if (omrsEndpointName.equals(omrs1)) {
                     return Endpoint.ONE;

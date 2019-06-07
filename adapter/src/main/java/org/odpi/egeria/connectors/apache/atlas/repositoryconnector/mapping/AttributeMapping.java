@@ -119,7 +119,7 @@ public abstract class AttributeMapping {
      * @param methodName calling method
      * @return InstanceProperties
      */
-    public static InstanceProperties addPropertyToInstance(OMRSRepositoryHelper repositoryHelper,
+    static InstanceProperties addPropertyToInstance(OMRSRepositoryHelper repositoryHelper,
                                                            String repositoryName,
                                                            TypeDefAttribute property,
                                                            InstanceProperties properties,
@@ -169,12 +169,12 @@ public abstract class AttributeMapping {
      * @param methodName  calling method name
      * @return instance properties object.
      */
-    public static InstanceProperties addPrimitivePropertyToInstance(OMRSRepositoryHelper omrsRepositoryHelper,
-                                                                    String sourceName,
-                                                                    InstanceProperties properties,
-                                                                    TypeDefAttribute property,
-                                                                    Object propertyValue,
-                                                                    String methodName) {
+    private static InstanceProperties addPrimitivePropertyToInstance(OMRSRepositoryHelper omrsRepositoryHelper,
+                                                                     String sourceName,
+                                                                     InstanceProperties properties,
+                                                                     TypeDefAttribute property,
+                                                                     Object propertyValue,
+                                                                     String methodName) {
 
         InstanceProperties resultingProperties = properties;
 
@@ -309,13 +309,12 @@ public abstract class AttributeMapping {
      * @param propertyValue value of property
      * @return InstanceProperties
      */
-    public static InstanceProperties addEnumPropertyToInstance(InstanceProperties properties,
-                                                               TypeDefAttribute property,
-                                                               Map<String, String> atlasElementValueToOmrsElementValue,
-                                                               Object propertyValue) {
+    private static InstanceProperties addEnumPropertyToInstance(InstanceProperties properties,
+                                                                TypeDefAttribute property,
+                                                                Map<String, String> atlasElementValueToOmrsElementValue,
+                                                                Object propertyValue) {
 
         String propertyName = property.getAttributeName();
-        InstanceProperties resultingProperties = properties;
 
         if (propertyValue != null) {
 
@@ -343,7 +342,7 @@ public abstract class AttributeMapping {
                     enumPropertyValue.setDescription(omrsEnumValue.getDescription());
                     enumPropertyValue.setOrdinal(omrsEnumValue.getOrdinal());
                     enumPropertyValue.setSymbolicName(omrsEnumValue.getValue());
-                    resultingProperties.setProperty(propertyName, enumPropertyValue);
+                    properties.setProperty(propertyName, enumPropertyValue);
                 } else {
                     if (log.isWarnEnabled()) { log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue); }
                 }
@@ -355,7 +354,7 @@ public abstract class AttributeMapping {
             if (log.isDebugEnabled()) { log.debug("Null property"); }
         }
 
-        return resultingProperties;
+        return properties;
 
     }
 
@@ -367,7 +366,7 @@ public abstract class AttributeMapping {
      * @param v2 second value to compare
      * @return int
      */
-    public static int compareInstanceProperty(InstancePropertyValue v1, InstancePropertyValue v2) {
+    static int compareInstanceProperty(InstancePropertyValue v1, InstancePropertyValue v2) {
 
         int result = 0;
         if (v1 == v2) {
@@ -379,56 +378,53 @@ public abstract class AttributeMapping {
         } else {
 
             InstancePropertyCategory category = v1.getInstancePropertyCategory();
-            switch (category) {
-                case PRIMITIVE:
-                    PrimitivePropertyValue pv1 = (PrimitivePropertyValue) v1;
-                    PrimitivePropertyValue pv2 = (PrimitivePropertyValue) v2;
-                    PrimitiveDefCategory primitiveCategory = pv1.getPrimitiveDefCategory();
-                    switch (primitiveCategory) {
-                        case OM_PRIMITIVE_TYPE_INT:
-                            result = ((Integer) pv1.getPrimitiveValue() - (Integer) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BYTE:
-                            result = ((Byte) pv1.getPrimitiveValue()).compareTo((Byte) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_CHAR:
-                            result = ((Character) pv1.getPrimitiveValue()).compareTo((Character) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_STRING:
-                            result = ((String) pv1.getPrimitiveValue()).compareTo((String) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_DATE:
-                            result = ((Date) pv1.getPrimitiveValue()).compareTo((Date) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_LONG:
-                            result = ((Long) pv1.getPrimitiveValue()).compareTo((Long) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_FLOAT:
-                            result = ((Float) pv1.getPrimitiveValue()).compareTo((Float) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_SHORT:
-                            result = ((Short) pv1.getPrimitiveValue()).compareTo((Short) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_DOUBLE:
-                            result = ((Double) pv1.getPrimitiveValue()).compareTo((Double) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BOOLEAN:
-                            result = ((Boolean) pv1.getPrimitiveValue()).compareTo((Boolean) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BIGDECIMAL:
-                            result = ((BigDecimal) pv1.getPrimitiveValue()).compareTo((BigDecimal) pv2.getPrimitiveValue());
-                            break;
-                        case OM_PRIMITIVE_TYPE_BIGINTEGER:
-                            result = ((BigInteger) pv1.getPrimitiveValue()).compareTo((BigInteger) pv2.getPrimitiveValue());
-                            break;
-                        default:
-                            result = pv1.getPrimitiveValue().toString().compareTo(pv2.getPrimitiveValue().toString());
-                            break;
-                    }
-                    break;
-                default:
-                    log.warn("Unhandled instance value type for comparison: {}", category);
-                    break;
+            if (category.equals(InstancePropertyCategory.PRIMITIVE)) {
+                PrimitivePropertyValue pv1 = (PrimitivePropertyValue) v1;
+                PrimitivePropertyValue pv2 = (PrimitivePropertyValue) v2;
+                PrimitiveDefCategory primitiveCategory = pv1.getPrimitiveDefCategory();
+                switch (primitiveCategory) {
+                    case OM_PRIMITIVE_TYPE_INT:
+                        result = ((Integer) pv1.getPrimitiveValue() - (Integer) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_BYTE:
+                        result = ((Byte) pv1.getPrimitiveValue()).compareTo((Byte) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_CHAR:
+                        result = ((Character) pv1.getPrimitiveValue()).compareTo((Character) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_STRING:
+                        result = ((String) pv1.getPrimitiveValue()).compareTo((String) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_DATE:
+                        result = ((Date) pv1.getPrimitiveValue()).compareTo((Date) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_LONG:
+                        result = ((Long) pv1.getPrimitiveValue()).compareTo((Long) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_FLOAT:
+                        result = ((Float) pv1.getPrimitiveValue()).compareTo((Float) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_SHORT:
+                        result = ((Short) pv1.getPrimitiveValue()).compareTo((Short) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_DOUBLE:
+                        result = ((Double) pv1.getPrimitiveValue()).compareTo((Double) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_BOOLEAN:
+                        result = ((Boolean) pv1.getPrimitiveValue()).compareTo((Boolean) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_BIGDECIMAL:
+                        result = ((BigDecimal) pv1.getPrimitiveValue()).compareTo((BigDecimal) pv2.getPrimitiveValue());
+                        break;
+                    case OM_PRIMITIVE_TYPE_BIGINTEGER:
+                        result = ((BigInteger) pv1.getPrimitiveValue()).compareTo((BigInteger) pv2.getPrimitiveValue());
+                        break;
+                    default:
+                        result = pv1.getPrimitiveValue().toString().compareTo(pv2.getPrimitiveValue().toString());
+                        break;
+                }
+            } else {
+                log.warn("Unhandled instance value type for comparison: {}", category);
             }
 
         }

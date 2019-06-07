@@ -9,8 +9,6 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.Attrib
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeDefNotSupportedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,8 +20,6 @@ import java.util.Set;
  */
 public abstract class EntityDefMapping extends BaseTypeDefMapping {
 
-    private static final Logger log = LoggerFactory.getLogger(EntityDefMapping.class);
-
     /**
      * Adds the provided OMRS type definition to Apache Atlas (if possible), or throws a TypeDefNotSupportedException
      * if not possible.
@@ -32,7 +28,7 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
      * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
      * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
      * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
-     * @throws TypeDefNotSupportedException
+     * @throws TypeDefNotSupportedException when entity cannot be fully represented in Atlas
      */
     public static void addEntityTypeToAtlas(EntityDef omrsEntityDef,
                                             TypeDefStore typeDefStore,
@@ -61,9 +57,8 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
             }
         }
 
-        // TODO: is setting relationship attributes here required, or will they be added when relationship typedefs
-        //  are created? (If needed, probably need to be added as an update to the entity typedef, as part of the
-        //  relationship creation process?)
+        // Note: we do not need to setup relationship attributes here, as they will be setup automatically
+        // when we define the relationship typedefs
 
         fullyCovered = fullyCovered && setupPropertyMappings(omrsEntityDef, entityTypeDef, attributeDefStore);
 

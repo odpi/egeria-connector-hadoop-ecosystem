@@ -154,11 +154,7 @@ public class AttributeTypeDefStore {
      * @return {@code Map<String, String>}
      */
     public Map<String, String> getElementMappingsForAtlasTypeDef(String atlasName) {
-        if (atlasNameToElementMap.containsKey(atlasName)) {
-            return atlasNameToElementMap.get(atlasName);
-        } else {
-            return null;
-        }
+        return atlasNameToElementMap.getOrDefault(atlasName, null);
     }
 
     /**
@@ -169,11 +165,7 @@ public class AttributeTypeDefStore {
      * @return {@code Map<String, String>}
      */
     public Map<String, String> getElementMappingsForOMRSTypeDef(String omrsName) {
-        if (omrsNameToElementMap.containsKey(omrsName)) {
-            return omrsNameToElementMap.get(omrsName);
-        } else {
-            return null;
-        }
+        return omrsNameToElementMap.getOrDefault(omrsName, null);
     }
 
     /**
@@ -199,11 +191,7 @@ public class AttributeTypeDefStore {
      * @return String
      */
     public String getMappedOMRSTypeDefName(String atlasName) {
-        if (atlasNameToOmrsName.containsKey(atlasName)) {
-            return atlasNameToOmrsName.get(atlasName);
-        } else {
-            return null;
-        }
+        return atlasNameToOmrsName.getOrDefault(atlasName, null);
     }
 
     /**

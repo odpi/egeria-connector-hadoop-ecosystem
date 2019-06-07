@@ -8,8 +8,6 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumDef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,8 +17,6 @@ import java.util.List;
  * Class that generically handles converting between Apache Atlas and OMRS Enum (Attribute)TypeDefs.
  */
 public abstract class EnumDefMapping {
-
-    private static final Logger log = LoggerFactory.getLogger(EnumDefMapping.class);
 
     public static void addEnumToAtlas(EnumDef omrsEnumDef,
                                       AttributeTypeDefStore attributeDefStore,

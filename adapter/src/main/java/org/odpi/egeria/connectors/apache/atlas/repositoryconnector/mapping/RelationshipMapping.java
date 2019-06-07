@@ -5,7 +5,6 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
-import org.apache.atlas.model.instance.AtlasStruct;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
@@ -31,7 +30,6 @@ public class RelationshipMapping {
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeDefStore;
-    private AtlasRelationship.AtlasRelationshipWithExtInfo atlasRelationshipWithExtInfo;
     private AtlasRelationship atlasRelationship;
     private String userId;
 
@@ -52,7 +50,6 @@ public class RelationshipMapping {
         this.atlasRepositoryConnector = atlasRepositoryConnector;
         this.typeDefStore = typeDefStore;
         this.attributeDefStore = attributeDefStore;
-        this.atlasRelationshipWithExtInfo = instance;
         this.atlasRelationship = instance.getRelationship();
         this.userId = userId;
     }
@@ -61,7 +58,7 @@ public class RelationshipMapping {
      * Retrieve the mapped OMRS Relationship from the Apache Atlas AtlasRelationship used to construct this mapping object.
      *
      * @return Relationship
-     * @throws RepositoryErrorException
+     * @throws RepositoryErrorException when unable to retrieve the Relationship
      */
     public Relationship getRelationship() throws RepositoryErrorException {
 
@@ -177,10 +174,10 @@ public class RelationshipMapping {
      * @param userId the user through which to retrieve the EntityProxy (unused)
      * @return EntityProxy
      */
-    public static EntityProxy getEntityProxyForObject(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
-                                                      TypeDefStore typeDefStore,
-                                                      AtlasEntity.AtlasEntityWithExtInfo fullAtlasObj,
-                                                      String userId) {
+    static EntityProxy getEntityProxyForObject(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
+                                               TypeDefStore typeDefStore,
+                                               AtlasEntity.AtlasEntityWithExtInfo fullAtlasObj,
+                                               String userId) {
 
         final String methodName = "getEntityProxyForObject";
         AtlasEntity atlasObj = fullAtlasObj.getEntity();
@@ -195,7 +192,7 @@ public class RelationshipMapping {
             String atlasTypeName = atlasObj.getTypeName();
             String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeName);
 
-            String qualifiedName = null;
+            String qualifiedName;
             Map<String, Object> attributes = atlasObj.getAttributes();
             if (attributes.containsKey("qualifiedName")) {
                 qualifiedName = (String) attributes.get("qualifiedName");
@@ -245,9 +242,9 @@ public class RelationshipMapping {
      * @param atlasRepositoryConnector connectivity to an Apache Atlas environment
      * @param omrsRelationshipDef the OMRS RelationshipDef for which to create a skeleton Relationship
      * @return Relationship
-     * @throws RepositoryErrorException
+     * @throws RepositoryErrorException when unable to create a new skeletal Relationship
      */
-    public static Relationship getSkeletonRelationship(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
+    static Relationship getSkeletonRelationship(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
                                                        RelationshipDef omrsRelationshipDef) throws RepositoryErrorException {
 
         final String methodName = "getSkeletonRelationship";

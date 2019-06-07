@@ -545,7 +545,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws TypeDefKnownException the TypeDef is already stored in the repository.
      * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
      * @throws InvalidTypeDefException the new TypeDef has invalid contents.
-     * @throws FunctionNotSupportedException the repository does not support this call.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     @Override
@@ -556,7 +555,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             TypeDefKnownException,
             TypeDefConflictException,
             InvalidTypeDefException,
-            FunctionNotSupportedException,
             UserNotAuthorizedException {
 
         final String  methodName = "addTypeDef";
@@ -667,7 +665,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws TypeDefKnownException the TypeDef is already stored in the repository.
      * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
      * @throws InvalidTypeDefException the new TypeDef has invalid contents.
-     * @throws FunctionNotSupportedException the repository does not support this call.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     @Override
@@ -678,7 +675,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             TypeDefKnownException,
             TypeDefConflictException,
             InvalidTypeDefException,
-            FunctionNotSupportedException,
             UserNotAuthorizedException {
 
         final String  methodName           = "addAttributeTypeDef";
@@ -773,13 +769,20 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // If we know the TypeDef is unimplemented, immediately throw an exception stating as much
         if (typeDefStore.getUnimplementedTypeDefByGUID(guid) != null) {
-            throw new TypeDefNotSupportedException(
-                    404,
-                    ApacheAtlasOMRSMetadataCollection.class.getName(),
+            OMRSErrorCode errorCode = OMRSErrorCode.TYPEDEF_NOT_KNOWN;
+            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    typeDef.getName(),
+                    guid,
+                    typeDefParameterName,
                     methodName,
-                    typeDef.getName() + " is not supported.",
-                    "",
-                    "Request support through Egeria GitHub issue.");
+                    repositoryName
+            );
+            throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
         } else if (typeDefStore.getTypeDefByGUID(guid) != null) {
 
             List<String> issues = new ArrayList<>();
@@ -807,13 +810,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             // If we were unable to verify everything, throw exception indicating it is not a supported TypeDef
             if (!bVerified) {
-                throw new TypeDefNotSupportedException(
-                        404,
-                        ApacheAtlasOMRSMetadataCollection.class.getName(),
+                if (log.isWarnEnabled()) { log.warn("TypeDef '{}' cannot be supported due to conflicts: {}", typeDef.getName(), String.join(", ", issues)); }
+                OMRSErrorCode errorCode = OMRSErrorCode.VERIFY_CONFLICT_DETECTED;
+                String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
                         methodName,
-                        typeDef.getName() + " is not supported: " + String.join(", ", issues),
-                        "",
-                        "Request support through Egeria GitHub issue.");
+                        repositoryName);
+                throw new TypeDefConflictException(errorCode.getHTTPErrorCode(),
+                        this.getClass().getName(),
+                        methodName,
+                        errorMessage,
+                        errorCode.getSystemAction(),
+                        errorCode.getUserAction());
             } else {
                 return true;
             }
@@ -841,7 +848,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      */
     @Override
     public boolean verifyAttributeTypeDef(String            userId,
-                                           AttributeTypeDef  attributeTypeDef) throws InvalidParameterException,
+                                          AttributeTypeDef  attributeTypeDef) throws InvalidParameterException,
             RepositoryErrorException,
             TypeDefNotSupportedException,
             TypeDefConflictException,
@@ -913,7 +920,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         EntityDetail detail = null;
         try {
             detail = getEntityDetail(userId, guid);
-        } catch (EntityNotKnownException | EntityProxyOnlyException e) {
+        } catch (EntityNotKnownException e) {
             if (log.isInfoEnabled()) { log.info("Entity {} not known to the repository, or only a proxy.", guid, e); }
         }
         return detail;
@@ -981,7 +988,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
      *                                 the metadata collection is stored.
      * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws EntityProxyOnlyException the requested entity instance is only a proxy in the metadata collection.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     @Override
@@ -989,7 +995,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                         String guid) throws InvalidParameterException,
             RepositoryErrorException,
             EntityNotKnownException,
-            EntityProxyOnlyException,
             UserNotAuthorizedException {
 
         final String  methodName        = "getEntityDetail";
@@ -1641,7 +1646,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         if (results != null) {
             entityDetails = getEntityDetailsFromAtlasResults(results.getEntities(), userId);
         }
-        return entityDetails.isEmpty() ? null : entityDetails;
+        return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
     }
 
@@ -1733,6 +1738,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     /**
      * Build an Atlas domain-specific language (DSL) query based on the provided parameters, and return its results.
      *
+     * @param methodName the name of the calling method
      * @param entityTypeGUID unique identifier for the type of entity requested.  Null means any type of entity
      *                       (but could be slow so not recommended.
      * @param limitResultsByClassification list of classifications by which to limit the results.
@@ -1749,11 +1755,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param sequencingOrder Enum defining how the results should be ordered.
      * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
      *                 unrestricted return results size.
-     * @return {@code List<EntityDetail>}
-     * @throws FunctionNotSupportedException
-     * @throws InvalidParameterException
-     * @throws RepositoryErrorException
-     * @throws UserNotAuthorizedException
+     * @return AtlasSearchResult
+     * @throws FunctionNotSupportedException when trying to search using a status that is not supported in Atlas
      */
     private AtlasSearchResult buildAndRunDSLSearch(String methodName,
                                                    String entityTypeGUID,
@@ -1764,12 +1767,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                    List<InstanceStatus> limitResultsByStatus,
                                                    String sequencingProperty,
                                                    SequencingOrder sequencingOrder,
-                                                   int pageSize) throws
-            FunctionNotSupportedException {
+                                                   int pageSize) throws FunctionNotSupportedException {
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // For this kind of query, we MUST have an entity type (for Atlas),
         // so will default to Referenceable if nothing else was specified
@@ -1785,7 +1787,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
         }
         Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName);
-        sb.append("from " + atlasTypeName);
+        sb.append("from ");
+        sb.append(atlasTypeName);
         boolean bWhereClauseAdded = false;
 
         // Add the multiple classification criteria, if requested
@@ -1819,7 +1822,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             value,
                             omrsPropertyMap,
                             omrsAttrTypeDefs,
-                            (matchCriteria == null ? false : matchCriteria.equals(MatchCriteria.NONE)),
+                            (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                             true
                     );
                 }
@@ -1928,10 +1931,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Add paging criteria, if requested
         if (pageSize > 0) {
-            sb.append(" limit " + pageSize);
+            sb.append(" limit ");
+            sb.append(pageSize);
         }
         if (fromEntityElement > 0) {
-            sb.append(" offset " + fromEntityElement);
+            sb.append(" offset ");
+            sb.append(fromEntityElement);
         }
 
         return atlasRepositoryConnector.searchWithDSL(sb.toString());
@@ -1958,7 +1963,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
      *                 unrestricted return results size.
      * @return {@code List<EntityDetail>}
-     * @throws FunctionNotSupportedException
+     * @throws FunctionNotSupportedException when attempting to search based on a status that is not supported in Atlas
      */
     private AtlasSearchResult buildAndRunBasicSearch(String methodName,
                                                      String entityTypeGUID,
@@ -1968,8 +1973,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                      String fullTextQuery,
                                                      int fromEntityElement,
                                                      List<InstanceStatus> limitResultsByStatus,
-                                                     int pageSize) throws
-            FunctionNotSupportedException {
+                                                     int pageSize) throws FunctionNotSupportedException {
 
         // Otherwise Atlas's "basic" search is likely to be significantly faster
         SearchParameters searchParameters = new SearchParameters();
@@ -2010,7 +2014,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             value,
                             omrsPropertyMap,
                             omrsAttrTypeDefs,
-                            (matchCriteria == null ? false : matchCriteria.equals(MatchCriteria.NONE)),
+                            (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                             false
                     );
                 }
@@ -2072,9 +2076,10 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param atlasEntities the Atlas entities for which to retrieve details
      * @param userId the user through which to do the retrieval
      * @return {@code List<EntityDetail>}
-     * @throws InvalidParameterException
-     * @throws RepositoryErrorException
-     * @throws UserNotAuthorizedException
+     * @throws InvalidParameterException the guid is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     private List<EntityDetail> getEntityDetailsFromAtlasResults(List<AtlasEntityHeader> atlasEntities,
                                                                 String userId) throws
@@ -2092,10 +2097,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 } catch (EntityNotKnownException e) {
                     if (log.isErrorEnabled()) {
                         log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
-                    }
-                } catch (EntityProxyOnlyException e) {
-                    if (log.isErrorEnabled()) {
-                        log.error("Entity with GUID {} only a proxy -- excluding from results.", atlasEntityHeader.getGuid());
                     }
                 }
             }
@@ -2128,7 +2129,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             if (atlasPropertyName != null) {
 
                 SearchParameters.FilterCriteria atlasCriterion = new SearchParameters.FilterCriteria();
-                StringBuffer sbCriterion = new StringBuffer();
+                StringBuilder sbCriterion = new StringBuilder();
                 InstancePropertyCategory category = value.getInstancePropertyCategory();
                 switch (category) {
                     case PRIMITIVE:
@@ -2375,7 +2376,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
         }
 
-        return (issues == null || issues.isEmpty()) ? null : issues;
+        return issues.isEmpty() ? null : issues;
 
     }
 

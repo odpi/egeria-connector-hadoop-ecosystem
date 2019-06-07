@@ -34,7 +34,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
      * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
      * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
      * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
-     * @throws TypeDefNotSupportedException
+     * @throws TypeDefNotSupportedException when the typedef cannot be fully represented in Atlas
      */
     public static void addRelationshipTypeToAtlas(RelationshipDef omrsRelationshipDef,
                                                   TypeDefStore typeDefStore,
@@ -44,7 +44,6 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         final String methodName = "addRelationshipTypeToAtlas";
 
         String omrsTypeDefName = omrsRelationshipDef.getName();
-        boolean fullyCovered = true;
 
         // Map base properties
         AtlasRelationshipDef relationshipTypeDef = new AtlasRelationshipDef();
@@ -52,7 +51,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
 
         // Map entity-specific properties:
         // a) endpoints
-        fullyCovered = fullyCovered && setupRelationshipEnds(omrsRelationshipDef, relationshipTypeDef, typeDefStore);
+        boolean fullyCovered = setupRelationshipEnds(omrsRelationshipDef, relationshipTypeDef, typeDefStore);
 
         // b) propagation
         if (fullyCovered) {
@@ -125,8 +124,6 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         // ... meaning we need to invert the attribute names and cardinalities as part of the
         //     translation (and we'll need to do the same within the mapping we store)
 
-        boolean fullyCovered = true;
-
         RelationshipEndDef omrs1 = omrsRelationshipDef.getEndDef1();
         RelationshipEndDef omrs2 = omrsRelationshipDef.getEndDef2();
         AtlasRelationshipEndDef atlas1 = new AtlasRelationshipEndDef();
@@ -145,7 +142,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         String attrDescForAtlas2 = omrs1.getAttributeDescription();
         RelationshipEndCardinality cardinalityForAtlas2 = omrs1.getAttributeCardinality();
 
-        fullyCovered = fullyCovered && setupRelationshipEnd(
+        boolean fullyCovered = setupRelationshipEnd(
                 omrsRelationshipDef,
                 atlas1,
                 atlasTypeName1,
@@ -161,7 +158,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
                 attrDescForAtlas2,
                 cardinalityForAtlas2
         );
-        // TODO: ensure we put these endpoint mappings into typeDefStore!
+        // TODO: do we need to ensure we put these endpoint mappings into typeDefStore?
 
         if (fullyCovered) {
             atlasRelationshipDef.setEndDef1(atlas1);
@@ -182,7 +179,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
      * @param atlasAttrName the name of the attribute on this end of the relationship (that points to the other end)
      * @param atlasAttrDescription the description of the attribute
      * @param atlasAttributeCardinality the cardinality of the attribute
-     * @returns boolean indicating success (true) or not (false) of the relationship endpoint setup
+     * @return boolean indicating success (true) or not (false) of the relationship endpoint setup
      */
     private static boolean setupRelationshipEnd(RelationshipDef omrsRelationshipDef,
                                                 AtlasRelationshipEndDef atlasRelEnd,
@@ -204,7 +201,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
                     break;
                 case UNKNOWN:
                     fullyCovered = false;
-                    if (log.isWarnEnabled()) { log.warn("Unable to determine cardinality of relationship end -- skipping the relationship", omrsRelationshipDef); }
+                    if (log.isWarnEnabled()) { log.warn("Unable to determine cardinality of relationship end -- skipping the relationship: {}", omrsRelationshipDef); }
                     break;
             }
         } else {

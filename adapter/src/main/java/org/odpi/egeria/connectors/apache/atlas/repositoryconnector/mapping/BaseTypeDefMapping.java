@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Class that generically handles converting between Apache Atlas and OMRS TypeDefs.
  */
-public class BaseTypeDefMapping {
+class BaseTypeDefMapping {
 
     private static final Logger log = LoggerFactory.getLogger(BaseTypeDefMapping.class);
 
@@ -23,8 +23,8 @@ public class BaseTypeDefMapping {
      * @param omrsTypeDef the OMRS type definition
      * @param atlasTypeDef the Apache Atlas type definition
      */
-    public static void setupBaseMapping(TypeDef omrsTypeDef,
-                                        AtlasBaseTypeDef atlasTypeDef) {
+    static void setupBaseMapping(TypeDef omrsTypeDef,
+                                 AtlasBaseTypeDef atlasTypeDef) {
         atlasTypeDef.setGuid(omrsTypeDef.getGUID());
         atlasTypeDef.setName(omrsTypeDef.getName());
         atlasTypeDef.setServiceType("omrs");
@@ -45,9 +45,9 @@ public class BaseTypeDefMapping {
      * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
      * @return boolean - true if all of the properties could be mapped, otherwise false
      */
-    public static boolean setupPropertyMappings(TypeDef omrsTypeDef,
-                                                AtlasStructDef atlasTypeDef,
-                                                AttributeTypeDefStore attributeDefStore) {
+    static boolean setupPropertyMappings(TypeDef omrsTypeDef,
+                                         AtlasStructDef atlasTypeDef,
+                                         AttributeTypeDefStore attributeDefStore) {
 
         boolean fullyCovered = true;
 
