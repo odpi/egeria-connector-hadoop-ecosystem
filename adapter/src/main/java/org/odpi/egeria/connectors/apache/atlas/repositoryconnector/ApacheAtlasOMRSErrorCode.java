@@ -35,7 +35,7 @@ public enum ApacheAtlasOMRSErrorCode {
             "The system was unable to process the instance provided, because it does not support the instance's type.",
             "Check your calling method is validating type support before sending instances."),
     PROPERTY_NOT_KNOWN_FOR_INSTANCE(404, "OMRS-ATLAS-REPOSITORY-404-003",
-            "The property \"{0}\" is not mapped for typedef \"{1}\" in repository \"{3}\"",
+            "The property \"{0}\" is not mapped for typedef \"{1}\" in repository \"{2}\"",
             "The system was unable to set the property provided on the instance, because it does not support the property.",
             "Consider extending the properties of the repository to avoid this error in the future."),
     ;
