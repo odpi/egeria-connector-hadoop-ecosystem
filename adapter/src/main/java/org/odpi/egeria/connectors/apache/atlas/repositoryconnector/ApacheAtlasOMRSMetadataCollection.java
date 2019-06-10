@@ -573,8 +573,24 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         if (typeDefStore.isTypeDefMapped(omrsTypeDefName)) {
 
-            // If it is a mapped TypeDef, add it to our store
-            typeDefStore.addTypeDef(newTypeDef);
+            // If it is a mapped TypeDef, retrieve the mapped type from Atlas and validate it covers what we require
+            String atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(omrsTypeDefName);
+            List<String> gaps = validateTypeDefCoverage(newTypeDef, atlasRepositoryConnector.getTypeDefByName(atlasTypeName, newTypeDef.getCategory()));
+            if (gaps != null) {
+                // If there were gaps, drop the typedef as unimplemented
+                typeDefStore.addUnimplementedTypeDef(newTypeDef);
+                throw new TypeDefNotSupportedException(
+                        404,
+                        ApacheAtlasOMRSMetadataCollection.class.getName(),
+                        methodName,
+                        omrsTypeDefName + " is not supported.",
+                        String.join(", ", gaps),
+                        "Request support through Egeria GitHub issue."
+                );
+            } else {
+                // Otherwise add it as implemented
+                typeDefStore.addTypeDef(newTypeDef);
+            }
 
         } else if (!typeDefStore.isReserved(omrsTypeDefName)) {
 
@@ -2467,6 +2483,24 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         }
 
         // Validate that we support all of the possible properties
+        validateAttributeCoverage(omrsTypeDef, atlasTypeDef, issues);
+
+        return issues.isEmpty() ? null : issues;
+
+    }
+
+    /**
+     * Compare the provided OMRS TypeDef's properties to the provided Apache Atlas TypeDef's properties and ensure they
+     * fully cover each other (including across OMRS TypeDef's supertype hierarchy).
+     *
+     * @param omrsTypeDef the OMRS TypeDef to compare
+     * @param atlasTypeDef the Apache Atlas TypeDef to compare
+     * @param issues a list of issues to append to if any gaps are found
+     */
+    private void validateAttributeCoverage(TypeDef omrsTypeDef,
+                                           AtlasStructDef atlasTypeDef,
+                                           List<String> issues) {
+
         String omrsTypeDefName = omrsTypeDef.getName();
         List<TypeDefAttribute> omrsProperties = omrsTypeDef.getPropertiesDefinition();
         if (omrsProperties != null) {
@@ -2488,8 +2522,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 }
             }
         }
-
-        return issues.isEmpty() ? null : issues;
+        TypeDefLink superType = omrsTypeDef.getSuperType();
+        if (superType != null) {
+            TypeDef superTypeDef = typeDefStore.getTypeDefByGUID(superType.getGUID(), false);
+            if (superTypeDef == null) {
+                superTypeDef = typeDefStore.getUnimplementedTypeDefByGUID(superType.getGUID());
+            }
+            if (superType != null) {
+                validateAttributeCoverage(superTypeDef, atlasTypeDef, issues);
+            }
+        }
 
     }
 

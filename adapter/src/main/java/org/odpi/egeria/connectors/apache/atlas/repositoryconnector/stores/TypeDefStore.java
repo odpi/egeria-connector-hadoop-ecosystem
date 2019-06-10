@@ -322,7 +322,7 @@ public class TypeDefStore {
      * @param warnIfNotFound whether to log a warning if GUID is not known (true) or not (false).
      * @return TypeDef
      */
-    private TypeDef getTypeDefByGUID(String guid, boolean warnIfNotFound) {
+    public TypeDef getTypeDefByGUID(String guid, boolean warnIfNotFound) {
         if (omrsGuidToTypeDef.containsKey(guid)) {
             return omrsGuidToTypeDef.get(guid);
         } else {

@@ -1,0 +1,315 @@
+{
+  "enumDefs": [],
+  "structDefs": [],
+  "classificationDefs": [],
+  "entityDefs": [
+    {
+      "name": "Referenceable",
+      "serviceType": "atlas_core",
+      "typeVersion": "1.3",
+      "attributeDefs": [
+        {
+          "name": "qualifiedName",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": true,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "additionalProperties",
+          "typeName": "map<string,string>",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": true
+        },
+        {
+          "name": "replicatedFrom",
+          "typeName": "array<AtlasServer>",
+          "isOptional": true,
+          "cardinality": "SET",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 2147483647,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false,
+          "options": {
+            "isSoftReference": "true"
+          }
+        },
+        {
+          "name": "replicatedTo",
+          "typeName": "array<AtlasServer>",
+          "isOptional": true,
+          "cardinality": "SET",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 2147483647,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false,
+          "options": {
+            "isSoftReference": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AtlasGlossary",
+      "serviceType": "atlas_core",
+      "typeVersion": "1.2",
+      "attributeDefs": [
+        {
+          "name": "qualifiedName",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": true,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "additionalProperties",
+          "typeName": "map<string,string>",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": true
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "shortDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "longDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "language",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "usage",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        }
+      ],
+      "superTypes": [
+        "__internal"
+      ]
+    },
+    {
+      "name": "AtlasGlossaryCategory",
+      "serviceType": "atlas_core",
+      "typeVersion": "1.2",
+      "attributeDefs": [
+        {
+          "name": "qualifiedName",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": true,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "additionalProperties",
+          "typeName": "map<string,string>",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": true
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "shortDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "longDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        }
+      ],
+      "superTypes": [
+        "__internal"
+      ]
+    },
+    {
+      "name": "AtlasGlossaryTerm",
+      "serviceType": "atlas_core",
+      "typeVersion": "1.2",
+      "attributeDefs": [
+        {
+          "name": "qualifiedName",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": true,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "additionalProperties",
+          "typeName": "map<string,string>",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": true
+        },
+        {
+          "name": "name",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": true,
+          "includeInNotification": false
+        },
+        {
+          "name": "shortDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "longDescription",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "examples",
+          "typeName": "array<string>",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "abbreviation",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "usage",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        }
+      ],
+      "superTypes": [
+        "__internal"
+      ]
+    }
+  ],
+  "relationshipDefs": []
+}

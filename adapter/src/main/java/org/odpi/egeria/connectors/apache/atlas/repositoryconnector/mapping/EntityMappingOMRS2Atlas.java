@@ -91,7 +91,7 @@ public class EntityMappingOMRS2Atlas {
         }
         checkForMissingFields(methodName, missingFieldNames);
 
-        AtlasEntity.AtlasEntityWithExtInfo existingAtlasEntity = atlasRepositoryConnector.getEntityByGUID(guid, true, true);
+        AtlasEntity.AtlasEntityWithExtInfo existingAtlasEntity = atlasRepositoryConnector.getEntityByGUID(guid, true, true, false);
 
         // If there is an existing entity, and it is not already a reference copy, we have a conflict
         boolean bCreate = (existingAtlasEntity == null);

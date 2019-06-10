@@ -2,6 +2,7 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
@@ -10,6 +11,7 @@ import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
@@ -21,9 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.atlas.AtlasClientV2;
+import org.springframework.core.io.ClassPathResource;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
@@ -66,11 +72,28 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         this.atlasClient = new AtlasClientV2(new String[]{ getBaseURL() }, new String[]{ username, password });
 
         // Test REST API connection by attempting to retrieve types list
+        AtlasTypesDef atlasTypes = null;
         try {
-            AtlasTypesDef atlasTypes = atlasClient.getAllTypeDefs(new SearchFilter());
+            atlasTypes = atlasClient.getAllTypeDefs(new SearchFilter());
             successfulInit = (atlasTypes != null && atlasTypes.hasEntityDef("Referenceable"));
         } catch (AtlasServiceException e) {
             log.error("Unable to retrieve types from Apache Atlas.", e);
+        }
+
+        ClassPathResource mappingResource = new ClassPathResource("ApacheAtlasNativeTypesPatch.json");
+
+        try {
+
+            // Apply Open Metadata patch to the out-of-the-box Apache Atlas types
+            InputStream stream = mappingResource.getInputStream();
+            ObjectMapper mapper = new ObjectMapper();
+            AtlasTypesDef atlasTypesDef = mapper.readValue(stream, AtlasTypesDef.class);
+            atlasClient.updateAtlasTypeDefs(atlasTypesDef);
+
+        } catch (IOException e) {
+            log.error("Unable to load ApacheAtlasNativeTypesPatch.json from jar file -- cannot patch default Apache Atlas types.", e);
+        } catch (AtlasServiceException e) {
+            log.error("Unable to patch default Apache Atlas types.", e);
         }
 
         if (!successfulInit) {
@@ -181,11 +204,26 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @return AtlasEntityWithExtInfo
      */
     public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid, boolean minimalExtraInfo, boolean ignoreRelationships) {
+        return getEntityByGUID(guid, minimalExtraInfo, ignoreRelationships, true);
+    }
+
+    /**
+     * Retrieve an Apache Atlas Entity instance by its GUID.
+     *
+     * @param guid the GUID of the entity instance to retrieve
+     * @param minimalExtraInfo if true, minimize the amount of extra information retrieved about the GUID
+     * @param ignoreRelationships if true, will return only the entity (none of its relationships)
+     * @param logIfNotFound if true, will log any exception where the entity is not found, otherwise will not
+     * @return AtlasEntityWithExtInfo
+     */
+    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid, boolean minimalExtraInfo, boolean ignoreRelationships, boolean logIfNotFound) {
         AtlasEntity.AtlasEntityWithExtInfo entity = null;
         try {
             entity = atlasClient.getEntityByGuid(guid, minimalExtraInfo, ignoreRelationships);
         } catch (AtlasServiceException e) {
-            log.error("Unable to retrieve entity by GUID: {}", guid, e);
+            if (logIfNotFound) {
+                log.error("Unable to retrieve entity by GUID: {}", guid, e);
+            }
         }
         return entity;
     }
