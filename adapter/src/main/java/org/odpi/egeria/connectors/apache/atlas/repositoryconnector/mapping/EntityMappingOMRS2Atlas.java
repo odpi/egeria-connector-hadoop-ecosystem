@@ -70,6 +70,13 @@ public class EntityMappingOMRS2Atlas {
 
         AtlasEntity atlasEntity = getSkeletonAtlasEntity();
 
+        // Add type information
+        InstanceType omrsType = omrsEntity.getType();
+        String omrsTypeName = omrsType.getTypeDefName();
+        String atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(omrsTypeName);
+        atlasEntity.setTypeName(atlasTypeName);
+
+        // Add required fields
         List<String> missingFieldNames = new ArrayList<>();
         String guid = omrsEntity.getGUID();
         if (guid == null) {
@@ -110,14 +117,10 @@ public class EntityMappingOMRS2Atlas {
         }
 
         // Add any property values
-        InstanceType omrsType = omrsEntity.getType();
-        String omrsTypeName = omrsType.getTypeDefName();
-        Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName);
-
         setProperties(
                 omrsEntity.getProperties(),
                 atlasEntity,
-                omrsPropertyMap,
+                typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName),
                 omrsEntity.getType().getTypeDefName(),
                 methodName
         );
@@ -125,6 +128,7 @@ public class EntityMappingOMRS2Atlas {
         // Add any classifications
         addClassifications(atlasEntity);
 
+        // Attempt the save to Apache Atlas
         AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = new AtlasEntity.AtlasEntityWithExtInfo(atlasEntity);
         EntityMutations.EntityOperation opTaken = null;
         EntityMutationResponse result = atlasRepositoryConnector.saveEntity(atlasEntityWithExtInfo, bCreate);
