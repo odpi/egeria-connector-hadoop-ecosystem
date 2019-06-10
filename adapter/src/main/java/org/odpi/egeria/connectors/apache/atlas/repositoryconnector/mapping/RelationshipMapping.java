@@ -126,7 +126,7 @@ public class RelationshipMapping {
                         atlasRelationshipType,
                         null);
                 throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                        EntityMapping.class.getName(),
+                        EntityMappingAtlas2OMRS.class.getName(),
                         methodName,
                         errorMessage,
                         errorCode.getSystemAction(),
@@ -262,7 +262,7 @@ public class RelationshipMapping {
             String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
                     omrsRelationshipDef.getName());
             throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                    EntityMapping.class.getName(),
+                    EntityMappingAtlas2OMRS.class.getName(),
                     methodName,
                     errorMessage,
                     errorCode.getSystemAction(),

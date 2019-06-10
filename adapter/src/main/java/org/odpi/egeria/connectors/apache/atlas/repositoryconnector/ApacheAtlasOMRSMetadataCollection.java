@@ -4,10 +4,7 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
-import org.apache.atlas.model.instance.AtlasClassification;
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
@@ -973,7 +970,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     errorCode.getSystemAction(),
                     errorCode.getUserAction());
         }
-        EntityMapping mapping = new EntityMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
         return mapping.getEntitySummary();
 
     }
@@ -1025,7 +1022,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     errorCode.getSystemAction(),
                     errorCode.getUserAction());
         }
-        EntityMapping mapping = new EntityMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
         return mapping.getEntityDetail();
 
     }
@@ -1126,7 +1123,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         errorCode.getUserAction());
             } else {
 
-                EntityMapping entityMap = new EntityMapping(
+                EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
                         atlasRepositoryConnector,
                         typeDefStore,
                         attributeTypeDefStore,
@@ -1661,6 +1658,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                                  the metadata collection is stored.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
+    @Override
     public Relationship  isRelationshipKnown(String     userId,
                                              String     guid) throws InvalidParameterException,
             RepositoryErrorException,
@@ -1700,6 +1698,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                                         the requested GUID stored.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
+    @Override
     public Relationship getRelationship(String    userId,
                                         String    guid) throws InvalidParameterException,
             RepositoryErrorException,
@@ -1734,6 +1733,120 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         return mapping.getRelationship();
 
     }
+
+    /**
+     * Save the entity as a reference copy.  The id of the home metadata collection is already set up in the
+     * entity.
+     *
+     * @param userId unique identifier for requesting server.
+     * @param entity details of the entity to save.
+     * @throws InvalidParameterException the entity is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                    the metadata collection is stored.
+     * @throws TypeErrorException the requested type is not known, or not supported in the metadata repository
+     *                            hosting the metadata collection.
+     * @throws PropertyErrorException one or more of the requested properties are not defined, or have different
+     *                                  characteristics in the TypeDef for this entity's type.
+     * @throws HomeEntityException the entity belongs to the local repository so creating a reference
+     *                               copy would be invalid.
+     * @throws EntityConflictException the new entity conflicts with an existing entity.
+     * @throws InvalidEntityException the new entity has invalid contents.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    @Override
+    public void saveEntityReferenceCopy(String userId,
+                                        EntityDetail   entity) throws InvalidParameterException,
+            RepositoryErrorException,
+            TypeErrorException,
+            PropertyErrorException,
+            HomeEntityException,
+            EntityConflictException,
+            InvalidEntityException,
+            UserNotAuthorizedException {
+
+        final String  methodName = "saveEntityReferenceCopy";
+
+        /*
+         * Validate parameters
+         */
+        this.validateRepositoryConnector(methodName);
+        parentConnector.validateRepositoryIsActive(methodName);
+
+        if (entity == null) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.INSTANCE_NOT_PROVIDED;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    methodName,
+                    repositoryName
+            );
+            throw new InvalidParameterException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+
+        InstanceType type = entity.getType();
+        String typeName = type.getTypeDefName();
+        String atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(typeName);
+
+        if (atlasTypeName == null) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_KNOWN_FOR_INSTANCE;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    typeName,
+                    entity.getGUID(),
+                    methodName,
+                    repositoryName
+            );
+            throw new TypeErrorException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+
+        String receivedCollectionId = entity.getMetadataCollectionId();
+        if (metadataCollectionId.equals(receivedCollectionId)) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.INSTANCE_ALREADY_HOME;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    methodName,
+                    repositoryName
+            );
+            throw new HomeEntityException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+
+        EntityMappingOMRS2Atlas mapping = new EntityMappingOMRS2Atlas(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
+
+        // Attempt to save the reference copy, and throw an exception if unsuccessful
+        EntityMutations.EntityOperation result = mapping.saveReferenceCopy();
+        if (result == null) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.UNABLE_TO_SAVE;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                    methodName,
+                    repositoryName
+            );
+            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+
+    }
+
+    /**
+     * Retrieve the set of states that the repository supports.
+     *
+     * @return {@code Set<InstanceStatus>}
+     */
+    public Set<InstanceStatus> getAvailableStates() { return this.availableStates; }
 
     /**
      * Build an Atlas domain-specific language (DSL) query based on the provided parameters, and return its results.

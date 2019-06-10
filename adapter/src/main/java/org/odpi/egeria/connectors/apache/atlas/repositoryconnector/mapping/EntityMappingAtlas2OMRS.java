@@ -23,9 +23,9 @@ import java.util.*;
 /**
  * Class that generically handles converting an Apache Atlas EntityInstance object into an OMRS EntityDetail object.
  */
-public class EntityMapping {
+public class EntityMappingAtlas2OMRS {
 
-    private static final Logger log = LoggerFactory.getLogger(EntityMapping.class);
+    private static final Logger log = LoggerFactory.getLogger(EntityMappingAtlas2OMRS.class);
 
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
@@ -43,11 +43,11 @@ public class EntityMapping {
      * @param instance the Atlas entity to be mapped
      * @param userId the user through which to do the mapping
      */
-    public EntityMapping(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
-                         TypeDefStore typeDefStore,
-                         AttributeTypeDefStore attributeDefStore,
-                         AtlasEntity.AtlasEntityWithExtInfo instance,
-                         String userId) {
+    public EntityMappingAtlas2OMRS(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
+                                   TypeDefStore typeDefStore,
+                                   AttributeTypeDefStore attributeDefStore,
+                                   AtlasEntity.AtlasEntityWithExtInfo instance,
+                                   String userId) {
         this.atlasRepositoryConnector = atlasRepositoryConnector;
         this.typeDefStore = typeDefStore;
         this.attributeDefStore = attributeDefStore;
@@ -282,7 +282,7 @@ public class EntityMapping {
                                                 atlasPropertyName,
                                                 null);
                                         throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                                EntityMapping.class.getName(),
+                                                EntityMappingAtlas2OMRS.class.getName(),
                                                 methodName,
                                                 errorMessage,
                                                 errorCode.getSystemAction(),
@@ -296,7 +296,7 @@ public class EntityMapping {
                                         atlasPropertyName,
                                         null);
                                 throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                        EntityMapping.class.getName(),
+                                        EntityMappingAtlas2OMRS.class.getName(),
                                         methodName,
                                         errorMessage,
                                         errorCode.getSystemAction(),
@@ -568,7 +568,7 @@ public class EntityMapping {
                                 atlasClassificationName,
                                 omrsTypeDefName);
                         throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                EntityMapping.class.getName(),
+                                EntityMappingAtlas2OMRS.class.getName(),
                                 methodName,
                                 errorMessage,
                                 errorCode.getSystemAction(),

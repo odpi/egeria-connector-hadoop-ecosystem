@@ -12,9 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The base class for all mappings between OMRS AttributeTypeDefs and Apache Atlas properties.
@@ -120,12 +118,12 @@ public abstract class AttributeMapping {
      * @return InstanceProperties
      */
     static InstanceProperties addPropertyToInstance(OMRSRepositoryHelper repositoryHelper,
-                                                           String repositoryName,
-                                                           TypeDefAttribute property,
-                                                           InstanceProperties properties,
-                                                           AttributeTypeDefStore attributeDefStore,
-                                                           Object propertyValue,
-                                                           String methodName) {
+                                                    String repositoryName,
+                                                    TypeDefAttribute property,
+                                                    InstanceProperties properties,
+                                                    AttributeTypeDefStore attributeDefStore,
+                                                    Object propertyValue,
+                                                    String methodName) {
 
         InstanceProperties resultingProperties = properties;
 
@@ -154,6 +152,71 @@ public abstract class AttributeMapping {
         }
 
         return resultingProperties;
+
+    }
+
+    /**
+     * Retrieves a simple Java object representation for the provided OMRS InstancePropertyValue.
+     *
+     * @param omrsValue the OMRS value to translate
+     * @return Object
+     */
+    static Object getValueFromInstance(InstancePropertyValue omrsValue,
+                                       String omrsTypeDefName,
+                                       AttributeTypeDefStore attributeDefStore) {
+
+        Object value = null;
+
+        switch (omrsValue.getInstancePropertyCategory()) {
+            case PRIMITIVE:
+                PrimitivePropertyValue primitivePropertyValue = (PrimitivePropertyValue) omrsValue;
+                value = primitivePropertyValue.getPrimitiveValue();
+                break;
+            case MAP:
+                MapPropertyValue mapPropertyValue = (MapPropertyValue) omrsValue;
+                InstanceProperties mapValues = mapPropertyValue.getMapValues();
+                if (mapValues != null) {
+                    Map<String, InstancePropertyValue> mapOfValues = mapValues.getInstanceProperties();
+                    if (mapOfValues != null) {
+                        Map<String, Object> mappedValues = new HashMap<>();
+                        for (Map.Entry<String, InstancePropertyValue> entry : mapOfValues.entrySet()) {
+                            String entryName = entry.getKey();
+                            InstancePropertyValue entryValue = entry.getValue();
+                            mappedValues.put(entryName, getValueFromInstance(entryValue, omrsTypeDefName, attributeDefStore));
+                        }
+                        value = mappedValues;
+                    }
+                }
+                break;
+            case ENUM:
+                Map<String, String> enumElementMap = attributeDefStore.getElementMappingsForOMRSTypeDef(omrsTypeDefName);
+                EnumPropertyValue enumPropertyValue = (EnumPropertyValue) omrsValue;
+                String atlasValue = enumElementMap.get(enumPropertyValue.getSymbolicName());
+                value = atlasValue;
+                break;
+            case ARRAY:
+                ArrayPropertyValue arrayPropertyValue = (ArrayPropertyValue) omrsValue;
+                InstanceProperties arrayValues = arrayPropertyValue.getArrayValues();
+                if (arrayValues != null) {
+                    Map<String, InstancePropertyValue> arrayOfValues = arrayValues.getInstanceProperties();
+                    if (arrayOfValues != null) {
+                        List<Object> mappedValues = new ArrayList<>(arrayValues.getPropertyCount());
+                        for (Map.Entry<String, InstancePropertyValue> entry : arrayOfValues.entrySet()) {
+                            String entryKey = entry.getKey();
+                            int entryIndex  = Integer.parseInt(entryKey);
+                            InstancePropertyValue entryValue = entry.getValue();
+                            mappedValues.set(entryIndex, getValueFromInstance(entryValue, omrsTypeDefName, attributeDefStore));
+                        }
+                        value = mappedValues;
+                    }
+                }
+                break;
+            default:
+                log.warn("Unhandled type for mapping: {}", omrsValue);
+                break;
+        }
+
+        return value;
 
     }
 

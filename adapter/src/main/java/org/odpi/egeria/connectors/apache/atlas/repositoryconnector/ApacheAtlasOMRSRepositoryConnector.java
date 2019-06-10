@@ -9,6 +9,7 @@ import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
@@ -262,6 +263,27 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             result = atlasClient.dslSearch(dslQuery);
         } catch (AtlasServiceException e) {
             log.error("Unable to search based on DSL query: {}", dslQuery, e);
+        }
+        return result;
+    }
+
+    /**
+     * Save the entity provided to Apache Atlas.
+     *
+     * @param atlasEntity the Apache Atlas entity to save
+     * @param create indicates whether the entity should be created (true) or updated (false)
+     * @return EntityMutationResponse listing the details of the entity that was saved
+     */
+    public EntityMutationResponse saveEntity(AtlasEntity.AtlasEntityWithExtInfo atlasEntity, boolean create) {
+        EntityMutationResponse result = null;
+        try {
+            if (create) {
+                result = atlasClient.createEntity(atlasEntity);
+            } else {
+                result = atlasClient.updateEntity(atlasEntity);
+            }
+        } catch (AtlasServiceException e) {
+            log.error("Unable to save entity: {}", atlasEntity, e);
         }
         return result;
     }
