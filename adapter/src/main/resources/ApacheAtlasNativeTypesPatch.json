@@ -28,7 +28,7 @@
           "valuesMaxCount": 1,
           "isUnique": false,
           "isIndexable": false,
-          "includeInNotification": true
+          "includeInNotification": false
         },
         {
           "name": "replicatedFrom",
@@ -85,7 +85,7 @@
           "valuesMaxCount": 1,
           "isUnique": false,
           "isIndexable": false,
-          "includeInNotification": true
+          "includeInNotification": false
         },
         {
           "name": "name",
@@ -172,7 +172,7 @@
           "valuesMaxCount": 1,
           "isUnique": false,
           "isIndexable": false,
-          "includeInNotification": true
+          "includeInNotification": false
         },
         {
           "name": "name",
@@ -237,7 +237,7 @@
           "valuesMaxCount": 1,
           "isUnique": false,
           "isIndexable": false,
-          "includeInNotification": true
+          "includeInNotification": false
         },
         {
           "name": "name",

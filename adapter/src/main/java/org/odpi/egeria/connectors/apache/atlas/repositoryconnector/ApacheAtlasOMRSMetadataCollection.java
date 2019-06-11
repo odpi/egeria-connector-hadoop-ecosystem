@@ -1768,7 +1768,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws EntityConflictException the new entity conflicts with an existing entity.
      * @throws InvalidEntityException the new entity has invalid contents.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
-     */
+
     @Override
     public void saveEntityReferenceCopy(String userId,
                                         EntityDetail   entity) throws InvalidParameterException,
@@ -1782,9 +1782,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         final String  methodName = "saveEntityReferenceCopy";
 
-        /*
-         * Validate parameters
-         */
+        // Validate parameters
         this.validateRepositoryConnector(methodName);
         parentConnector.validateRepositoryIsActive(methodName);
 
@@ -1856,6 +1854,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         }
 
     }
+    */
 
     /**
      * Retrieve the set of states that the repository supports.

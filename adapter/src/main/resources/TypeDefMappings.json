@@ -6,10 +6,6 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "additionalProperties",
-        "omrs": "additionalProperties"
       }
     ]
   },
@@ -20,10 +16,6 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "additionalProperties",
-        "omrs": "additionalProperties"
       },
       {
         "atlas": "name",
@@ -50,10 +42,6 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "additionalProperties",
-        "omrs": "additionalProperties"
       },
       {
         "atlas": "name",
@@ -100,10 +88,6 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "additionalProperties",
-        "omrs": "additionalProperties"
       },
       {
         "atlas": "name",

@@ -60,7 +60,7 @@ public class EntityMappingOMRS2Atlas {
      * @throws PropertyErrorException one or more of the requested properties are not defined, or have different
      *                                characteristics in the TypeDef for this entity's type.
      * @throws EntityConflictException the new entity conflicts with an existing entity.
-     */
+
     public EntityMutations.EntityOperation saveReferenceCopy() throws
             InvalidEntityException,
             PropertyErrorException,
@@ -152,6 +152,7 @@ public class EntityMappingOMRS2Atlas {
         return opTaken;
 
     }
+     */
 
     /**
      * Adds any classifications defined on the OMRS entity this mapping was initialized with to the Atlas entity.
