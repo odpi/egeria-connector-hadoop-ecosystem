@@ -573,7 +573,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         if (typeDefStore.isTypeDefMapped(omrsTypeDefName)) {
 
-            // If it is a mapped TypeDef, retrieve the mapped type from Atlas and validate it covers what we require
+            /* If it is a mapped TypeDef, retrieve the mapped type from Atlas and validate it covers what we require
+            // (no longer needed for a read-only connector)
             String atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(omrsTypeDefName);
             List<String> gaps = validateTypeDefCoverage(newTypeDef, atlasRepositoryConnector.getTypeDefByName(atlasTypeName, newTypeDef.getCategory()));
             if (gaps != null) {
@@ -591,11 +592,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 // Otherwise add it as implemented
                 typeDefStore.addTypeDef(newTypeDef);
             }
+            */
+
+            typeDefStore.addTypeDef(newTypeDef);
 
         } else if (!typeDefStore.isReserved(omrsTypeDefName)) {
 
             if (atlasRepositoryConnector.typeDefExistsByName(omrsTypeDefName)) {
-                // If the TypeDef already exists in Atlas, add it to our store
+                /* If the TypeDef already exists in Atlas, add it to our store
                 List<String> gaps = validateTypeDefCoverage(newTypeDef, atlasRepositoryConnector.getTypeDefByName(omrsTypeDefName, newTypeDef.getCategory()));
                 if (gaps != null) {
                     // If there were gaps, drop the typedef as unimplemented
@@ -612,6 +616,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     // Otherwise add it as implemented
                     typeDefStore.addTypeDef(newTypeDef);
                 }
+                */
+                typeDefStore.addTypeDef(newTypeDef);
             } else {
                 switch(newTypeDef.getCategory()) {
                     case ENTITY_DEF:
@@ -2469,7 +2475,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param omrsTypeDef the OMRS TypeDef to compare
      * @param atlasTypeDef the Apache Atlas TypeDef to compare
      * @return {@code List<String>} of issues identified, or null if types have full coverage
-     */
+
     private List<String> validateTypeDefCoverage(TypeDef omrsTypeDef,
                                                  AtlasStructDef atlasTypeDef) {
 
@@ -2487,6 +2493,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         return issues.isEmpty() ? null : issues;
 
     }
+     */
 
     /**
      * Compare the provided OMRS TypeDef's properties to the provided Apache Atlas TypeDef's properties and ensure they
@@ -2495,7 +2502,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param omrsTypeDef the OMRS TypeDef to compare
      * @param atlasTypeDef the Apache Atlas TypeDef to compare
      * @param issues a list of issues to append to if any gaps are found
-     */
+
     private void validateAttributeCoverage(TypeDef omrsTypeDef,
                                            AtlasStructDef atlasTypeDef,
                                            List<String> issues) {
@@ -2533,5 +2540,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         }
 
     }
+     */
 
 }

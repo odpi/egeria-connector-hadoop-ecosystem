@@ -258,7 +258,7 @@ public class TypeDefStore {
         String guid = typeDef.getGUID();
         omrsGuidToTypeDef.put(guid, typeDef);
         omrsNameToGuid.put(typeDef.getName(), guid);
-        addAttributes(typeDef.getPropertiesDefinition(), guid);
+        addAttributes(typeDef.getPropertiesDefinition(), guid, typeDef.getName());
     }
 
     /**
@@ -270,7 +270,7 @@ public class TypeDefStore {
     public void addUnimplementedTypeDef(TypeDef typeDef) {
         String guid = typeDef.getGUID();
         unimplementedTypeDefs.put(guid, typeDef);
-        addAttributes(typeDef.getPropertiesDefinition(), guid);
+        addAttributes(typeDef.getPropertiesDefinition(), guid, typeDef.getName());
     }
 
     /**
@@ -278,14 +278,32 @@ public class TypeDefStore {
      *
      * @param attributes the list of attribute definitions for the OMRS TypeDef
      * @param guid of the OMRS TypeDef
+     * @param name of the OMRS TypeDef
      */
-    private void addAttributes(List<TypeDefAttribute> attributes, String guid) {
+    private void addAttributes(List<TypeDefAttribute> attributes, String guid, String name) {
         if (!omrsGuidToAttributeMap.containsKey(guid)) {
             omrsGuidToAttributeMap.put(guid, new HashMap<>());
         }
         if (attributes != null) {
+            Map<String, String> oneToOne = new HashMap<>();
             for (TypeDefAttribute attribute : attributes) {
-                omrsGuidToAttributeMap.get(guid).put(attribute.getAttributeName(), attribute);
+                String propertyName = attribute.getAttributeName();
+                omrsGuidToAttributeMap.get(guid).put(propertyName, attribute);
+                oneToOne.put(propertyName, propertyName);
+            }
+            if (!omrsNameToAttributeMap.containsKey(name)) {
+                // If no mapping was loaded for this OMRS type definition, add one-to-one mappings
+                omrsNameToAttributeMap.put(name, oneToOne);
+            } else {
+                // If a mapping was loaded for this OMRS type definition, extend the mapping with nulls
+                // for any properties that were left unmapped
+                Map<String, String> mappedProperties = omrsNameToAttributeMap.get(name);
+                Map<String, String> fullSetOfProperties = new HashMap<>(mappedProperties);
+                oneToOne.keySet().forEach(omrsProperty -> {
+                    if (!mappedProperties.containsKey(omrsProperty)) {
+                        fullSetOfProperties.put(omrsProperty, null);
+                    }
+                });
             }
         }
     }
