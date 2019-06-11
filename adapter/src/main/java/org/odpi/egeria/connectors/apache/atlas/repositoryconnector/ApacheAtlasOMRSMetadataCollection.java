@@ -5,7 +5,6 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.*;
-import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
@@ -1593,6 +1592,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 Map<String, TypeDefAttribute> typeDefAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
 
                 if (typeDefAttributeMap != null) {
+                    // This will look at all OMRS attributes, but buildAndRunDSLSearch (later) should limit to only those mapped to Atlas
                     for (Map.Entry<String, TypeDefAttribute> attributeEntry : typeDefAttributeMap.entrySet()) {
                         String attributeName = attributeEntry.getKey();
                         TypeDefAttribute typeDefAttribute = attributeEntry.getValue();
@@ -1618,7 +1618,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                         break;
                                 }
                                 break;
-                            case ENUM_DEF:
+                            default:
+                                if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
                                 break;
                         }
                     }
