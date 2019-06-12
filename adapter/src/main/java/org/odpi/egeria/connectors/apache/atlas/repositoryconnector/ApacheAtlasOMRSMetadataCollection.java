@@ -619,7 +619,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 typeDefStore.addTypeDef(newTypeDef);
             } else {
                 switch(newTypeDef.getCategory()) {
-                    case ENTITY_DEF:
+                    /*case ENTITY_DEF:
                         EntityDefMapping.addEntityTypeToAtlas(
                                 (EntityDef) newTypeDef,
                                 typeDefStore,
@@ -634,7 +634,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 attributeTypeDefStore,
                                 atlasRepositoryConnector
                         );
-                        break;
+                        break;*/
+                    // For now, only create classifications (no other new types for open metadata)
                     case CLASSIFICATION_DEF:
                         ClassificationDefMapping.addClassificationTypeToAtlas(
                                 (ClassificationDef) newTypeDef,
