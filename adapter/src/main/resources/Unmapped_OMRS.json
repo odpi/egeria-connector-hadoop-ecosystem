@@ -1,0 +1,10 @@
+[
+  "RelationalColumn",
+  "ForeignKey",
+  "RelationalColumnType",
+  "RelationalTable",
+  "RelationalTableType",
+  "DeployedDatabaseSchema",
+  "RelationalDBSchemaType",
+  "Database"
+]

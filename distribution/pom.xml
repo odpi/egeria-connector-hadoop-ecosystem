@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright Contributors to the ODPi Egeria project. -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>egeria-connector-apache-atlas</artifactId>
+        <groupId>org.odpi.egeria</groupId>
+        <version>1.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>egeria-connector-apache-atlas-package</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.odpi.egeria</groupId>
+            <artifactId>egeria-connector-apache-atlas-adapter</artifactId>
+            <version>${open-metadata.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade.version}</version>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.odpi.egeria:egeria-connector-apache-atlas-adapter</include>
+                                    <include>org.apache.atlas:atlas-client-common</include>
+                                    <include>org.apache.atlas:atlas-client-v1</include>
+                                    <include>org.apache.atlas:atlas-client-v2</include>
+                                    <include>org.apache.atlas:atlas-intg</include>
+                                    <include>org.apache.hadoop:hadoop-auth</include>
+                                    <include>org.apache.hadoop:hadoop-common</include>
+                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
+                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
+                                    <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
+                                    <include>com.sun.jersey:jersey-client</include>
+                                    <include>com.sun.jersey:jersey-core</include>
+                                    <include>com.sun.jersey:jersey-json</include>
+                                    <include>com.sun.jersey.contribs:jersey-multipart</include>
+                                    <include>javax.ws.rs:jsr311-api</include>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
