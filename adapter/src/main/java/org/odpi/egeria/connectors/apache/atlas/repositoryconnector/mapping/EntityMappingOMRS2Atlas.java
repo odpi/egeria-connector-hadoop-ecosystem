@@ -39,7 +39,7 @@ public class EntityMappingOMRS2Atlas {
      * @param attributeDefStore the store of mapped AttributeTypeDefs for the Atlas repository
      * @param instance the OMRS entity to be mapped
      * @param userId the user through which to do the mapping
-     */
+
     public EntityMappingOMRS2Atlas(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
                                    TypeDefStore typeDefStore,
                                    AttributeTypeDefStore attributeDefStore,
@@ -51,6 +51,7 @@ public class EntityMappingOMRS2Atlas {
         this.omrsEntity = instance;
         this.userId = userId;
     }
+     */
 
     /**
      * Attempts to save a reference copy in Apache Atlas for the OMRS entity used to initialize this mapping.
@@ -159,7 +160,7 @@ public class EntityMappingOMRS2Atlas {
      *
      * @param atlasEntity the Apache Atlas entity to which to add any mapped classifications
      * @throws PropertyErrorException when the OMRS entity uses a status not recognized by Atlas
-     */
+
     private void addClassifications(AtlasEntity atlasEntity) throws PropertyErrorException {
 
         final String methodName = "addClassifications";
@@ -195,6 +196,7 @@ public class EntityMappingOMRS2Atlas {
         }
 
     }
+     */
 
     /**
      * Maps the OMRS properties provided to the Atlas object provided.
@@ -205,7 +207,7 @@ public class EntityMappingOMRS2Atlas {
      * @param omrsTypeDefName the name of the OMRS type definition
      * @param methodName the name of the calling method
      * @throws PropertyErrorException when a property is not mapped or is otherwise unknown to Atlas
-     */
+
     private void setProperties(InstanceProperties omrsProperties,
                                AtlasStruct atlasObj,
                                Map<String, String> omrsPropertyMap,
@@ -241,6 +243,7 @@ public class EntityMappingOMRS2Atlas {
         }
 
     }
+     */
 
     /**
      * Retrieves the minimalistic mapping for an AtlasEntity, irrespective of the type definition of the entity.
@@ -248,7 +251,7 @@ public class EntityMappingOMRS2Atlas {
      * @return AtlasEntity
      * @throws InvalidEntityException when any expected fields are missing on the OMRS entity
      * @throws PropertyErrorException when the OMRS entity uses a status not recognized by Atlas
-     */
+
     private AtlasEntity getSkeletonAtlasEntity() throws
             InvalidEntityException,
             PropertyErrorException {
@@ -313,13 +316,14 @@ public class EntityMappingOMRS2Atlas {
         return atlasEntity;
 
     }
+     */
 
     /**
      * Retrieves the minimalistic mapping for an AtlasClassification, irrespective of the type definition of it.
      *
      * @return AtlasClassification
      * @throws PropertyErrorException when the OMRS entity uses a status not recognized by Atlas
-     */
+
     private AtlasClassification getSkeletonAtlasClassification() throws PropertyErrorException {
 
         final String methodName = "getSkeletonAtlasClassification";
@@ -351,6 +355,7 @@ public class EntityMappingOMRS2Atlas {
         return atlasClassification;
 
     }
+     */
 
     /**
      * Check for any missing fields that were identified.
@@ -358,7 +363,7 @@ public class EntityMappingOMRS2Atlas {
      * @param methodName the name of the calling method
      * @param missingFieldNames the list of field names that are missing (if any)
      * @throws InvalidEntityException when the list of provided field names is not empty
-     */
+
     private void checkForMissingFields(String methodName, List<String> missingFieldNames) throws InvalidEntityException {
         if (!missingFieldNames.isEmpty()) {
             StringBuilder fieldMessage = new StringBuilder();
@@ -377,5 +382,6 @@ public class EntityMappingOMRS2Atlas {
                     errorCode.getUserAction());
         }
     }
+     */
 
 }

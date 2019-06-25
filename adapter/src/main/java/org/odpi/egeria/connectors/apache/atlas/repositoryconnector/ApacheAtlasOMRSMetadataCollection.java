@@ -26,6 +26,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSMetadataCollection.class);
 
+    public static final String GENERATED_TYPE_PREFIX = "__|";
+    public static final String GENERATED_TYPE_POSTFIX = "|__";
+
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeTypeDefStore;
@@ -644,7 +647,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 atlasRepositoryConnector
                         );
                         break;
-                    case UNKNOWN_DEF:
+                    default:
                         typeDefStore.addUnimplementedTypeDef(newTypeDef);
                         throw new TypeDefNotSupportedException(
                                 404,
@@ -806,12 +809,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             List<String> issues = new ArrayList<>();
 
+            boolean bVerified = true;
+
+            /* For a read-only connector, leave the status validation to when we try to write a status (throw exception at that point if we cannot support it)
             Set<InstanceStatus> validStatuses = new HashSet<>(typeDef.getValidInstanceStatusList());
             boolean bVerified = validStatuses.equals(availableStates);
             if (!bVerified) {
                 issues.add("not all statuses supported: " + validStatuses);
-            }
+            } */
 
+            /* For a read-only connector, we do not need to support all properties
             // Validate that we support all of the possible properties before deciding whether we
             // fully-support the TypeDef or not
             String omrsTypeDefName = typeDef.getName();
@@ -825,7 +832,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         issues.add("property '" + omrsPropertyName + "' is not mapped");
                     }
                 }
-            }
+            } */
 
             // If we were unable to verify everything, throw exception indicating it is not a supported TypeDef
             if (!bVerified) {
@@ -979,6 +986,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         /*
          * Perform operation
          */
+        String prefix = null;
+        if (isGeneratedGUID(guid)) {
+            prefix = getPrefixFromGeneratedId(guid);
+            guid = getGuidFromGeneratedId(guid);
+        }
+
         AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid);
         if (entity == null) {
             OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
@@ -992,7 +1005,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     errorCode.getSystemAction(),
                     errorCode.getUserAction());
         }
-        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntitySummary();
 
     }
@@ -1031,6 +1044,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         /*
          * Perform operation
          */
+        String prefix = null;
+        if (isGeneratedGUID(guid)) {
+            prefix = getPrefixFromGeneratedId(guid);
+            guid = getGuidFromGeneratedId(guid);
+        }
+
         AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid);
         if (entity == null) {
             OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
@@ -1044,7 +1063,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     errorCode.getSystemAction(),
                     errorCode.getUserAction());
         }
-        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, userId);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntityDetail();
 
     }
@@ -1128,6 +1147,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             // Otherwise, only bother searching if we are after ACTIVE (or "all") entities -- non-ACTIVE means we
             // will just return an empty list
 
+            String prefix = null;
+            if (isGeneratedGUID(entityGUID)) {
+                prefix = getPrefixFromGeneratedId(entityGUID);
+                entityGUID = getGuidFromGeneratedId(entityGUID);
+            }
+
             // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
             AtlasEntity.AtlasEntityWithExtInfo asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false);
 
@@ -1150,6 +1175,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         typeDefStore,
                         attributeTypeDefStore,
                         asset,
+                        prefix,
                         userId
                 );
 
@@ -1238,7 +1264,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        AtlasSearchResult results;
+        List<AtlasEntityHeader> results;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
@@ -1287,7 +1313,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = null;
         if (results != null) {
-            entityDetails = getEntityDetailsFromAtlasResults(results.getEntities(), userId);
+            entityDetails = getEntityDetailsFromAtlasResults(results, userId);
         }
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
@@ -1363,7 +1389,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        AtlasSearchResult results;
+        List<AtlasEntityHeader> results;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
@@ -1426,10 +1452,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             Map<String, InstancePropertyValue> propertiesToMatch = matchClassificationProperties.getInstanceProperties();
 
-            List<AtlasEntityHeader> candidateEntities = results.getEntities();
-            if (candidateEntities != null) {
+            if (results != null) {
                 // For each entity we've preliminarily identified...
-                for (AtlasEntityHeader candidateEntity : candidateEntities) {
+                for (AtlasEntityHeader candidateEntity : results) {
                     List<AtlasClassification> classificationsForEntity = candidateEntity.getClassifications();
                     // ... iterate through each of its classifications to narrow in on only the one of interest
                     for (AtlasClassification candidateClassification : classificationsForEntity) {
@@ -1478,12 +1503,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             int endOfPageMarker = Math.min(fromEntityElement + pageSize, atlasEntities.size());
             if (fromEntityElement != 0 || endOfPageMarker < atlasEntities.size()) {
                 atlasEntities = atlasEntities.subList(fromEntityElement, endOfPageMarker);
-                results.setEntities(atlasEntities);
             }
 
         } else if (results != null) {
             // If no classification properties to limit, just grab the results directly
-            atlasEntities = results.getEntities();
+            atlasEntities = results;
         }
 
         List<EntityDetail> entityDetails = getEntityDetailsFromAtlasResults(atlasEntities, userId);
@@ -1560,7 +1584,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        AtlasSearchResult results;
+        List<AtlasEntityHeader> results;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
@@ -1665,7 +1689,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = null;
         if (results != null) {
-            entityDetails = getEntityDetailsFromAtlasResults(results.getEntities(), userId);
+            entityDetails = getEntityDetailsFromAtlasResults(results, userId);
         }
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
@@ -1865,6 +1889,20 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     */
 
     /**
+     * Retrieve the type definitions that are mapped for this repository.
+     *
+     * @return TypeDefStore
+     */
+    public TypeDefStore getTypeDefStore() { return this.typeDefStore; }
+
+    /**
+     * Retrieve the attribute definitions that are mapped for this repository.
+     *
+     * @return AttributeTypeDefStore
+     */
+    public AttributeTypeDefStore getAttributeTypeDefStore() { return this.attributeTypeDefStore; }
+
+    /**
      * Retrieve the set of states that the repository supports.
      *
      * @return {@code Set<InstanceStatus>}
@@ -1891,19 +1929,19 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param sequencingOrder Enum defining how the results should be ordered.
      * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
      *                 unrestricted return results size.
-     * @return AtlasSearchResult
+     * @return {@code List<AtlasEntityHeader>}
      * @throws FunctionNotSupportedException when trying to search using a status that is not supported in Atlas
      */
-    private AtlasSearchResult buildAndRunDSLSearch(String methodName,
-                                                   String entityTypeGUID,
-                                                   List<String> limitResultsByClassification,
-                                                   InstanceProperties matchProperties,
-                                                   MatchCriteria matchCriteria,
-                                                   int fromEntityElement,
-                                                   List<InstanceStatus> limitResultsByStatus,
-                                                   String sequencingProperty,
-                                                   SequencingOrder sequencingOrder,
-                                                   int pageSize) throws FunctionNotSupportedException {
+    private List<AtlasEntityHeader> buildAndRunDSLSearch(String methodName,
+                                                         String entityTypeGUID,
+                                                         List<String> limitResultsByClassification,
+                                                         InstanceProperties matchProperties,
+                                                         MatchCriteria matchCriteria,
+                                                         int fromEntityElement,
+                                                         List<InstanceStatus> limitResultsByStatus,
+                                                         String sequencingProperty,
+                                                         SequencingOrder sequencingOrder,
+                                                         int pageSize) throws FunctionNotSupportedException {
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
@@ -1912,170 +1950,196 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         // For this kind of query, we MUST have an entity type (for Atlas),
         // so will default to Referenceable if nothing else was specified
         String omrsTypeName = "Referenceable";
-        String atlasTypeName = omrsTypeName;
+        Map<String, String> atlasTypeNamesByPrefix = new HashMap<>();
         if (entityTypeGUID != null) {
             TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
             if (typeDef != null) {
                 omrsTypeName = typeDef.getName();
-                atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(omrsTypeName);
+                atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
             } else {
                 if (log.isWarnEnabled()) { log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID); }
             }
-        }
-        Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName);
-        sb.append("from ");
-        sb.append(atlasTypeName);
-        boolean bWhereClauseAdded = false;
-
-        // Add the multiple classification criteria, if requested
-        // (recall that OMRS classification name should be identical to Atlas classification name -- no translation needed)
-        if (limitResultsByClassification != null) {
-            List<String> classifications = new ArrayList<>();
-            for (String classificationName : limitResultsByClassification) {
-                classifications.add(atlasTypeName + " isa " + classificationName);
-            }
-            if (!classifications.isEmpty()) {
-                sb.append(" where ");
-                sb.append(String.join(" and ", classifications));
-                bWhereClauseAdded = true;
-            }
+        } else {
+            atlasTypeNamesByPrefix.put(null, omrsTypeName);
         }
 
-        // Add match properties, if requested
-        if (matchProperties != null) {
-            List<String> propertyCriteria = new ArrayList<>();
-            Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
-            // By default, include only Referenceable's properties (as these will be the only properties that exist
-            // across ALL entity types)
-            Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
-            if (properties != null) {
-                for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
-                    String omrsPropertyName = property.getKey();
-                    InstancePropertyValue value = property.getValue();
-                    addSearchConditionFromValue(
-                            propertyCriteria,
-                            omrsPropertyName,
-                            value,
-                            omrsPropertyMap,
-                            omrsAttrTypeDefs,
-                            (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
-                            true
-                    );
-                }
-            }
-            if (!propertyCriteria.isEmpty()) {
-                String propertyMatchDelim = " and ";
-                if (matchCriteria != null && matchCriteria.equals(MatchCriteria.ANY)) {
-                    propertyMatchDelim = " or ";
-                }
-                if (!bWhereClauseAdded) {
-                    sb.append(" where");
-                }
-                sb.append(" ");
-                sb.append(String.join(propertyMatchDelim, propertyCriteria));
-            }
-        }
+        // Run multiple searches, if there are multiple types mapped to the OMRS type...
+        List<AtlasSearchResult> totalResults = new ArrayList<>();
+        for (Map.Entry<String, String> entry : atlasTypeNamesByPrefix.entrySet()) {
 
-        // Add status limiters, if requested
-        if (limitResultsByStatus != null) {
-            List<String> states = new ArrayList<>();
-            Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
-            if (limitSet.equals(availableStates)) {
-                states.add("__state = 'DELETED'");
-                states.add("__state = 'ACTIVE'");
-            } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED)) {
-                states.add("__state = 'DELETED'");
-            } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
-                states.add("__state = 'ACTIVE'");
-            } else {
-                // Otherwise we must be searching for states that Atlas does not support
-                OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                        this.getClass().getName(),
-                        repositoryName);
-                throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                        this.getClass().getName(),
-                        methodName,
-                        errorMessage,
-                        errorCode.getSystemAction(),
-                        errorCode.getUserAction());
-            }
-            if (!states.isEmpty()) {
-                if (!bWhereClauseAdded) {
-                    sb.append(" where");
-                }
-                sb.append(" ");
-                sb.append(String.join(" or ", states));
-            }
-        }
+            String prefix = entry.getKey();
+            String atlasTypeName = entry.getValue();
+            Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName, prefix);
 
-        // Add sorting criteria, if requested
-        if (sequencingOrder != null) {
-            switch (sequencingOrder) {
-                case GUID:
-                    sb.append(" orderby __guid asc");
-                    break;
-                case LAST_UPDATE_OLDEST:
-                    sb.append(" orderby __modificationTimestamp asc");
-                    break;
-                case LAST_UPDATE_RECENT:
-                    sb.append(" orderby __modificationTimestamp desc");
-                    break;
-                case CREATION_DATE_OLDEST:
-                    sb.append(" orderby __timestamp asc");
-                    break;
-                case CREATION_DATE_RECENT:
-                    sb.append(" orderby __timestamp desc");
-                    break;
-                case PROPERTY_ASCENDING:
-                    if (sequencingProperty != null) {
-                        String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
-                        if (atlasPropertyName != null) {
-                            sb.append(" orderby ");
-                            sb.append(atlasPropertyName);
-                            sb.append(" asc");
-                        } else {
-                            if (log.isWarnEnabled()) { log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty); }
-                            sb.append(" orderby __guid asc");
-                        }
-                    } else {
-                        if (log.isWarnEnabled()) { log.warn("No property for sorting provided, defaulting to GUID."); }
+            sb.append("from ");
+            sb.append(atlasTypeName);
+            boolean bWhereClauseAdded = false;
+
+            // Add the multiple classification criteria, if requested
+            // (recall that OMRS classification name should be identical to Atlas classification name -- no translation needed)
+            if (limitResultsByClassification != null) {
+                List<String> classifications = new ArrayList<>();
+                for (String classificationName : limitResultsByClassification) {
+                    classifications.add(atlasTypeName + " isa " + classificationName);
+                }
+                if (!classifications.isEmpty()) {
+                    sb.append(" where ");
+                    sb.append(String.join(" and ", classifications));
+                    bWhereClauseAdded = true;
+                }
+            }
+
+            // Add match properties, if requested
+            if (matchProperties != null) {
+                List<String> propertyCriteria = new ArrayList<>();
+                Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
+                // By default, include only Referenceable's properties (as these will be the only properties that exist
+                // across ALL entity types)
+                Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
+                if (properties != null) {
+                    for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
+                        String omrsPropertyName = property.getKey();
+                        InstancePropertyValue value = property.getValue();
+                        addSearchConditionFromValue(
+                                propertyCriteria,
+                                omrsPropertyName,
+                                value,
+                                omrsPropertyMap,
+                                omrsAttrTypeDefs,
+                                (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
+                                true
+                        );
+                    }
+                }
+                if (!propertyCriteria.isEmpty()) {
+                    String propertyMatchDelim = " and ";
+                    if (matchCriteria != null && matchCriteria.equals(MatchCriteria.ANY)) {
+                        propertyMatchDelim = " or ";
+                    }
+                    if (!bWhereClauseAdded) {
+                        sb.append(" where");
+                    }
+                    sb.append(" ");
+                    sb.append(String.join(propertyMatchDelim, propertyCriteria));
+                }
+            }
+
+            // Add status limiters, if requested
+            if (limitResultsByStatus != null) {
+                List<String> states = new ArrayList<>();
+                Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
+                if (limitSet.equals(availableStates)) {
+                    states.add("__state = 'DELETED'");
+                    states.add("__state = 'ACTIVE'");
+                } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED)) {
+                    states.add("__state = 'DELETED'");
+                } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
+                    states.add("__state = 'ACTIVE'");
+                } else {
+                    // Otherwise we must be searching for states that Atlas does not support
+                    OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
+                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                            this.getClass().getName(),
+                            repositoryName);
+                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                            this.getClass().getName(),
+                            methodName,
+                            errorMessage,
+                            errorCode.getSystemAction(),
+                            errorCode.getUserAction());
+                }
+                if (!states.isEmpty()) {
+                    if (!bWhereClauseAdded) {
+                        sb.append(" where");
+                    }
+                    sb.append(" ");
+                    sb.append(String.join(" or ", states));
+                }
+            }
+
+            // Add sorting criteria, if requested
+            if (sequencingOrder != null) {
+                switch (sequencingOrder) {
+                    case GUID:
                         sb.append(" orderby __guid asc");
-                    }
-                    break;
-                case PROPERTY_DESCENDING:
-                    if (sequencingProperty != null) {
-                        String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
-                        if (atlasPropertyName != null) {
-                            sb.append(" orderby ");
-                            sb.append(atlasPropertyName);
-                            sb.append(" desc");
+                        break;
+                    case LAST_UPDATE_OLDEST:
+                        sb.append(" orderby __modificationTimestamp asc");
+                        break;
+                    case LAST_UPDATE_RECENT:
+                        sb.append(" orderby __modificationTimestamp desc");
+                        break;
+                    case CREATION_DATE_OLDEST:
+                        sb.append(" orderby __timestamp asc");
+                        break;
+                    case CREATION_DATE_RECENT:
+                        sb.append(" orderby __timestamp desc");
+                        break;
+                    case PROPERTY_ASCENDING:
+                        if (sequencingProperty != null) {
+                            String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
+                            if (atlasPropertyName != null) {
+                                sb.append(" orderby ");
+                                sb.append(atlasPropertyName);
+                                sb.append(" asc");
+                            } else {
+                                if (log.isWarnEnabled()) {
+                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
+                                }
+                                sb.append(" orderby __guid asc");
+                            }
                         } else {
-                            if (log.isWarnEnabled()) { log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty); }
+                            if (log.isWarnEnabled()) {
+                                log.warn("No property for sorting provided, defaulting to GUID.");
+                            }
                             sb.append(" orderby __guid asc");
                         }
-                    } else {
-                        if (log.isWarnEnabled()) { log.warn("No property for sorting provided, defaulting to GUID."); }
-                        sb.append(" orderby __guid desc");
-                    }
-                    break;
-                default:
-                    // Do nothing -- no sorting
-                    break;
+                        break;
+                    case PROPERTY_DESCENDING:
+                        if (sequencingProperty != null) {
+                            String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
+                            if (atlasPropertyName != null) {
+                                sb.append(" orderby ");
+                                sb.append(atlasPropertyName);
+                                sb.append(" desc");
+                            } else {
+                                if (log.isWarnEnabled()) {
+                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
+                                }
+                                sb.append(" orderby __guid asc");
+                            }
+                        } else {
+                            if (log.isWarnEnabled()) {
+                                log.warn("No property for sorting provided, defaulting to GUID.");
+                            }
+                            sb.append(" orderby __guid desc");
+                        }
+                        break;
+                    default:
+                        // Do nothing -- no sorting
+                        break;
+                }
             }
+
+            // Add paging criteria, if requested
+            if (pageSize > 0) {
+                sb.append(" limit ");
+                sb.append(pageSize);
+            }
+            // TODO: can we use fromEntityElement already here if there is a multi-type map?
+            if (fromEntityElement > 0) {
+                sb.append(" offset ");
+                sb.append(fromEntityElement);
+            }
+
+            AtlasSearchResult results = atlasRepositoryConnector.searchWithDSL(sb.toString());
+            if (results != null) {
+                totalResults.add(results);
+            }
+
         }
 
-        // Add paging criteria, if requested
-        if (pageSize > 0) {
-            sb.append(" limit ");
-            sb.append(pageSize);
-        }
-        if (fromEntityElement > 0) {
-            sb.append(" offset ");
-            sb.append(fromEntityElement);
-        }
-
-        return atlasRepositoryConnector.searchWithDSL(sb.toString());
+        return combineMultipleResults(totalResults, fromEntityElement, sequencingProperty, sequencingOrder, pageSize);
 
     }
 
@@ -2101,108 +2165,143 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @return {@code List<EntityDetail>}
      * @throws FunctionNotSupportedException when attempting to search based on a status that is not supported in Atlas
      */
-    private AtlasSearchResult buildAndRunBasicSearch(String methodName,
-                                                     String entityTypeGUID,
-                                                     String limitResultsByClassification,
-                                                     InstanceProperties matchProperties,
-                                                     MatchCriteria matchCriteria,
-                                                     String fullTextQuery,
-                                                     int fromEntityElement,
-                                                     List<InstanceStatus> limitResultsByStatus,
-                                                     int pageSize) throws FunctionNotSupportedException {
-
-        // Otherwise Atlas's "basic" search is likely to be significantly faster
-        SearchParameters searchParameters = new SearchParameters();
-        searchParameters.setIncludeClassificationAttributes(true);
-        searchParameters.setIncludeSubClassifications(true);
-        searchParameters.setIncludeSubTypes(true);
-        searchParameters.setOffset(fromEntityElement);
-        searchParameters.setLimit(pageSize);
+    private List<AtlasEntityHeader> buildAndRunBasicSearch(String methodName,
+                                                           String entityTypeGUID,
+                                                           String limitResultsByClassification,
+                                                           InstanceProperties matchProperties,
+                                                           MatchCriteria matchCriteria,
+                                                           String fullTextQuery,
+                                                           int fromEntityElement,
+                                                           List<InstanceStatus> limitResultsByStatus,
+                                                           int pageSize) throws FunctionNotSupportedException {
 
         String omrsTypeName = "Referenceable";
+        Map<String, String> atlasTypeNamesByPrefix = new HashMap<>();
         if (entityTypeGUID != null) {
             TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
             if (typeDef != null) {
                 omrsTypeName = typeDef.getName();
-                String atlasTypeName = typeDefStore.getMappedAtlasTypeDefName(omrsTypeName);
-                searchParameters.setTypeName(atlasTypeName);
+                atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
             } else {
                 if (log.isWarnEnabled()) {
                     log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID);
                 }
             }
+        } else {
+            atlasTypeNamesByPrefix.put(null, omrsTypeName);
         }
 
-        if (matchProperties != null) {
-            Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
-            // By default, include only Referenceable's properties (as these will be the only properties that exist
-            // across ALL entity types)
-            Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName);
-            Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
-            if (properties != null) {
-                List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
-                for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
-                    String omrsPropertyName = property.getKey();
-                    InstancePropertyValue value = property.getValue();
-                    addSearchConditionFromValue(
-                            criteria,
-                            omrsPropertyName,
-                            value,
-                            omrsPropertyMap,
-                            omrsAttrTypeDefs,
-                            (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
-                            false
-                    );
-                }
-                SearchParameters.FilterCriteria entityFilters = new SearchParameters.FilterCriteria();
-                entityFilters.setCriterion(criteria);
-                if (matchCriteria != null) {
-                    switch (matchCriteria) {
-                        case ALL:
-                        case NONE:
-                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
-                            break;
-                        case ANY:
-                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
-                            break;
+        List<AtlasSearchResult> totalResults = new ArrayList<>();
+        for (Map.Entry<String, String> entry : atlasTypeNamesByPrefix.entrySet()) {
+
+            String prefix = entry.getKey();
+            String atlasTypeName = entry.getValue();
+
+            // Otherwise Atlas's "basic" search is likely to be significantly faster
+            SearchParameters searchParameters = new SearchParameters();
+            searchParameters.setTypeName(atlasTypeName);
+            searchParameters.setIncludeClassificationAttributes(true);
+            searchParameters.setIncludeSubClassifications(true);
+            searchParameters.setIncludeSubTypes(true);
+            // TODO: can we use fromEntityElement already here if there is a multi-type map?
+            searchParameters.setOffset(fromEntityElement);
+            searchParameters.setLimit(pageSize);
+
+            if (matchProperties != null) {
+                Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
+                // By default, include only Referenceable's properties (as these will be the only properties that exist
+                // across ALL entity types)
+                Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName, prefix);
+                Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
+                if (properties != null) {
+                    List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
+                    for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
+                        String omrsPropertyName = property.getKey();
+                        InstancePropertyValue value = property.getValue();
+                        addSearchConditionFromValue(
+                                criteria,
+                                omrsPropertyName,
+                                value,
+                                omrsPropertyMap,
+                                omrsAttrTypeDefs,
+                                (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
+                                false
+                        );
                     }
-                } else {
-                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                    SearchParameters.FilterCriteria entityFilters = new SearchParameters.FilterCriteria();
+                    entityFilters.setCriterion(criteria);
+                    if (matchCriteria != null) {
+                        switch (matchCriteria) {
+                            case ALL:
+                            case NONE:
+                                entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                                break;
+                            case ANY:
+                                entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                                break;
+                        }
+                    } else {
+                        entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                    }
+                    searchParameters.setEntityFilters(entityFilters);
                 }
-                searchParameters.setEntityFilters(entityFilters);
+            } else if (fullTextQuery != null) {
+                searchParameters.setQuery(fullTextQuery);
             }
-        } else if (fullTextQuery != null) {
-            searchParameters.setQuery(fullTextQuery);
-        }
 
-        if (limitResultsByStatus != null) {
-            Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
-            if (limitSet.equals(availableStates) || (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED))) {
-                // If we're to search for deleted, do not exclude deleted
-                searchParameters.setExcludeDeletedEntities(false);
-            } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
-                // Otherwise if we are only after active, do exclude deleted
-                searchParameters.setExcludeDeletedEntities(true);
-            } else {
-                // Otherwise we must be searching for states that Atlas does not support
-                OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                        this.getClass().getName(),
-                        repositoryName);
-                throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                        this.getClass().getName(),
-                        methodName,
-                        errorMessage,
-                        errorCode.getSystemAction(),
-                        errorCode.getUserAction());
+            if (limitResultsByStatus != null) {
+                Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
+                if (limitSet.equals(availableStates) || (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED))) {
+                    // If we're to search for deleted, do not exclude deleted
+                    searchParameters.setExcludeDeletedEntities(false);
+                } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
+                    // Otherwise if we are only after active, do exclude deleted
+                    searchParameters.setExcludeDeletedEntities(true);
+                } else {
+                    // Otherwise we must be searching for states that Atlas does not support
+                    OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
+                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                            this.getClass().getName(),
+                            repositoryName);
+                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                            this.getClass().getName(),
+                            methodName,
+                            errorMessage,
+                            errorCode.getSystemAction(),
+                            errorCode.getUserAction());
+                }
             }
+
+            if (limitResultsByClassification != null) {
+                searchParameters.setClassification(limitResultsByClassification);
+            }
+
+            AtlasSearchResult results = atlasRepositoryConnector.searchForEntities(searchParameters);
+            totalResults.add(results);
+
         }
 
-        if (limitResultsByClassification != null) {
-            searchParameters.setClassification(limitResultsByClassification);
+        return combineMultipleResults(totalResults, fromEntityElement, null, null, pageSize);
+
+    }
+
+    private List<AtlasEntityHeader> combineMultipleResults(List<AtlasSearchResult> resultsList,
+                                                           int fromElement,
+                                                           String sequencingProperty,
+                                                           SequencingOrder sequencingOrder,
+                                                           int pageSize) {
+
+        List<AtlasEntityHeader> totalResults = new ArrayList<>();
+        for (AtlasSearchResult result : resultsList) {
+            totalResults.addAll(result.getEntities());
         }
 
-        return atlasRepositoryConnector.searchForEntities(searchParameters);
+        if (resultsList.size() > 1) {
+            // TODO: need to potentially re-sort and re-limit the results,
+            //  if we ran the search against more than one type (will need Comparators for this part)
+        }
+
+        return totalResults;
 
     }
 
@@ -2469,6 +2568,56 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             if (log.isWarnEnabled()) { log.warn("Unable to add search condition, no OMRS property: {}", value); }
         }
 
+    }
+
+    /**
+     * Retrieves the Atlas GUID from a generated GUID (or the GUID if it is not generated).
+     *
+     * @param guid the guid to translate
+     * @return String
+     */
+    public static final String getGuidFromGeneratedId(String guid) {
+        if (isGeneratedGUID(guid)) {
+            return guid
+                    .substring(guid.indexOf(GENERATED_TYPE_POSTFIX) + GENERATED_TYPE_POSTFIX.length());
+        } else {
+            return guid;
+        }
+    }
+
+    /**
+     * Retrieves the generated prefix from a generated GUID (or null if the GUID is not generated).
+     *
+     * @param guid the guid from which to retrieve the prefix
+     * @return String
+     */
+    public static final String getPrefixFromGeneratedId(String guid) {
+        if (isGeneratedGUID(guid)) {
+            return guid
+                    .substring(GENERATED_TYPE_PREFIX.length(), guid.indexOf(GENERATED_TYPE_POSTFIX));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Indicates whether the provided GUID was generated (true) or not (false).
+     *
+     * @param guid the guid to test
+     * @return boolean
+     */
+    public static final boolean isGeneratedGUID(String guid) {
+        return guid.startsWith(GENERATED_TYPE_PREFIX);
+    }
+
+    /**
+     * Generates a unique type prefix for GUIDs based on the provided moniker.
+     *
+     * @param moniker a repeatable way by which to refer to the type
+     * @return String
+     */
+    public static final String generateTypePrefix(String moniker) {
+        return GENERATED_TYPE_PREFIX + moniker + GENERATED_TYPE_POSTFIX;
     }
 
     /**

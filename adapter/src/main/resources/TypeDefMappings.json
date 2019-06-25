@@ -506,5 +506,202 @@
   {
     "atlas": "Process",
     "omrs": "Process"
+  },
+  {
+    "atlas": "hive_db",
+    "omrs": "DeployedDatabaseSchema",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_db",
+    "omrs": "Connection",
+    "prefix": "DBC",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_db",
+    "omrs": "ConnectionToAsset",
+    "prefix": "DBCTA",
+    "endpointMappings": [
+      {
+        "omrs": "connections",
+        "prefix": "DBC"
+      },
+      {
+        "omrs": "asset"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_db",
+    "omrs": "Endpoint",
+    "prefix": "DBE",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_db",
+    "omrs": "ConnectionEndpoint",
+    "prefix": "DBCE",
+    "endpointMappings": [
+      {
+        "omrs": "connectionEndpoint",
+        "prefix": "DBE"
+      },
+      {
+        "omrs": "connections",
+        "prefix": "DBC"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table_db",
+    "omrs": "AssetSchemaType",
+    "endpointMappings": [
+      {
+        "omrs": "describesAssets",
+        "atlas": "db"
+      },
+      {
+        "omrs": "schema",
+        "atlas": "tables",
+        "prefix": "RTT"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_storagedesc",
+    "omrs": "RelationalDBSchemaType",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table_storagedesc",
+    "omrs": "AttributeForSchema",
+    "endpointMappings": [
+      {
+        "omrs": "parentSchemas",
+        "atlas": "sd"
+      },
+      {
+        "omrs": "attributes",
+        "atlas": "table"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table",
+    "omrs": "RelationalTable",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "comment",
+        "omrs": "comment"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table",
+    "omrs": "RelationalTableType",
+    "prefix": "RTT",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table",
+    "omrs": "SchemaAttributeType",
+    "prefix": "RTTSAT",
+    "endpointMappings": [
+      {
+        "omrs": "usedInSchemas"
+      },
+      {
+        "omrs": "type",
+        "prefix": "RTT"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_column",
+    "omrs": "RelationalColumn",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_column",
+    "omrs": "RelationalColumnType",
+    "prefix": "RCT",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_column",
+    "omrs": "SchemaAttributeType",
+    "prefix": "RCTSAT",
+    "endpointMappings": [
+      {
+        "omrs": "usedInSchemas"
+      },
+      {
+        "omrs": "type",
+        "prefix": "RCT"
+      }
+    ]
+  },
+  {
+    "atlas": "hive_table_columns",
+    "omrs": "AttributeForSchema",
+    "endpointMappings": [
+      {
+        "omrs": "parentSchemas",
+        "atlas": "table",
+        "prefix": "RTT"
+      },
+      {
+        "omrs": "attributes",
+        "atlas": "columns"
+      }
+    ]
   }
 ]
