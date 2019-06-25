@@ -88,7 +88,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Versions of dependent libraries -->
-        <spring-web.version>5.1.5.RELEASE</spring-web.version>
+        <apacheatlas.version>2.0.0</apacheatlas.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <jackson.version>2.9.9</jackson.version>
+        <spring.version>5.1.5.RELEASE</spring.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
@@ -106,19 +109,161 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>${spring-web.version}</version>
+                <artifactId>spring-core</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>2.1.1</version>
+            </dependency>
+            <!-- TODO: use below instead of more detailed dependencies, once it actually builds as a package
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>open-metadata-adapter-package</artifactId>
+                <version>${open-metadata.version}</version>
+            </dependency> -->
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>repository-services-apis</artifactId>
+                <version>${open-metadata.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>open-connector-framework</artifactId>
+                <version>${open-metadata.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-common</artifactId>
+                <version>${apacheatlas.version}</version>
+                <exclusions>
+                    <!-- Ensure Jackson remains in line with rest of Egeria (not overridden by Apache Atlas embedded version) -->
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-client-v2</artifactId>
+                <version>${apacheatlas.version}</version>
+                <exclusions>
+                    <!-- Ensure Jackson remains in line with rest of Egeria (not overridden by Apache Atlas embedded version) -->
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-notification</artifactId>
+                <version>${apacheatlas.version}</version>
+                <exclusions>
+                    <!-- Ensure Jackson remains in line with rest of Egeria (not overridden by Apache Atlas embedded version) -->
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-intg</artifactId>
+                <version>${apacheatlas.version}</version>
+                <exclusions>
+                    <!-- Ensure Jackson remains in line with rest of Egeria (not overridden by Apache Atlas embedded version) -->
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-client-common</artifactId>
+                <version>${apacheatlas.version}</version>
+                <exclusions>
+                    <!-- Ensure Jackson remains in line with rest of Egeria (not overridden by Apache Atlas embedded version) -->
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>jsr311-api</artifactId>
+                <version>1.1.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.odpi.egeria</groupId>
-            <artifactId>open-metadata-adapter-package</artifactId>
-            <version>${open-metadata.version}</version>
-        </dependency>
+
     </dependencies>
 
     <!-- TODO: temporarily pull from ODPi snapshot repo for Maven, until snapshots are available in Maven Central -->
@@ -308,6 +453,37 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Check no unnecessary or missing dependencies           -->
+            <!-- Note test scope dependencies can't be reliably checked -->
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <outputXML>true</outputXML>
+                            <ignoredUnusedDeclaredDependencies>
+                                <!-- Test dependencies - should only be used in test scope. False positive from dependency check -->
+                                <ignoredUnusedDeclaredDependency>org.junit.jupiter:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.mockito:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.testng:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>junit:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.junit.platform:*</ignoredUnusedDeclaredDependency>
+                                <!-- Used with slf4j as default implementation in test scope only -->
+                                <ignoredUnusedDeclaredDependency>ch.qos.logback:*</ignoredUnusedDeclaredDependency>
+                                <!-- Ignore these as used for packaging -->
+                                <ignoredUnusedDeclaredDependency>org.odpi.egeria:egeria-connector-apache-atlas-adapter:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.apache.atlas:atlas-common:*</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
