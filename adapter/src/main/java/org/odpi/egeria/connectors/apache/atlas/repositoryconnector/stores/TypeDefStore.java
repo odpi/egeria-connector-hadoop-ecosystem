@@ -118,6 +118,8 @@ public class TypeDefStore {
                         MappingFromFile endpoint1 = endpoints.get(0);
                         MappingFromFile endpoint2 = endpoints.get(1);
                         EndpointMapping endpointMapping = new EndpointMapping(
+                                atlasName,
+                                omrsName,
                                 endpoint1.getAtlasName(),
                                 endpoint1.getOMRSName(),
                                 endpoint1.getPrefix(),
@@ -252,6 +254,31 @@ public class TypeDefStore {
         } else {
             return Endpoint.UNDEFINED;
         }
+    }
+
+    /**
+     * Retrieve the relationship endpoint mapping from the Apache Atlas details provided.
+     *
+     * @param atlasTypeName the name of the Apache Atlas type definition
+     * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
+     * @return EndpointMapping
+     */
+    public EndpointMapping getEndpointMappingFromAtlasName(String atlasTypeName, String entityPrefix) {
+        if (atlasNameToEndpointMapByPrefix.containsKey(atlasTypeName)) {
+            return atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(entityPrefix, null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve all endpoint mappings (relationships) that are mapped for the provided Apache Atlas type.
+     *
+     * @param atlasTypeName the name of the Apache Atlas type definition
+     * @return {@code Map<String, EndpointMapping>}
+     */
+    public Map<String, EndpointMapping> getAllEndpointMappingsFromAtlasName(String atlasTypeName) {
+        return atlasNameToEndpointMapByPrefix.getOrDefault(atlasTypeName, null);
     }
 
     /**
@@ -500,6 +527,8 @@ public class TypeDefStore {
      */
     public final class EndpointMapping {
 
+        private String atlasRelationshipTypeName;
+        private String omrsRelationshipTypeName;
         private String atlas1;
         private String atlas2;
         private String omrs1;
@@ -507,7 +536,16 @@ public class TypeDefStore {
         private String prefix1;
         private String prefix2;
 
-        EndpointMapping(String atlas1, String omrs1, String prefix1, String atlas2, String omrs2, String prefix2) {
+        EndpointMapping(String atlasRelationshipTypeName,
+                        String omrsRelationshipTypeName,
+                        String atlas1,
+                        String omrs1,
+                        String prefix1,
+                        String atlas2,
+                        String omrs2,
+                        String prefix2) {
+            this.atlasRelationshipTypeName = atlasRelationshipTypeName;
+            this.omrsRelationshipTypeName = omrsRelationshipTypeName;
             this.atlas1 = atlas1;
             this.atlas2 = atlas2;
             this.omrs1 = omrs1;
@@ -523,7 +561,7 @@ public class TypeDefStore {
          * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
          * @return Endpoint
          */
-        Endpoint getMatchingOmrsEndpoint(String atlasEndpointName, String entityPrefix) {
+        public Endpoint getMatchingOmrsEndpoint(String atlasEndpointName, String entityPrefix) {
             if (atlasEndpointName != null) {
                 // If there is a named Atlas endpoint, check that the prefixes are the same before choosing an endpoint
                 if (atlasEndpointName.equals(atlas1) && samePrefixes(prefix1, entityPrefix)) {
@@ -548,7 +586,7 @@ public class TypeDefStore {
          * @param omrsEndpointName the OMRS endpoint attribute name
          * @return Endpoint
          */
-        Endpoint getMatchingAtlasEndpoint(String omrsEndpointName, String entityPrefix) {
+        public Endpoint getMatchingAtlasEndpoint(String omrsEndpointName, String entityPrefix) {
             if (omrsEndpointName != null) {
                 if (omrsEndpointName.equals(omrs1) && samePrefixes(prefix1, entityPrefix)) {
                     return Endpoint.ONE;
@@ -564,6 +602,11 @@ public class TypeDefStore {
             }
             return Endpoint.UNDEFINED;
         }
+
+        public String getPrefixOne() { return prefix1; }
+        public String getPrefixTwo() { return prefix2; }
+        public String getAtlasRelationshipTypeName() { return atlasRelationshipTypeName; }
+        public String getOmrsRelationshipTypeName() { return omrsRelationshipTypeName; }
 
         /**
          * Indicates whether the two prefixes are the same (true) or not (false).
