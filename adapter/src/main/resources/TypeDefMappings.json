@@ -514,6 +514,22 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      },
+      {
+        "atlas": "ownerType",
+        "omrs": "ownerType"
       }
     ]
   },
@@ -525,6 +541,18 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "clusterName",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "parameters",
+        "omrs": "configurationProperties"
       }
     ]
   },
@@ -550,6 +578,18 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "clusterName",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "location",
+        "omrs": "networkAddress"
       }
     ]
   },
@@ -590,6 +630,10 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "inputFormat",
+        "omrs": "encodingStandard"
       }
     ]
   },
@@ -626,6 +670,10 @@
       {
         "atlas": "comment",
         "omrs": "comment"
+      },
+      {
+        "atlas": "tableType",
+        "omrs": "nativeClass"
       }
     ]
   },
@@ -637,6 +685,14 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "author"
       }
     ]
   },
@@ -661,6 +717,22 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "position",
+        "omrs": "position"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "comment",
+        "omrs": "comment"
       }
     ]
   },
@@ -672,6 +744,18 @@
       {
         "atlas": "qualifiedName",
         "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "author"
+      },
+      {
+        "atlas": "type",
+        "omrs": "dataType"
       }
     ]
   },
