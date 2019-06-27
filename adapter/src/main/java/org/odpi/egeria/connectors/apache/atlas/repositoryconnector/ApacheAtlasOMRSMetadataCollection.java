@@ -1313,7 +1313,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = null;
         if (results != null) {
-            entityDetails = getEntityDetailsFromAtlasResults(results, userId);
+            entityDetails = sortAndLimitFinalResults(
+                    results,
+                    fromEntityElement,
+                    sequencingProperty,
+                    sequencingOrder,
+                    pageSize,
+                    userId
+            );
         }
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
@@ -1510,7 +1517,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             atlasEntities = results;
         }
 
-        List<EntityDetail> entityDetails = getEntityDetailsFromAtlasResults(atlasEntities, userId);
+        List<EntityDetail> entityDetails = sortAndLimitFinalResults(
+                atlasEntities,
+                fromEntityElement,
+                sequencingProperty,
+                sequencingOrder,
+                pageSize,
+                userId
+        );
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
     }
@@ -1689,7 +1703,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = null;
         if (results != null) {
-            entityDetails = getEntityDetailsFromAtlasResults(results, userId);
+            entityDetails = sortAndLimitFinalResults(
+                    results,
+                    fromEntityElement,
+                    sequencingProperty,
+                    sequencingOrder,
+                    pageSize,
+                    userId
+            );
         }
         return (entityDetails == null || entityDetails.isEmpty()) ? null : entityDetails;
 
@@ -2139,7 +2160,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         }
 
-        return combineMultipleResults(totalResults, fromEntityElement, sequencingProperty, sequencingOrder, pageSize);
+        return combineMultipleResults(totalResults);
 
     }
 
@@ -2281,24 +2302,67 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         }
 
-        return combineMultipleResults(totalResults, fromEntityElement, null, null, pageSize);
+        return combineMultipleResults(totalResults);
 
     }
 
-    private List<AtlasEntityHeader> combineMultipleResults(List<AtlasSearchResult> resultsList,
-                                                           int fromElement,
-                                                           String sequencingProperty,
-                                                           SequencingOrder sequencingOrder,
-                                                           int pageSize) {
-
-        List<AtlasEntityHeader> totalResults = new ArrayList<>();
-        for (AtlasSearchResult result : resultsList) {
-            totalResults.addAll(result.getEntities());
+    /**
+     * Combine a list of Apache Atlas results into a single list of atlas entities.
+     *
+     * @param resultsList the list of multiple Apache Atlas search results
+     * @return {@code List<AtlasEntityHeader>}
+     */
+    private List<AtlasEntityHeader> combineMultipleResults(List<AtlasSearchResult> resultsList) {
+        if (resultsList == null || resultsList.isEmpty()) {
+            return null;
+        } else if (resultsList.size() == 1) {
+            return resultsList.get(0).getEntities();
+        } else {
+            List<AtlasEntityHeader> totalResults = new ArrayList<>();
+            for (AtlasSearchResult result : resultsList) {
+                totalResults.addAll(result.getEntities());
+            }
+            return totalResults;
         }
+    }
 
-        if (resultsList.size() > 1) {
-            // TODO: need to potentially re-sort and re-limit the results,
-            //  if we ran the search against more than one type (will need Comparators for this part)
+    /**
+     * Sort the list of results and limit based on the provided parameters.
+     *
+     * @param results the Apache Atlas results to sort and limit
+     * @param fromElement the starting element to include in the limited results
+     * @param sequencingProperty the property by which to sort the results (or null, if not sorting by property)
+     * @param sequencingOrder the order by which to sort the results
+     * @param pageSize the number of results to include in this page
+     * @param userId the user through which to translate the results
+     * @return
+     * @throws InvalidParameterException the guid is null.
+     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
+     *                                  the metadata collection is stored.
+     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     */
+    private List<EntityDetail> sortAndLimitFinalResults(List<AtlasEntityHeader> results,
+                                                        int fromElement,
+                                                        String sequencingProperty,
+                                                        SequencingOrder sequencingOrder,
+                                                        int pageSize,
+                                                        String userId) throws
+            InvalidParameterException,
+            RepositoryErrorException,
+            UserNotAuthorizedException {
+
+        List<EntityDetail> totalResults = new ArrayList<>();
+        totalResults.addAll(getEntityDetailsFromAtlasResults(results, userId));
+
+        // TODO: send something in that determines whether re-sorting the results is actually necessary?
+        // Need to potentially re-sort and re-limit the results, if we ran the search against more than one type
+        Comparator<EntityDetail> comparator = SequencingUtils.getEntityDetailComparator(sequencingOrder, sequencingProperty);
+        if (comparator != null) {
+            totalResults.sort(comparator);
+        }
+        int endOfPageMarker = Math.min(fromElement + pageSize, totalResults.size());
+        if (fromElement != 0 || endOfPageMarker < totalResults.size()) {
+            totalResults = totalResults.subList(fromElement, endOfPageMarker);
         }
 
         return totalResults;

@@ -372,65 +372,9 @@ public class EntityMappingAtlas2OMRS {
         }
 
         // Now sort the results, if requested
-        Comparator<Relationship> comparator = null;
-        if (sequencingOrder != null) {
-            switch (sequencingOrder) {
-                case GUID:
-                    comparator = Comparator.comparing(Relationship::getGUID);
-                    break;
-                case LAST_UPDATE_OLDEST:
-                    comparator = Comparator.comparing(Relationship::getUpdateTime);
-                    break;
-                case LAST_UPDATE_RECENT:
-                    comparator = Comparator.comparing(Relationship::getUpdateTime).reversed();
-                    break;
-                case CREATION_DATE_OLDEST:
-                    comparator = Comparator.comparing(Relationship::getCreateTime);
-                    break;
-                case CREATION_DATE_RECENT:
-                    comparator = Comparator.comparing(Relationship::getCreateTime).reversed();
-                    break;
-                case PROPERTY_ASCENDING:
-                    if (sequencingProperty != null) {
-                        comparator = (a, b) -> {
-                            InstanceProperties p1 = a.getProperties();
-                            InstanceProperties p2 = b.getProperties();
-                            InstancePropertyValue v1 = null;
-                            InstancePropertyValue v2 = null;
-                            if (p1 != null) {
-                                v1 = p1.getPropertyValue(sequencingProperty);
-                            }
-                            if (p2 != null) {
-                                v2 = p2.getPropertyValue(sequencingProperty);
-                            }
-                            return AttributeMapping.compareInstanceProperty(v1, v2);
-                        };
-                    }
-                    break;
-                case PROPERTY_DESCENDING:
-                    if (sequencingProperty != null) {
-                        comparator = (b, a) -> {
-                            InstanceProperties p1 = a.getProperties();
-                            InstanceProperties p2 = b.getProperties();
-                            InstancePropertyValue v1 = null;
-                            InstancePropertyValue v2 = null;
-                            if (p1 != null) {
-                                v1 = p1.getPropertyValue(sequencingProperty);
-                            }
-                            if (p2 != null) {
-                                v2 = p2.getPropertyValue(sequencingProperty);
-                            }
-                            return AttributeMapping.compareInstanceProperty(v1, v2);
-                        };
-                    }
-                    break;
-                default:
-                    // Do nothing -- no sorting
-                    break;
-            }
-            if (comparator != null) {
-                omrsRelationships.sort(comparator);
-            }
+        Comparator<Relationship> comparator = SequencingUtils.getRelationshipComparator(sequencingOrder, sequencingProperty);
+        if (comparator != null) {
+            omrsRelationships.sort(comparator);
         }
 
         // And finally limit the results, if requested
