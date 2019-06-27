@@ -320,7 +320,6 @@ public class EntityMappingAtlas2OMRS {
                 String relationshipPrefix = entry.getKey();
                 TypeDefStore.EndpointMapping mapping = entry.getValue();
                 // Only generate the generated relationships (normally-mapped should be covered already above)
-                // TODO: assumes that all generated relationships have the same Atlas entity on both ends
                 if (relationshipPrefix != null) {
                     EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
                             atlasRepositoryConnector,
