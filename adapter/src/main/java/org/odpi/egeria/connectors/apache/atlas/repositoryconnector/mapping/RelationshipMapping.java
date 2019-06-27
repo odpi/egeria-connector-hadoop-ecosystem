@@ -82,14 +82,14 @@ public class RelationshipMapping {
             EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
                     atlasRepositoryConnector,
                     typeDefStore,
-                    atlasRepositoryConnector.getEntityByGUID(atlasEp1.getGuid(), true, true),
+                    atlasRepositoryConnector.getEntityByGUID(atlasEp1.getGuid(), true, true).getEntity(),
                     null,
                     userId
             );
             EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
                     atlasRepositoryConnector,
                     typeDefStore,
-                    atlasRepositoryConnector.getEntityByGUID(atlasEp2.getGuid(), true, true),
+                    atlasRepositoryConnector.getEntityByGUID(atlasEp2.getGuid(), true, true).getEntity(),
                     null,
                     userId
             );
@@ -298,19 +298,18 @@ public class RelationshipMapping {
      *
      * @param atlasRepositoryConnector OMRS connector to the Apache Atlas repository
      * @param typeDefStore store of mapped TypeDefs
-     * @param fullAtlasObj the Apache Atlas object for which to retrieve an EntityProxy
+     * @param atlasObj the Apache Atlas object for which to retrieve an EntityProxy
      * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
      * @param userId the user through which to retrieve the EntityProxy (unused)
      * @return EntityProxy
      */
-    static EntityProxy getEntityProxyForObject(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
-                                               TypeDefStore typeDefStore,
-                                               AtlasEntity.AtlasEntityWithExtInfo fullAtlasObj,
-                                               String entityPrefix,
-                                               String userId) {
+    public static EntityProxy getEntityProxyForObject(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
+                                                      TypeDefStore typeDefStore,
+                                                      AtlasEntity atlasObj,
+                                                      String entityPrefix,
+                                                      String userId) {
 
         final String methodName = "getEntityProxyForObject";
-        AtlasEntity atlasObj = fullAtlasObj.getEntity();
 
         EntityProxy entityProxy = null;
         if (atlasObj != null) {

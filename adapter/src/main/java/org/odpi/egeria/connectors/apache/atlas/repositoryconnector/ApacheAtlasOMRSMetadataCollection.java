@@ -2621,6 +2621,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
+     * Generates a unique GUID using the provided prefix and GUID components.
+     *
+     * @param moniker the prefix moniker to apply
+     * @param guid the GUID to which to prepend the prefix
+     * @return String
+     */
+    public static final String generateGuidWithPrefix(String moniker, String guid) {
+        return (moniker == null ? "" : generateTypePrefix(moniker)) + guid;
+    }
+
+    /**
      * Compare the provided OMRS TypeDef to the provided Apache Atlas TypeDef and ensure they fully cover each other.
      *
      * @param omrsTypeDef the OMRS TypeDef to compare

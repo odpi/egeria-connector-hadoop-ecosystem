@@ -283,7 +283,7 @@ public class TypeDefStore {
 
     /**
      * Retrieves all of the Apache Atlas TypeDef names that are mapped to the provided OMRS TypeDef name, or null
-     * if there is no mapping. The map returned will be keyed by prefix, and values will be the mapped OMRS TypeDef
+     * if there is no mapping. The map returned will be keyed by prefix, and values will be the mapped Atlas TypeDef
      * name for that prefix.
      *
      * @param omrsName the name of the OMRS TypeDef
@@ -317,6 +317,18 @@ public class TypeDefStore {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Retrieves all of the OMRS TypeDef names that are mapped to the provided OMRS TypeDef name, or null if there is
+     * no mapping. The map returned will be keyed by prefix, and values will be the mapped OMRS TypeDef name for that
+     * prefix.
+     *
+     * @param atlasName the name of the Apache Atlas TypeDef
+     * @return {@code Map<String, String>}
+     */
+    public Map<String, String> getAllMappedOMRSTypeDefNames(String atlasName) {
+        return atlasNameToOmrsNamesByPrefix.getOrDefault(atlasName, null);
     }
 
     /**

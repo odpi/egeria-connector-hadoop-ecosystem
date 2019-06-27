@@ -237,7 +237,7 @@ public class EntityMappingAtlas2OMRS {
                                     ep1 = RelationshipMapping.getEntityProxyForObject(
                                             atlasRepositoryConnector,
                                             typeDefStore,
-                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true),
+                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true).getEntity(),
                                             mapping == null ? null : mapping.getPrefixOne(),
                                             userId
                                     );
@@ -245,7 +245,7 @@ public class EntityMappingAtlas2OMRS {
                                     ep2 = RelationshipMapping.getEntityProxyForObject(
                                             atlasRepositoryConnector,
                                             typeDefStore,
-                                            atlasEntityWithExtInfo,
+                                            atlasEntity,
                                             prefixForSelf,
                                             userId
                                     );
@@ -255,14 +255,14 @@ public class EntityMappingAtlas2OMRS {
                                     ep1 = RelationshipMapping.getEntityProxyForObject(
                                             atlasRepositoryConnector,
                                             typeDefStore,
-                                            atlasEntityWithExtInfo,
+                                            atlasEntity,
                                             prefixForSelf,
                                             userId
                                     );
                                     ep2 = RelationshipMapping.getEntityProxyForObject(
                                             atlasRepositoryConnector,
                                             typeDefStore,
-                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true),
+                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true).getEntity(),
                                             mapping == null ? null : mapping.getPrefixTwo(),
                                             userId
                                     );
@@ -325,20 +325,20 @@ public class EntityMappingAtlas2OMRS {
                     EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
                             atlasRepositoryConnector,
                             typeDefStore,
-                            atlasEntityWithExtInfo,
+                            atlasEntity,
                             mapping.getPrefixOne(),
                             userId
                     );
                     EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
                             atlasRepositoryConnector,
                             typeDefStore,
-                            atlasEntityWithExtInfo,
+                            atlasEntity,
                             mapping.getPrefixTwo(),
                             userId
                     );
                     // TODO: assumes that all generated relationships have the same Atlas entity on both ends, and that
                     //  there are never any properties on a generated relationship
-                    String relationshipGUID = ApacheAtlasOMRSMetadataCollection.generateTypePrefix(relationshipPrefix) + atlasEntity.getGuid();
+                    String relationshipGUID = ApacheAtlasOMRSMetadataCollection.generateGuidWithPrefix(relationshipPrefix, atlasEntity.getGuid());
                     Relationship omrsRelationship = RelationshipMapping.getRelationship(
                             atlasRepositoryConnector,
                             typeDefStore,

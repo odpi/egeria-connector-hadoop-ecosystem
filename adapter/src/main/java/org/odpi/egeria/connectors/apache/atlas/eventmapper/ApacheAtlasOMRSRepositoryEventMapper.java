@@ -14,24 +14,21 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMappingAtlas2OMRS;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.RelationshipMapping;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.frameworks.connectors.Connector;
 import org.odpi.openmetadata.frameworks.connectors.VirtualConnectorExtension;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditCode;
 import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicListener;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.EntityDetail;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.Relationship;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryeventmapper.OMRSRepositoryEventMapperBase;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * ApacheAtlasOMRSRepositoryEventMapper supports the event mapper function for Apache Atlas
@@ -48,6 +45,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private String sourceName;
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private ApacheAtlasOMRSMetadataCollection atlasMetadataCollection;
+    private TypeDefStore typeDefStore;
     private String metadataCollectionId;
     private String originatorServerName;
     private String originatorServerType;
@@ -118,6 +116,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
                     e
             );
         }
+        this.typeDefStore = atlasMetadataCollection.getTypeDefStore();
         this.metadataCollectionId = atlasRepositoryConnector.getMetadataCollectionId();
         this.originatorServerName = atlasRepositoryConnector.getServerName();
         this.originatorServerType = atlasRepositoryConnector.getServerType();
@@ -269,17 +268,34 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      * @param atlasEntityHeader the new Apache Atlas entity information
      */
     private void processNewEntity(AtlasEntityHeader atlasEntityHeader) {
-        // TODO: need to check if this is a generated type, and if so send multiple entities + the relationship between
-        EntityDetail entityDetail = getMappedEntity(atlasEntityHeader, null);
-        if (entityDetail != null) {
-            repositoryEventProcessor.processNewEntityEvent(
-                    sourceName,
-                    metadataCollectionId,
-                    originatorServerName,
-                    originatorServerType,
-                    localOrganizationName,
-                    entityDetail
-            );
+        // Send an event for every entity: normal and generated
+        String atlasTypeName = atlasEntityHeader.getTypeName();
+        Map<String, String> omrsTypesByPrefix = typeDefStore.getAllMappedOMRSTypeDefNames(atlasTypeName);
+        for (String prefix : omrsTypesByPrefix.keySet()) {
+            EntityDetail entityDetail = getMappedEntity(atlasEntityHeader, prefix);
+            if (entityDetail != null) {
+                repositoryEventProcessor.processNewEntityEvent(
+                        sourceName,
+                        metadataCollectionId,
+                        originatorServerName,
+                        originatorServerType,
+                        localOrganizationName,
+                        entityDetail
+                );
+                if (prefix != null) {
+                    List<Relationship> generatedRelationships = getGeneratedRelationshipsForEntity(atlasEntityHeader, entityDetail);
+                    for (Relationship generatedRelationship : generatedRelationships) {
+                        repositoryEventProcessor.processNewRelationshipEvent(
+                                sourceName,
+                                metadataCollectionId,
+                                originatorServerName,
+                                originatorServerType,
+                                localOrganizationName,
+                                generatedRelationship
+                        );
+                    }
+                }
+            }
         }
     }
 
@@ -289,20 +305,97 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      * @param atlasEntityHeader the updated Apache Atlas entity information
      */
     private void processUpdatedEntity(AtlasEntityHeader atlasEntityHeader) {
-        // TODO: need to check if this is a generated type, and if so send multiple entities + the relationship between
-        EntityDetail entityDetail = getMappedEntity(atlasEntityHeader, null);
-        if (entityDetail != null) {
-            // TODO: find a way to pull back the old version to send in the update event
-            repositoryEventProcessor.processUpdatedEntityEvent(
-                    sourceName,
-                    metadataCollectionId,
-                    originatorServerName,
-                    originatorServerType,
-                    localOrganizationName,
-                    null,
-                    entityDetail
-            );
+        // Send an event for every entity: normal and generated
+        Map<String, String> omrsTypesByPrefix = typeDefStore.getAllMappedOMRSTypeDefNames(atlasEntityHeader.getTypeName());
+        for (String prefix : omrsTypesByPrefix.keySet()) {
+            EntityDetail entityDetail = getMappedEntity(atlasEntityHeader, prefix);
+            if (entityDetail != null) {
+                // TODO: find a way to pull back the old version to send in the update event
+                repositoryEventProcessor.processUpdatedEntityEvent(
+                        sourceName,
+                        metadataCollectionId,
+                        originatorServerName,
+                        originatorServerType,
+                        localOrganizationName,
+                        null,
+                        entityDetail
+                );
+                if (prefix != null) {
+                    List<Relationship> generatedRelationships = getGeneratedRelationshipsForEntity(atlasEntityHeader, entityDetail);
+                    for (Relationship generatedRelationship : generatedRelationships) {
+                        // TODO: find a way to pull back the old version to send in the update event
+                        repositoryEventProcessor.processUpdatedRelationshipEvent(
+                                sourceName,
+                                metadataCollectionId,
+                                originatorServerName,
+                                originatorServerType,
+                                localOrganizationName,
+                                null,
+                                generatedRelationship
+                        );
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * Generate any pseudo-relationships for the provided entity.
+     *
+     * @param atlasEntityHeader
+     * @param entityDetail
+     * @return
+     */
+    private List<Relationship> getGeneratedRelationshipsForEntity(AtlasEntityHeader atlasEntityHeader,
+                                                                  EntityDetail entityDetail) {
+
+        String atlasTypeName = atlasEntityHeader.getTypeName();
+        List<Relationship> generatedRelationships = new ArrayList<>();
+        Map<String, TypeDefStore.EndpointMapping> mappings = typeDefStore.getAllEndpointMappingsFromAtlasName(atlasTypeName);
+        for (Map.Entry<String, TypeDefStore.EndpointMapping> entry : mappings.entrySet()) {
+            String relationshipPrefix = entry.getKey();
+            if (relationshipPrefix != null) {
+                String relationshipGUID = ApacheAtlasOMRSMetadataCollection.generateGuidWithPrefix(relationshipPrefix, atlasEntityHeader.getGuid());
+                TypeDefStore.EndpointMapping mapping = entry.getValue();
+                EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        new AtlasEntity(atlasEntityHeader),
+                        mapping.getPrefixOne(),
+                        null
+                );
+                EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        new AtlasEntity(atlasEntityHeader),
+                        mapping.getPrefixTwo(),
+                        null
+                );
+                try {
+                    Relationship generatedRelationship = RelationshipMapping.getRelationship(atlasRepositoryConnector,
+                            typeDefStore,
+                            mapping.getOmrsRelationshipTypeName(),
+                            relationshipGUID,
+                            InstanceStatus.ACTIVE,
+                            ep1,
+                            ep2,
+                            entityDetail.getCreatedBy(),
+                            entityDetail.getUpdatedBy(),
+                            entityDetail.getCreateTime(),
+                            entityDetail.getUpdateTime(),
+                            null);
+                    if (generatedRelationship != null) {
+                        generatedRelationships.add(generatedRelationship);
+                    } else {
+                        log.warn("Unable to create generated relationship with prefix {}, for entity: {}", relationshipPrefix, entityDetail.getGUID());
+                    }
+                } catch(RepositoryErrorException e){
+                    log.error("Unable to create generated relationship with prefix {}, for entity: {}", relationshipPrefix, entityDetail.getGUID(), e);
+                }
+            }
+        }
+        return generatedRelationships;
+
     }
 
     /**
