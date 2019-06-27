@@ -508,6 +508,36 @@
     "omrs": "Process"
   },
   {
+    "atlas": "hdfs_path",
+    "omrs": "FileFolder",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      },
+      {
+        "atlas": "createTime",
+        "omrs": "createTime"
+      },
+      {
+        "atlas": "modifiedTime",
+        "omrs": "modifiedTime"
+      }
+    ]
+  },
+  {
     "atlas": "hive_db",
     "omrs": "Database",
     "propertyMappings": [
@@ -994,6 +1024,87 @@
       {
         "atlas": "columns",
         "omrs": "attributes"
+      }
+    ]
+  },
+  {
+    "atlas": "sqoop_dbdatastore",
+    "omrs": "DataStore",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
+  },
+  {
+    "atlas": "sqoop_dbdatastore",
+    "omrs": "Connection",
+    "prefix": "SDBD",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      }
+    ]
+  },
+  {
+    "atlas": "sqoop_dbdatastore",
+    "omrs": "ConnectionToAsset",
+    "prefix": "SDBDCTA",
+    "endpointMappings": [
+      {
+        "omrs": "connections",
+        "prefix": "SDBD"
+      },
+      {
+        "omrs": "asset"
+      }
+    ]
+  },
+  {
+    "atlas": "kafka_topic",
+    "omrs": "Topic",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      },
+      {
+        "atlas": "type",
+        "omrs": "topicType"
       }
     ]
   }
