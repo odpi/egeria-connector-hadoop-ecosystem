@@ -71,7 +71,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      */
     @Override
     public TypeDefGallery getAllTypes(String   userId) throws RepositoryErrorException,
-            UserNotAuthorizedException {
+            InvalidParameterException {
 
         final String                       methodName = "getAllTypes";
 
