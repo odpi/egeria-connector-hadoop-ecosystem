@@ -47,7 +47,8 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
         // Map entity-specific properties: supertype (if any)
         TypeDefLink supertype = omrsEntityDef.getSuperType();
         if (supertype != null) {
-            String atlasSupertypeName = typeDefStore.getMappedAtlasTypeDefName(supertype.getName());
+            // TODO: assumes all mapped superTypes remain actual defs (never generated, so never a prefix)
+            String atlasSupertypeName = typeDefStore.getMappedAtlasTypeDefName(supertype.getName(), null);
             if (atlasSupertypeName != null) {
                 Set<String> supertypes = new HashSet<>();
                 supertypes.add(atlasSupertypeName);

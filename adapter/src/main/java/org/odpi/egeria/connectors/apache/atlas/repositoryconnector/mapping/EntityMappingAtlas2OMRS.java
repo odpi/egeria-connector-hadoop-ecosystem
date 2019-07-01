@@ -3,12 +3,12 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
 import org.apache.atlas.model.instance.*;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSMetadataCollection;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.SequencingOrder;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
@@ -32,6 +32,7 @@ public class EntityMappingAtlas2OMRS {
     private AttributeTypeDefStore attributeDefStore;
     private AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo;
     private AtlasEntity atlasEntity;
+    private String prefix;
     private String userId;
 
     /**
@@ -41,18 +42,21 @@ public class EntityMappingAtlas2OMRS {
      * @param typeDefStore the store of mapped TypeDefs for the Atlas repository
      * @param attributeDefStore the store of mapped AttributeTypeDefs for the Atlas repository
      * @param instance the Atlas entity to be mapped
+     * @param prefix the prefix indicating a generated type (and GUID), or null if not generated
      * @param userId the user through which to do the mapping
      */
     public EntityMappingAtlas2OMRS(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
                                    TypeDefStore typeDefStore,
                                    AttributeTypeDefStore attributeDefStore,
                                    AtlasEntity.AtlasEntityWithExtInfo instance,
+                                   String prefix,
                                    String userId) {
         this.atlasRepositoryConnector = atlasRepositoryConnector;
         this.typeDefStore = typeDefStore;
         this.attributeDefStore = attributeDefStore;
         this.atlasEntityWithExtInfo = instance;
         this.atlasEntity = atlasEntityWithExtInfo.getEntity();
+        this.prefix = prefix;
         this.userId = userId;
     }
 
@@ -63,7 +67,7 @@ public class EntityMappingAtlas2OMRS {
      * @throws RepositoryErrorException when unable to retrieve the EntitySummary
      */
     public EntitySummary getEntitySummary() throws RepositoryErrorException {
-        EntitySummary summary = getSkeletonEntitySummary();
+        EntitySummary summary = getSkeletonEntitySummary(prefix);
         setModAndVersionDetails(summary);
         addClassifications(summary);
         return summary;
@@ -79,10 +83,11 @@ public class EntityMappingAtlas2OMRS {
 
         final String methodName = "getEntityDetail";
         String atlasTypeDefName = atlasEntity.getTypeName();
-        String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName);
+        String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
+        if (log.isInfoEnabled()) { log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName); }
 
         // Create the basic skeleton
-        EntityDetail detail = getSkeletonEntityDetail(omrsTypeDefName);
+        EntityDetail detail = getSkeletonEntityDetail(omrsTypeDefName, prefix);
 
         // Then apply the instance-specific mapping
         if (detail != null) {
@@ -94,7 +99,7 @@ public class EntityMappingAtlas2OMRS {
             Map<String, TypeDefAttribute> omrsAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeDefName);
 
             // Iterate through the provided mappings to set an OMRS instance property for each one
-            Map<String, String> atlasToOmrsProperties = typeDefStore.getPropertyMappingsForAtlasTypeDef(atlasTypeDefName);
+            Map<String, String> atlasToOmrsProperties = typeDefStore.getPropertyMappingsForAtlasTypeDef(atlasTypeDefName, prefix);
             Map<String, Object> atlasProperties = atlasEntity.getAttributes();
             if (atlasProperties != null) {
                 Set<String> alreadyMapped = new HashSet<>();
@@ -178,7 +183,7 @@ public class EntityMappingAtlas2OMRS {
 
         final String methodName = "getRelationships";
         List<Relationship> omrsRelationships = new ArrayList<>();
-        OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
+        //OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
         String repositoryName = atlasRepositoryConnector.getRepositoryName();
 
         // We have all the relationships from Atlas (no way to limit the query), so we will iterate
@@ -202,12 +207,15 @@ public class EntityMappingAtlas2OMRS {
                 relationshipAssignments.add((LinkedHashMap) atlasRelationshipValue);
             }
 
+            // Handle actual relationships in Atlas
             if (relationshipAssignments != null) {
                 for (LinkedHashMap valueToTranslate : relationshipAssignments) {
 
                     AtlasRelatedObjectId relationshipAssignment = new AtlasRelatedObjectId(valueToTranslate);
                     String atlasRelationshipType = relationshipAssignment.getRelationshipType();
-                    String omrsRelationshipType = typeDefStore.getMappedOMRSTypeDefName(atlasRelationshipType);
+                    // TODO: currently all mappings from Atlas RelationshipDef to OMRS RelationshipDef are one-to-n, so never a prefix
+                    //  for the relationship itself, but may be prefixes on the entity endpoints of the relationship
+                    String omrsRelationshipType = typeDefStore.getMappedOMRSTypeDefName(atlasRelationshipType, null);
 
                     if (omrsRelationshipType != null) {
 
@@ -217,125 +225,86 @@ public class EntityMappingAtlas2OMRS {
                         // Only include the relationship if we are including all or those that match this type GUID
                         if (relationshipTypeGUID == null || omrsTypeDefGuid.equals(relationshipTypeGUID)) {
 
-                            // TODO: see about incorporating into / re-using RelationshipMapping.getRelationship (heavy overlap)
-                            Relationship omrsRelationship = RelationshipMapping.getSkeletonRelationship(
-                                    atlasRepositoryConnector,
-                                    (RelationshipDef) omrsTypeDef
-                            );
-                            omrsRelationship.setGUID(relationshipAssignment.getRelationshipGuid());
-                            omrsRelationship.setMetadataCollectionId(atlasRepositoryConnector.getMetadataCollectionId());
-                            switch (relationshipAssignment.getRelationshipStatus()) {
-                                case ACTIVE:
-                                    omrsRelationship.setStatus(InstanceStatus.ACTIVE);
+                            TypeDefStore.Endpoint endpointOfRelated = typeDefStore.getMappedEndpointFromAtlasName(atlasRelationshipType, atlasPropertyName, null);
+                            TypeDefStore.EndpointMapping mapping = typeDefStore.getEndpointMappingFromAtlasName(atlasRelationshipType, null);
+
+                            EntityProxy ep1;
+                            EntityProxy ep2;
+
+                            String prefixForSelf;
+                            switch (endpointOfRelated) {
+                                case ONE:
+                                    ep1 = RelationshipMapping.getEntityProxyForObject(
+                                            atlasRepositoryConnector,
+                                            typeDefStore,
+                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true).getEntity(),
+                                            mapping == null ? null : mapping.getPrefixOne(),
+                                            userId
+                                    );
+                                    prefixForSelf = mapping == null ? null : mapping.getPrefixTwo();
+                                    ep2 = RelationshipMapping.getEntityProxyForObject(
+                                            atlasRepositoryConnector,
+                                            typeDefStore,
+                                            atlasEntity,
+                                            prefixForSelf,
+                                            userId
+                                    );
                                     break;
-                                case DELETED:
-                                    omrsRelationship.setStatus(InstanceStatus.DELETED);
+                                case TWO:
+                                    prefixForSelf = mapping == null ? null : mapping.getPrefixOne();
+                                    ep1 = RelationshipMapping.getEntityProxyForObject(
+                                            atlasRepositoryConnector,
+                                            typeDefStore,
+                                            atlasEntity,
+                                            prefixForSelf,
+                                            userId
+                                    );
+                                    ep2 = RelationshipMapping.getEntityProxyForObject(
+                                            atlasRepositoryConnector,
+                                            typeDefStore,
+                                            atlasRepositoryConnector.getEntityByGUID(relationshipAssignment.getGuid(), true, true).getEntity(),
+                                            mapping == null ? null : mapping.getPrefixTwo(),
+                                            userId
+                                    );
                                     break;
                                 default:
-                                    if (log.isWarnEnabled()) {
-                                        log.warn("Unhandled relationship status, defaulting to ACTIVE: {}", relationshipAssignment.getRelationshipStatus());
-                                    }
-                                    omrsRelationship.setStatus(InstanceStatus.ACTIVE);
-                                    break;
+                                    OMRSErrorCode errorCode = OMRSErrorCode.INVALID_RELATIONSHIP_ENDS;
+                                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                                            repositoryName,
+                                            omrsRelationshipType,
+                                            atlasPropertyName,
+                                            null);
+                                    throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                                            EntityMappingAtlas2OMRS.class.getName(),
+                                            methodName,
+                                            errorMessage,
+                                            errorCode.getSystemAction(),
+                                            errorCode.getUserAction());
                             }
-                            omrsRelationship.setInstanceProvenanceType(InstanceProvenanceType.LOCAL_COHORT);
-                            // These don't appear to be retained by Atlas, so defaulting to values based on update time
-                            omrsRelationship.setVersion(atlasEntity.getUpdateTime().getTime());
-                            omrsRelationship.setCreateTime(atlasEntity.getUpdateTime());
-                            omrsRelationship.setCreatedBy(atlasEntity.getCreatedBy());
-                            omrsRelationship.setUpdatedBy(atlasEntity.getUpdatedBy());
-                            omrsRelationship.setUpdateTime(atlasEntity.getUpdateTime());
 
-                            TypeDefStore.Endpoint endpoint = typeDefStore.getMappedEndpointFromAtlasName(atlasRelationshipType, atlasPropertyName);
-
-                            EntityProxy epSelf = RelationshipMapping.getEntityProxyForObject(
-                                    atlasRepositoryConnector,
-                                    typeDefStore,
-                                    atlasEntityWithExtInfo,
-                                    userId
-                            );
-
-                            String otherEndGuid = relationshipAssignment.getGuid();
-
-                            EntityProxy epOther = RelationshipMapping.getEntityProxyForObject(
-                                    atlasRepositoryConnector,
-                                    typeDefStore,
-                                    atlasRepositoryConnector.getEntityByGUID(otherEndGuid, true, true),
-                                    userId
-                            );
-
-                            if (epSelf != null && epOther != null) {
-                                switch (endpoint) {
-                                    case ONE:
-                                        omrsRelationship.setEntityOneProxy(epSelf);
-                                        omrsRelationship.setEntityTwoProxy(epOther);
-                                        break;
-                                    case TWO:
-                                        omrsRelationship.setEntityOneProxy(epOther);
-                                        omrsRelationship.setEntityTwoProxy(epSelf);
-                                        break;
-                                    default:
-                                        OMRSErrorCode errorCode = OMRSErrorCode.INVALID_RELATIONSHIP_ENDS;
-                                        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                                                repositoryName,
-                                                omrsRelationshipType,
-                                                atlasPropertyName,
-                                                null);
-                                        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                                EntityMappingAtlas2OMRS.class.getName(),
-                                                methodName,
-                                                errorMessage,
-                                                errorCode.getSystemAction(),
-                                                errorCode.getUserAction());
+                            // If the prefixes match, then include the relationship -- otherwise skip the relationship
+                            if ((prefixForSelf == null && prefix == null) || (prefixForSelf != null && prefixForSelf.equals(prefix))) {
+                                AtlasStruct attrsOnAtlasReln = relationshipAssignment.getRelationshipAttributes();
+                                Map<String, Object> atlasRelationshipProperties = null;
+                                if (attrsOnAtlasReln != null) {
+                                    atlasRelationshipProperties = attrsOnAtlasReln.getAttributes();
                                 }
-                            } else {
-                                OMRSErrorCode errorCode = OMRSErrorCode.INVALID_RELATIONSHIP_ENDS;
-                                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                                        repositoryName,
-                                        omrsRelationshipType,
-                                        atlasPropertyName,
-                                        null);
-                                throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                        EntityMappingAtlas2OMRS.class.getName(),
-                                        methodName,
-                                        errorMessage,
-                                        errorCode.getSystemAction(),
-                                        errorCode.getUserAction());
+                                Relationship omrsRelationship = RelationshipMapping.getRelationship(
+                                        atlasRepositoryConnector,
+                                        typeDefStore,
+                                        attributeDefStore,
+                                        atlasRelationshipType,
+                                        relationshipAssignment.getRelationshipGuid(),
+                                        relationshipAssignment.getRelationshipStatus(),
+                                        ep1,
+                                        ep2,
+                                        atlasEntity.getCreatedBy(),
+                                        atlasEntity.getUpdatedBy(),
+                                        atlasEntity.getCreateTime(),
+                                        atlasEntity.getUpdateTime(),
+                                        atlasRelationshipProperties);
+                                omrsRelationships.add(omrsRelationship);
                             }
-
-                            AtlasStruct attrsOnAtlasReln = relationshipAssignment.getRelationshipAttributes();
-                            if (attrsOnAtlasReln != null) {
-
-                                Map<String, Object> atlasRelationshipProperties = attrsOnAtlasReln.getAttributes();
-                                Map<String, TypeDefAttribute> relationshipAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsRelationshipType);
-                                Map<String, String> atlasToOmrsProperties = typeDefStore.getPropertyMappingsForAtlasTypeDef(atlasRelationshipType);
-                                InstanceProperties omrsRelationshipProperties = new InstanceProperties();
-                                if (atlasToOmrsProperties != null) {
-
-                                    for (Map.Entry<String, String> property : atlasToOmrsProperties.entrySet()) {
-                                        String atlasProperty = property.getKey();
-                                        String omrsProperty = property.getValue();
-                                        if (relationshipAttributeMap.containsKey(omrsProperty)) {
-                                            TypeDefAttribute typeDefAttribute = relationshipAttributeMap.get(omrsProperty);
-                                            omrsRelationshipProperties = AttributeMapping.addPropertyToInstance(omrsRepositoryHelper,
-                                                    repositoryName,
-                                                    typeDefAttribute,
-                                                    omrsRelationshipProperties,
-                                                    attributeDefStore,
-                                                    atlasRelationshipProperties.get(atlasProperty),
-                                                    methodName);
-                                        } else {
-                                            if (log.isWarnEnabled()) {
-                                                log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsRelationshipType);
-                                            }
-                                        }
-                                    }
-
-                                }
-                                omrsRelationship.setProperties(omrsRelationshipProperties);
-
-                            }
-                            omrsRelationships.add(omrsRelationship);
 
                         }
                     }
@@ -344,66 +313,67 @@ public class EntityMappingAtlas2OMRS {
 
         }
 
+        // Then handle any generated relationships (between what is the same entity in Atlas but different entities in OMRS)
+        if (relationshipTypeGUID == null) {
+            Map<String, TypeDefStore.EndpointMapping> mappedRelationships = typeDefStore.getAllEndpointMappingsFromAtlasName(atlasEntity.getTypeName());
+            for (Map.Entry<String, TypeDefStore.EndpointMapping> entry : mappedRelationships.entrySet()) {
+                String relationshipPrefix = entry.getKey();
+                TypeDefStore.EndpointMapping mapping = entry.getValue();
+                // Only generate the generated relationships (normally-mapped should be covered already above)
+                if (relationshipPrefix != null) {
+                    EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
+                            atlasRepositoryConnector,
+                            typeDefStore,
+                            atlasEntity,
+                            mapping.getPrefixOne(),
+                            userId
+                    );
+                    EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
+                            atlasRepositoryConnector,
+                            typeDefStore,
+                            atlasEntity,
+                            mapping.getPrefixTwo(),
+                            userId
+                    );
+                    // TODO: assumes that all generated relationships have the same Atlas entity on both ends, and that
+                    //  there are never any properties on a generated relationship
+                    String relationshipGUID = ApacheAtlasOMRSMetadataCollection.generateGuidWithPrefix(relationshipPrefix, atlasEntity.getGuid());
+                    Relationship omrsRelationship = RelationshipMapping.getRelationship(
+                            atlasRepositoryConnector,
+                            typeDefStore,
+                            mapping.getOmrsRelationshipTypeName(),
+                            relationshipGUID,
+                            InstanceStatus.ACTIVE,
+                            ep1,
+                            ep2,
+                            atlasEntity.getCreatedBy(),
+                            atlasEntity.getUpdatedBy(),
+                            atlasEntity.getCreateTime(),
+                            atlasEntity.getUpdateTime(),
+                            null);
+                    omrsRelationships.add(omrsRelationship);
+                }
+            }
+        } else {
+            TypeDef typeDef = typeDefStore.getTypeDefByGUID(relationshipTypeGUID);
+            if (typeDef != null) {
+                String omrsTypeDefName = typeDef.getName();
+                Map<String, String> atlasTypesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeDefName);
+                for (Map.Entry<String, String> entry : atlasTypesByPrefix.entrySet()) {
+                    String prefix = entry.getKey();
+                    String atlasTypeName = entry.getValue();
+                    // TODO: Only generate the generated relationships (normally-mapped should be covered already above)
+                    if (prefix != null) {
+                        log.info("Have not yet implemented this relationship: ({}) {}", prefix, atlasTypeName);
+                    }
+                }
+            }
+        }
+
         // Now sort the results, if requested
-        Comparator<Relationship> comparator = null;
-        if (sequencingOrder != null) {
-            switch (sequencingOrder) {
-                case GUID:
-                    comparator = Comparator.comparing(Relationship::getGUID);
-                    break;
-                case LAST_UPDATE_OLDEST:
-                    comparator = Comparator.comparing(Relationship::getUpdateTime);
-                    break;
-                case LAST_UPDATE_RECENT:
-                    comparator = Comparator.comparing(Relationship::getUpdateTime).reversed();
-                    break;
-                case CREATION_DATE_OLDEST:
-                    comparator = Comparator.comparing(Relationship::getCreateTime);
-                    break;
-                case CREATION_DATE_RECENT:
-                    comparator = Comparator.comparing(Relationship::getCreateTime).reversed();
-                    break;
-                case PROPERTY_ASCENDING:
-                    if (sequencingProperty != null) {
-                        comparator = (a, b) -> {
-                            InstanceProperties p1 = a.getProperties();
-                            InstanceProperties p2 = b.getProperties();
-                            InstancePropertyValue v1 = null;
-                            InstancePropertyValue v2 = null;
-                            if (p1 != null) {
-                                v1 = p1.getPropertyValue(sequencingProperty);
-                            }
-                            if (p2 != null) {
-                                v2 = p2.getPropertyValue(sequencingProperty);
-                            }
-                            return AttributeMapping.compareInstanceProperty(v1, v2);
-                        };
-                    }
-                    break;
-                case PROPERTY_DESCENDING:
-                    if (sequencingProperty != null) {
-                        comparator = (b, a) -> {
-                            InstanceProperties p1 = a.getProperties();
-                            InstanceProperties p2 = b.getProperties();
-                            InstancePropertyValue v1 = null;
-                            InstancePropertyValue v2 = null;
-                            if (p1 != null) {
-                                v1 = p1.getPropertyValue(sequencingProperty);
-                            }
-                            if (p2 != null) {
-                                v2 = p2.getPropertyValue(sequencingProperty);
-                            }
-                            return AttributeMapping.compareInstanceProperty(v1, v2);
-                        };
-                    }
-                    break;
-                default:
-                    // Do nothing -- no sorting
-                    break;
-            }
-            if (comparator != null) {
-                omrsRelationships.sort(comparator);
-            }
+        Comparator<Relationship> comparator = SequencingUtils.getRelationshipComparator(sequencingOrder, sequencingProperty);
+        if (comparator != null) {
+            omrsRelationships.sort(comparator);
         }
 
         // And finally limit the results, if requested
@@ -421,10 +391,11 @@ public class EntityMappingAtlas2OMRS {
      *
      * @return EntitySummary
      */
-    private EntitySummary getSkeletonEntitySummary() {
+    private EntitySummary getSkeletonEntitySummary(String prefix) {
         EntitySummary summary = new EntitySummary();
         String guid = atlasEntity.getGuid();
-        summary.setGUID(guid);
+        prefix = prefix == null ? "" : ApacheAtlasOMRSMetadataCollection.generateTypePrefix(prefix);
+        summary.setGUID(prefix + guid);
         summary.setInstanceURL(getInstanceURL(guid));
         return summary;
     }
@@ -435,7 +406,7 @@ public class EntityMappingAtlas2OMRS {
      * @param omrsTypeDefName the name of the OMRS TypeDef for which to create a skeleton EntityDetail
      * @return EntityDetail
      */
-    private EntityDetail getSkeletonEntityDetail(String omrsTypeDefName) {
+    private EntityDetail getSkeletonEntityDetail(String omrsTypeDefName, String prefix) {
 
         EntityDetail detail = null;
         try {
@@ -458,7 +429,8 @@ public class EntityMappingAtlas2OMRS {
                     break;
             }
             String guid = atlasEntity.getGuid();
-            detail.setGUID(guid);
+            prefix = prefix == null ? "" : ApacheAtlasOMRSMetadataCollection.generateTypePrefix(prefix);
+            detail.setGUID(prefix + guid);
             detail.setInstanceURL(getInstanceURL(guid));
             setModAndVersionDetails(detail);
         } catch (TypeErrorException e) {
@@ -511,7 +483,7 @@ public class EntityMappingAtlas2OMRS {
             OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
             String repositoryName = atlasRepositoryConnector.getRepositoryName();
             String atlasTypeDefName = atlasEntity.getTypeName();
-            String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName);
+            String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
 
             for (AtlasClassification classificationAssignment : classificationAssignments) {
 

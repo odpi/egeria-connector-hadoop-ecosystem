@@ -21,17 +21,19 @@ public class TypeDefStore {
 
     private static final Logger log = LoggerFactory.getLogger(TypeDefStore.class);
 
+    // About the OMRS TypeDefs themselves
     private Map<String, TypeDef> omrsGuidToTypeDef;
     private Map<String, String> omrsNameToGuid;
     private Map<String, Map<String, TypeDefAttribute>> omrsGuidToAttributeMap;
-
-    private Map<String, String> omrsNameToAtlasName;
-    private Map<String, String> atlasNameToOmrsName;
     private Map<String, TypeDef> unimplementedTypeDefs;
-    private Map<String, Map<String, String>> atlasNameToAttributeMap;
-    private Map<String, Map<String, String>> omrsNameToAttributeMap;
-    private Map<String, EndpointMapping> atlasNameToEndpointMap;
-    private Map<String, EndpointMapping> omrsNameToEndpointMap;
+
+    // Mapping details
+    private Map<String, Map<String, String>> omrsNameToAtlasNamesByPrefix;
+    private Map<String, Map<String, String>> atlasNameToOmrsNamesByPrefix;
+    private Map<String, Map<String, Map<String, String>>> omrsNameToAttributeMapByPrefix;
+    private Map<String, Map<String, Map<String, String>>> atlasNameToAttributeMapByPrefix;
+    private Map<String, Map<String, EndpointMapping>> omrsNameToEndpointMapByPrefix;
+    private Map<String, Map<String, EndpointMapping>> atlasNameToEndpointMapByPrefix;
 
     private Set<String> unmappedTypes;
 
@@ -45,13 +47,13 @@ public class TypeDefStore {
         omrsGuidToTypeDef = new HashMap<>();
         omrsNameToGuid = new HashMap<>();
         omrsGuidToAttributeMap = new HashMap<>();
-        omrsNameToAtlasName = new HashMap<>();
-        atlasNameToOmrsName = new HashMap<>();
+        omrsNameToAtlasNamesByPrefix = new HashMap<>();
+        atlasNameToOmrsNamesByPrefix = new HashMap<>();
         unimplementedTypeDefs = new HashMap<>();
-        omrsNameToAttributeMap = new HashMap<>();
-        atlasNameToAttributeMap = new HashMap<>();
-        atlasNameToEndpointMap = new HashMap<>();
-        omrsNameToEndpointMap = new HashMap<>();
+        omrsNameToAttributeMapByPrefix = new HashMap<>();
+        atlasNameToAttributeMapByPrefix = new HashMap<>();
+        omrsNameToEndpointMapByPrefix = new HashMap<>();
+        atlasNameToEndpointMapByPrefix = new HashMap<>();
         unmappedTypes = new HashSet<>();
         mapper = new ObjectMapper();
         loadMappings();
@@ -72,10 +74,19 @@ public class TypeDefStore {
             // Start with the basic mappings from type-to-type
             List<MappingFromFile> mappings = mapper.readValue(stream, new TypeReference<List<MappingFromFile>>(){});
             for (MappingFromFile mapping : mappings) {
+
                 String atlasName = mapping.getAtlasName();
                 String omrsName = mapping.getOMRSName();
-                omrsNameToAtlasName.put(omrsName, atlasName);
-                atlasNameToOmrsName.put(atlasName, omrsName);
+                String prefix = mapping.getPrefix();
+
+                if (!omrsNameToAtlasNamesByPrefix.containsKey(omrsName)) {
+                    omrsNameToAtlasNamesByPrefix.put(omrsName, new HashMap<>());
+                }
+                omrsNameToAtlasNamesByPrefix.get(omrsName).put(prefix, atlasName);
+                if (!atlasNameToOmrsNamesByPrefix.containsKey(atlasName)) {
+                    atlasNameToOmrsNamesByPrefix.put(atlasName, new HashMap<>());
+                }
+                atlasNameToOmrsNamesByPrefix.get(atlasName).put(prefix, omrsName);
 
                 // Process any property-to-property mappings within the types
                 List<MappingFromFile> properties = mapping.getPropertyMappings();
@@ -88,8 +99,14 @@ public class TypeDefStore {
                         propertyMapOmrsToAtlas.put(omrsProperty, atlasProperty);
                         propertyMapAtlasToOmrs.put(atlasProperty, omrsProperty);
                     }
-                    atlasNameToAttributeMap.put(atlasName, propertyMapAtlasToOmrs);
-                    omrsNameToAttributeMap.put(omrsName, propertyMapOmrsToAtlas);
+                    if (!omrsNameToAttributeMapByPrefix.containsKey(omrsName)) {
+                        omrsNameToAttributeMapByPrefix.put(omrsName, new HashMap<>());
+                    }
+                    omrsNameToAttributeMapByPrefix.get(omrsName).put(prefix, propertyMapOmrsToAtlas);
+                    if (!atlasNameToAttributeMapByPrefix.containsKey(atlasName)) {
+                        atlasNameToAttributeMapByPrefix.put(atlasName, new HashMap<>());
+                    }
+                    atlasNameToAttributeMapByPrefix.get(atlasName).put(prefix, propertyMapAtlasToOmrs);
                 }
 
                 // Process any endpoint-to-endpoint mappings within the types (for relationships)
@@ -101,13 +118,23 @@ public class TypeDefStore {
                         MappingFromFile endpoint1 = endpoints.get(0);
                         MappingFromFile endpoint2 = endpoints.get(1);
                         EndpointMapping endpointMapping = new EndpointMapping(
+                                atlasName,
+                                omrsName,
                                 endpoint1.getAtlasName(),
                                 endpoint1.getOMRSName(),
+                                endpoint1.getPrefix(),
                                 endpoint2.getAtlasName(),
-                                endpoint2.getOMRSName()
+                                endpoint2.getOMRSName(),
+                                endpoint2.getPrefix()
                         );
-                        atlasNameToEndpointMap.put(atlasName, endpointMapping);
-                        omrsNameToEndpointMap.put(omrsName, endpointMapping);
+                        if (!omrsNameToEndpointMapByPrefix.containsKey(omrsName)) {
+                            omrsNameToEndpointMapByPrefix.put(omrsName, new HashMap<>());
+                        }
+                        omrsNameToEndpointMapByPrefix.get(omrsName).put(prefix, endpointMapping);
+                        if (!atlasNameToEndpointMapByPrefix.containsKey(atlasName)) {
+                            atlasNameToEndpointMapByPrefix.put(atlasName, new HashMap<>());
+                        }
+                        atlasNameToEndpointMapByPrefix.get(atlasName).put(prefix, endpointMapping);
                     }
                 }
 
@@ -146,7 +173,7 @@ public class TypeDefStore {
      * @return boolean
      */
     public boolean isTypeDefMapped(String omrsName) {
-        return omrsNameToAtlasName.containsKey(omrsName);
+        return omrsNameToAtlasNamesByPrefix.containsKey(omrsName);
     }
 
     /**
@@ -164,13 +191,18 @@ public class TypeDefStore {
      * or null if there are no mappings (or no properties).
      *
      * @param atlasName the name of the Apache Atlas TypeDef
+     * @param prefix the prefix (if any) when mappings to multiple types exist
      * @return {@code Map<String, String>}
      */
-    public Map<String, String> getPropertyMappingsForAtlasTypeDef(String atlasName) {
-        if (atlasNameToAttributeMap.containsKey(atlasName)) {
-            return atlasNameToAttributeMap.get(atlasName);
+    public Map<String, String> getPropertyMappingsForAtlasTypeDef(String atlasName, String prefix) {
+        if (atlasNameToAttributeMapByPrefix.containsKey(atlasName)) {
+            if (atlasNameToAttributeMapByPrefix.get(atlasName).containsKey(prefix)) {
+                return atlasNameToAttributeMapByPrefix.get(atlasName).get(prefix);
+            } else {
+                return getPropertyMappingsForOMRSTypeDef(atlasName, prefix);
+            }
         } else {
-            return getPropertyMappingsForOMRSTypeDef(atlasName);
+            return getPropertyMappingsForOMRSTypeDef(atlasName, prefix);
         }
     }
 
@@ -179,10 +211,15 @@ public class TypeDefStore {
      * if there are no mappings (or no properties).
      *
      * @param omrsName the name of the OMRS TypeDef
+     * @param prefix the prefix (if any) when mappings to multiple types exist
      * @return {@code Map<String, String>}
      */
-    public Map<String, String> getPropertyMappingsForOMRSTypeDef(String omrsName) {
-        return omrsNameToAttributeMap.getOrDefault(omrsName, null);
+    public Map<String, String> getPropertyMappingsForOMRSTypeDef(String omrsName, String prefix) {
+        if (omrsNameToAttributeMapByPrefix.containsKey(omrsName)) {
+            return omrsNameToAttributeMapByPrefix.get(omrsName).getOrDefault(prefix, null);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -190,28 +227,77 @@ public class TypeDefStore {
      *
      * @param atlasTypeName the name of the Apache Atlas type definition
      * @param atlasRelnAttrName the name of the Apache Atlas relationship attribute
+     * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
      * @return Endpoint
      */
-    public Endpoint getMappedEndpointFromAtlasName(String atlasTypeName, String atlasRelnAttrName) {
-        EndpointMapping mapping = atlasNameToEndpointMap.get(atlasTypeName);
-        if (mapping != null) {
-            return mapping.getMatchingOmrsEndpoint(atlasRelnAttrName);
-        } else {
-            TypeDef typeDef = getTypeDefByName(atlasTypeName);
-            if (typeDef instanceof RelationshipDef) {
-                RelationshipDef relationshipDef = (RelationshipDef) typeDef;
-                RelationshipEndDef end1 = relationshipDef.getEndDef1();
-                RelationshipEndDef end2 = relationshipDef.getEndDef2();
-                if (end1.getAttributeName().equals(atlasRelnAttrName)) {
-                    return Endpoint.ONE;
-                } else if (end2.getAttributeName().equals(atlasRelnAttrName)) {
-                    return Endpoint.TWO;
-                } else {
-                    return Endpoint.UNDEFINED;
-                }
+    public Endpoint getMappedEndpointFromAtlasName(String atlasTypeName, String atlasRelnAttrName, String entityPrefix) {
+        if (atlasNameToEndpointMapByPrefix.containsKey(atlasTypeName)) {
+            EndpointMapping mapping = atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(entityPrefix, null);
+            if (mapping != null) {
+                return mapping.getMatchingOmrsEndpoint(atlasRelnAttrName, entityPrefix);
+            }
+        }
+        // If we fall through, look for a TypeDef that we created as part of OMRS registration (in which cases no
+        // prefixes or generation should be involved, so we can skip those checks)
+        TypeDef typeDef = getTypeDefByName(atlasTypeName);
+        if (typeDef instanceof RelationshipDef) {
+            RelationshipDef relationshipDef = (RelationshipDef) typeDef;
+            RelationshipEndDef end1 = relationshipDef.getEndDef1();
+            RelationshipEndDef end2 = relationshipDef.getEndDef2();
+            if (end1.getAttributeName().equals(atlasRelnAttrName)) {
+                return Endpoint.ONE;
+            } else if (end2.getAttributeName().equals(atlasRelnAttrName)) {
+                return Endpoint.TWO;
             } else {
                 return Endpoint.UNDEFINED;
             }
+        } else {
+            return Endpoint.UNDEFINED;
+        }
+    }
+
+    /**
+     * Retrieve the relationship endpoint mapping from the Apache Atlas details provided.
+     *
+     * @param atlasTypeName the name of the Apache Atlas type definition
+     * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
+     * @return EndpointMapping
+     */
+    public EndpointMapping getEndpointMappingFromAtlasName(String atlasTypeName, String entityPrefix) {
+        if (atlasNameToEndpointMapByPrefix.containsKey(atlasTypeName)) {
+            return atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(entityPrefix, null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve all endpoint mappings (relationships) that are mapped for the provided Apache Atlas type.
+     *
+     * @param atlasTypeName the name of the Apache Atlas type definition
+     * @return {@code Map<String, EndpointMapping>}
+     */
+    public Map<String, EndpointMapping> getAllEndpointMappingsFromAtlasName(String atlasTypeName) {
+        return atlasNameToEndpointMapByPrefix.getOrDefault(atlasTypeName, null);
+    }
+
+    /**
+     * Retrieves all of the Apache Atlas TypeDef names that are mapped to the provided OMRS TypeDef name, or null
+     * if there is no mapping. The map returned will be keyed by prefix, and values will be the mapped Atlas TypeDef
+     * name for that prefix.
+     *
+     * @param omrsName the name of the OMRS TypeDef
+     * @return {@code Map<String, String>}
+     */
+    public Map<String, String> getAllMappedAtlasTypeDefNames(String omrsName) {
+        if (isTypeDefMapped(omrsName)) {
+            return omrsNameToAtlasNamesByPrefix.get(omrsName);
+        } else if (omrsNameToGuid.containsKey(omrsName)) {
+            Map<String, String> map = new HashMap<>();
+            map.put(null, omrsName);
+            return map;
+        } else {
+            return null;
         }
     }
 
@@ -220,11 +306,12 @@ public class TypeDefStore {
      * there is a one-to-one mapping between Atlas and OMRS TypeDefs, or null if there is no mapping.
      *
      * @param omrsName the name of the OMRS TypeDef
+     * @param prefix the prefix (if any) when mappings to multiple types exist
      * @return String
      */
-    public String getMappedAtlasTypeDefName(String omrsName) {
+    public String getMappedAtlasTypeDefName(String omrsName, String prefix) {
         if (isTypeDefMapped(omrsName)) {
-            return omrsNameToAtlasName.get(omrsName);
+            return omrsNameToAtlasNamesByPrefix.get(omrsName).getOrDefault(prefix, null);
         } else if (omrsNameToGuid.containsKey(omrsName)) {
             return omrsName;
         } else {
@@ -233,15 +320,28 @@ public class TypeDefStore {
     }
 
     /**
+     * Retrieves all of the OMRS TypeDef names that are mapped to the provided OMRS TypeDef name, or null if there is
+     * no mapping. The map returned will be keyed by prefix, and values will be the mapped OMRS TypeDef name for that
+     * prefix.
+     *
+     * @param atlasName the name of the Apache Atlas TypeDef
+     * @return {@code Map<String, String>}
+     */
+    public Map<String, String> getAllMappedOMRSTypeDefNames(String atlasName) {
+        return atlasNameToOmrsNamesByPrefix.getOrDefault(atlasName, null);
+    }
+
+    /**
      * Retrieves the OMRS TypeDef name that is mapped to the provided Apache Atlas TypeDef name, the same name if
      * there is a one-to-one mapping between Atlas and OMRS TypeDefs, or null if there is no mapping.
      *
      * @param atlasName the name of the Apache Atlas TypeDef
+     * @param prefix the prefix (if any) when mappings to multiple types exist
      * @return String
      */
-    public String getMappedOMRSTypeDefName(String atlasName) {
-        if (atlasNameToOmrsName.containsKey(atlasName)) {
-            return atlasNameToOmrsName.get(atlasName);
+    public String getMappedOMRSTypeDefName(String atlasName, String prefix) {
+        if (atlasNameToOmrsNamesByPrefix.containsKey(atlasName)) {
+            return atlasNameToOmrsNamesByPrefix.get(atlasName).getOrDefault(prefix, null);
         } else if (omrsNameToGuid.containsKey(atlasName)) {
             return atlasName;
         } else {
@@ -291,19 +391,10 @@ public class TypeDefStore {
                 omrsGuidToAttributeMap.get(guid).put(propertyName, attribute);
                 oneToOne.put(propertyName, propertyName);
             }
-            if (!omrsNameToAttributeMap.containsKey(name)) {
+            if (!omrsNameToAttributeMapByPrefix.containsKey(name)) {
                 // If no mapping was loaded for this OMRS type definition, add one-to-one mappings
-                omrsNameToAttributeMap.put(name, oneToOne);
-            } else {
-                // If a mapping was loaded for this OMRS type definition, extend the mapping with nulls
-                // for any properties that were left unmapped
-                Map<String, String> mappedProperties = omrsNameToAttributeMap.get(name);
-                Map<String, String> fullSetOfProperties = new HashMap<>(mappedProperties);
-                oneToOne.keySet().forEach(omrsProperty -> {
-                    if (!mappedProperties.containsKey(omrsProperty)) {
-                        fullSetOfProperties.put(omrsProperty, null);
-                    }
-                });
+                omrsNameToAttributeMapByPrefix.put(name, new HashMap<>());
+                omrsNameToAttributeMapByPrefix.get(name).put(null, oneToOne);
             }
         }
     }
@@ -448,29 +539,53 @@ public class TypeDefStore {
      */
     public final class EndpointMapping {
 
+        private String atlasRelationshipTypeName;
+        private String omrsRelationshipTypeName;
         private String atlas1;
         private String atlas2;
         private String omrs1;
         private String omrs2;
+        private String prefix1;
+        private String prefix2;
 
-        EndpointMapping(String atlas1, String omrs1, String atlas2, String omrs2) {
+        EndpointMapping(String atlasRelationshipTypeName,
+                        String omrsRelationshipTypeName,
+                        String atlas1,
+                        String omrs1,
+                        String prefix1,
+                        String atlas2,
+                        String omrs2,
+                        String prefix2) {
+            this.atlasRelationshipTypeName = atlasRelationshipTypeName;
+            this.omrsRelationshipTypeName = omrsRelationshipTypeName;
             this.atlas1 = atlas1;
             this.atlas2 = atlas2;
             this.omrs1 = omrs1;
             this.omrs2 = omrs2;
+            this.prefix1 = prefix1;
+            this.prefix2 = prefix2;
         }
 
         /**
          * Retrieve the corresponding OMRS endpoint given an Apache Atlas endpoint attribute name.
          *
          * @param atlasEndpointName the Apache Atlas endpoint attribute name
+         * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
          * @return Endpoint
          */
-        Endpoint getMatchingOmrsEndpoint(String atlasEndpointName) {
+        public Endpoint getMatchingOmrsEndpoint(String atlasEndpointName, String entityPrefix) {
             if (atlasEndpointName != null) {
-                if (atlasEndpointName.equals(atlas1)) {
+                // If there is a named Atlas endpoint, check that the prefixes are the same before choosing an endpoint
+                if (atlasEndpointName.equals(atlas1) && samePrefixes(prefix1, entityPrefix)) {
                     return Endpoint.ONE;
-                } else if (atlasEndpointName.equals(atlas2)) {
+                } else if (atlasEndpointName.equals(atlas2) && samePrefixes(prefix2, entityPrefix)) {
+                    return Endpoint.TWO;
+                }
+            } else {
+                // If there is no named Atlas endpoint, check that recorded endpoint is also null and prefixes also match
+                if (atlas1 == null && samePrefixes(prefix1, entityPrefix)) {
+                    return Endpoint.ONE;
+                } else if (atlas2 == null && samePrefixes(prefix2, entityPrefix)) {
                     return Endpoint.TWO;
                 }
             }
@@ -483,15 +598,38 @@ public class TypeDefStore {
          * @param omrsEndpointName the OMRS endpoint attribute name
          * @return Endpoint
          */
-        Endpoint getMatchingAtlasEndpoint(String omrsEndpointName) {
+        public Endpoint getMatchingAtlasEndpoint(String omrsEndpointName, String entityPrefix) {
             if (omrsEndpointName != null) {
-                if (omrsEndpointName.equals(omrs1)) {
+                if (omrsEndpointName.equals(omrs1) && samePrefixes(prefix1, entityPrefix)) {
                     return Endpoint.ONE;
-                } else if (omrsEndpointName.equals(omrs2)) {
+                } else if (omrsEndpointName.equals(omrs2) && samePrefixes(prefix2, entityPrefix)) {
+                    return Endpoint.TWO;
+                }
+            } else {
+                if (omrs1 == null && samePrefixes(prefix1, entityPrefix)) {
+                    return Endpoint.ONE;
+                } else if (omrs2 == null && samePrefixes(prefix2, entityPrefix)) {
                     return Endpoint.TWO;
                 }
             }
             return Endpoint.UNDEFINED;
+        }
+
+        public String getPrefixOne() { return prefix1; }
+        public String getPrefixTwo() { return prefix2; }
+        public String getAtlasRelationshipTypeName() { return atlasRelationshipTypeName; }
+        public String getOmrsRelationshipTypeName() { return omrsRelationshipTypeName; }
+
+        /**
+         * Indicates whether the two prefixes are the same (true) or not (false).
+         *
+         * @param cand1 first prefix to compare
+         * @param cand2 second prefix to compare
+         * @return boolean
+         */
+        private boolean samePrefixes(String cand1, String cand2) {
+            return (cand1 == null && cand2 == null)
+                    || (cand1 != null && cand2 != null && cand1.equals(cand2));
         }
 
     }

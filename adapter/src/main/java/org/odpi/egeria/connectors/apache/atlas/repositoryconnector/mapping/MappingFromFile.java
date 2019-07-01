@@ -2,6 +2,7 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -26,6 +27,11 @@ public class MappingFromFile {
     private String omrs;
 
     /**
+     * The prefix to use for any generated OMRS TypeDefs based on a singular Apache Atlas type.
+     */
+    private String prefix;
+
+    /**
      * An array of mappings between Apache Atlas and OMRS property names for the TypeDef.
      */
     private List<MappingFromFile> propertyMappings;
@@ -42,10 +48,15 @@ public class MappingFromFile {
     @JsonProperty("omrs") public String getOMRSName() { return this.omrs; }
     @JsonProperty("omrs") public void setOMRSName(String omrs) { this.omrs = omrs; }
 
+    @JsonProperty("prefix") public String getPrefix() { return this.prefix; }
+    @JsonProperty("prefix") public void setPrefix(String prefix) { this.prefix = prefix; }
+
     @JsonProperty("propertyMappings") public List<MappingFromFile> getPropertyMappings() { return this.propertyMappings; }
     @JsonProperty("propertyMappings") public void setPropertyMappings(List<MappingFromFile> propertyMappings) { this.propertyMappings = propertyMappings; }
 
     @JsonProperty("endpointMappings") public List<MappingFromFile> getEndpointMappings() { return this.endpointMappings; }
     @JsonProperty("endpointMappings") public void setEndpointMappings(List<MappingFromFile> endpointMappings) { this.endpointMappings = endpointMappings; }
+
+    @JsonIgnore public boolean isGeneratedType() { return this.prefix != null; }
 
 }
