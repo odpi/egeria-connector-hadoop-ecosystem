@@ -2196,7 +2196,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                            List<InstanceStatus> limitResultsByStatus,
                                                            int pageSize) throws FunctionNotSupportedException {
 
-        String omrsTypeName = "Referenceable";
+        String omrsTypeName = null;
         Map<String, String> atlasTypeNamesByPrefix = new HashMap<>();
         if (entityTypeGUID != null) {
             TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
@@ -2209,7 +2209,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 }
             }
         } else {
-            atlasTypeNamesByPrefix.put(null, omrsTypeName);
+            atlasTypeNamesByPrefix.put(null, null);
         }
 
         List<AtlasSearchResult> totalResults = new ArrayList<>();
@@ -2220,7 +2220,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             // Otherwise Atlas's "basic" search is likely to be significantly faster
             SearchParameters searchParameters = new SearchParameters();
-            searchParameters.setTypeName(atlasTypeName);
+            if (atlasTypeName != null) {
+                searchParameters.setTypeName(atlasTypeName);
+            }
             searchParameters.setIncludeClassificationAttributes(true);
             searchParameters.setIncludeSubClassifications(true);
             searchParameters.setIncludeSubTypes(true);
@@ -2250,19 +2252,23 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         );
                     }
                     SearchParameters.FilterCriteria entityFilters = new SearchParameters.FilterCriteria();
-                    entityFilters.setCriterion(criteria);
-                    if (matchCriteria != null) {
-                        switch (matchCriteria) {
-                            case ALL:
-                            case NONE:
-                                entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
-                                break;
-                            case ANY:
-                                entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
-                                break;
+                    if (criteria.size() > 1) {
+                        entityFilters.setCriterion(criteria);
+                        if (matchCriteria != null) {
+                            switch (matchCriteria) {
+                                case ALL:
+                                case NONE:
+                                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                                    break;
+                                case ANY:
+                                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                                    break;
+                            }
+                        } else {
+                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
                         }
                     } else {
-                        entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                        entityFilters = criteria.get(0);
                     }
                     searchParameters.setEntityFilters(entityFilters);
                 }

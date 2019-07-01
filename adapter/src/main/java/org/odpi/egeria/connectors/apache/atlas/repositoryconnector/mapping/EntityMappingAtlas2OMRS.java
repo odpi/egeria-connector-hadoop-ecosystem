@@ -86,78 +86,84 @@ public class EntityMappingAtlas2OMRS {
         String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
         if (log.isInfoEnabled()) { log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName); }
 
-        // Create the basic skeleton
-        EntityDetail detail = getSkeletonEntityDetail(omrsTypeDefName, prefix);
+        EntityDetail detail = null;
+        if (omrsTypeDefName != null) {
 
-        // Then apply the instance-specific mapping
-        if (detail != null) {
+            // Create the basic skeleton
+            detail = getSkeletonEntityDetail(omrsTypeDefName, prefix);
 
-            InstanceProperties instanceProperties = new InstanceProperties();
-            OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
-            String repositoryName = atlasRepositoryConnector.getRepositoryName();
+            // Then apply the instance-specific mapping
+            if (detail != null) {
 
-            Map<String, TypeDefAttribute> omrsAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeDefName);
+                InstanceProperties instanceProperties = new InstanceProperties();
+                OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
+                String repositoryName = atlasRepositoryConnector.getRepositoryName();
 
-            // Iterate through the provided mappings to set an OMRS instance property for each one
-            Map<String, String> atlasToOmrsProperties = typeDefStore.getPropertyMappingsForAtlasTypeDef(atlasTypeDefName, prefix);
-            Map<String, Object> atlasProperties = atlasEntity.getAttributes();
-            if (atlasProperties != null) {
-                Set<String> alreadyMapped = new HashSet<>();
-                for (Map.Entry<String, String> property : atlasToOmrsProperties.entrySet()) {
-                    String atlasProperty = property.getKey();
-                    String omrsProperty = property.getValue();
-                    if (omrsAttributeMap.containsKey(omrsProperty)) {
-                        TypeDefAttribute typeDefAttribute = omrsAttributeMap.get(omrsProperty);
-                        instanceProperties = AttributeMapping.addPropertyToInstance(omrsRepositoryHelper,
-                                repositoryName,
-                                typeDefAttribute,
-                                instanceProperties,
-                                attributeDefStore,
-                                atlasProperties.get(atlasProperty),
-                                methodName);
-                        if (instanceProperties.getPropertyValue(omrsProperty) != null) {
-                            alreadyMapped.add(atlasProperty);
-                        }
-                    } else {
-                        if (log.isWarnEnabled()) {
-                            log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsTypeDefName);
+                Map<String, TypeDefAttribute> omrsAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeDefName);
+
+                // Iterate through the provided mappings to set an OMRS instance property for each one
+                Map<String, String> atlasToOmrsProperties = typeDefStore.getPropertyMappingsForAtlasTypeDef(atlasTypeDefName, prefix);
+                Map<String, Object> atlasProperties = atlasEntity.getAttributes();
+                if (atlasProperties != null) {
+                    Set<String> alreadyMapped = new HashSet<>();
+                    for (Map.Entry<String, String> property : atlasToOmrsProperties.entrySet()) {
+                        String atlasProperty = property.getKey();
+                        String omrsProperty = property.getValue();
+                        if (omrsAttributeMap.containsKey(omrsProperty)) {
+                            TypeDefAttribute typeDefAttribute = omrsAttributeMap.get(omrsProperty);
+                            instanceProperties = AttributeMapping.addPropertyToInstance(omrsRepositoryHelper,
+                                    repositoryName,
+                                    typeDefAttribute,
+                                    instanceProperties,
+                                    attributeDefStore,
+                                    atlasProperties.get(atlasProperty),
+                                    methodName);
+                            if (instanceProperties.getPropertyValue(omrsProperty) != null) {
+                                alreadyMapped.add(atlasProperty);
+                            }
+                        } else {
+                            if (log.isWarnEnabled()) {
+                                log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsTypeDefName);
+                            }
                         }
                     }
-                }
 
-                // And map any other simple (non-relationship) properties that are not otherwise mapped into 'additionalProperties'
-                Map<String, String> additionalProperties = new HashMap<>();
+                    // And map any other simple (non-relationship) properties that are not otherwise mapped into 'additionalProperties'
+                    Map<String, String> additionalProperties = new HashMap<>();
 
-                Set<String> nonRelationshipSet = atlasProperties.keySet();
+                    Set<String> nonRelationshipSet = atlasProperties.keySet();
 
-                // Remove all of the already-mapped properties from our list of non-relationship properties
-                nonRelationshipSet.removeAll(alreadyMapped);
+                    // Remove all of the already-mapped properties from our list of non-relationship properties
+                    nonRelationshipSet.removeAll(alreadyMapped);
 
-                // Iterate through the remaining property names, and add them to a map
-                // Note that because 'additionalProperties' is a string-to-string map, we will just convert everything
-                // to strings (even arrays of values, we'll concatenate into a single string)
-                for (String propertyName : nonRelationshipSet) {
-                    Object propertyValue = atlasProperties.get(propertyName);
-                    if (propertyValue != null) {
-                        additionalProperties.put(propertyName, propertyValue.toString());
+                    // Iterate through the remaining property names, and add them to a map
+                    // Note that because 'additionalProperties' is a string-to-string map, we will just convert everything
+                    // to strings (even arrays of values, we'll concatenate into a single string)
+                    for (String propertyName : nonRelationshipSet) {
+                        Object propertyValue = atlasProperties.get(propertyName);
+                        if (propertyValue != null) {
+                            additionalProperties.put(propertyName, propertyValue.toString());
+                        }
                     }
+
+                    // and finally setup the 'additionalProperties' attribute using this map
+                    instanceProperties = omrsRepositoryHelper.addStringMapPropertyToInstance(
+                            repositoryName,
+                            instanceProperties,
+                            "additionalProperties",
+                            additionalProperties,
+                            methodName
+                    );
                 }
 
-                // and finally setup the 'additionalProperties' attribute using this map
-                instanceProperties = omrsRepositoryHelper.addStringMapPropertyToInstance(
-                        repositoryName,
-                        instanceProperties,
-                        "additionalProperties",
-                        additionalProperties,
-                        methodName
-                );
+                detail.setProperties(instanceProperties);
+
+                // TODO: detail.setReplicatedBy();
+                addClassifications(detail);
+
             }
-
-            detail.setProperties(instanceProperties);
-
-            // TODO: detail.setReplicatedBy();
-            addClassifications(detail);
-
+        } else {
+            if (log.isWarnEnabled()) { log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix); }
         }
 
         return detail;

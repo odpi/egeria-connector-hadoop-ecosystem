@@ -382,11 +382,13 @@ public abstract class AttributeMapping {
         if (propertyValue != null) {
 
             String omrsValue = null;
-            for (Map.Entry<String, String> entry : atlasElementValueToOmrsElementValue.entrySet()) {
-                String cAtlas = entry.getKey();
-                if (cAtlas.equals(propertyValue)) {
-                    omrsValue = entry.getKey();
-                    break;
+            if (atlasElementValueToOmrsElementValue != null) {
+                for (Map.Entry<String, String> entry : atlasElementValueToOmrsElementValue.entrySet()) {
+                    String cAtlas = entry.getKey();
+                    if (cAtlas.equals(propertyValue)) {
+                        omrsValue = entry.getKey();
+                        break;
+                    }
                 }
             }
             if (omrsValue != null) {
