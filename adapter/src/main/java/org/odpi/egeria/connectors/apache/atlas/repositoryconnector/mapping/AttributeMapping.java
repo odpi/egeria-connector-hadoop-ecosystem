@@ -32,76 +32,84 @@ public abstract class AttributeMapping {
      */
     public static boolean valuesMatch(InstancePropertyValue omrsValue, Object atlasValue) {
 
-        boolean bMatch = false;
-        switch (omrsValue.getInstancePropertyCategory()) {
-            case ENUM:
-                EnumPropertyValue enumValue = (EnumPropertyValue) omrsValue;
-                bMatch = enumValue.getSymbolicName().equals(atlasValue);
-                break;
-            case PRIMITIVE:
-                PrimitivePropertyValue primitivePropertyValue = (PrimitivePropertyValue) omrsValue;
-                switch (primitivePropertyValue.getPrimitiveDefCategory()) {
-                    case OM_PRIMITIVE_TYPE_BIGDECIMAL:
-                        BigDecimal bigDecimal = (BigDecimal) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = bigDecimal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_BIGINTEGER:
-                        BigInteger bigInteger = (BigInteger) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = bigInteger.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_BOOLEAN:
-                        Boolean boolVal = (Boolean) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = boolVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_BYTE:
-                        Byte byteVal = (Byte) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = byteVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_CHAR:
-                        Character charVal = (Character) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = charVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_DOUBLE:
-                        Double doubleVal = (Double) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = doubleVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_FLOAT:
-                        Float floatVal = (Float) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = floatVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_INT:
-                        Integer intVal = (Integer) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = intVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_LONG:
-                        Long longVal = (Long) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = longVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_SHORT:
-                        Short shortVal = (Short) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = shortVal.equals(atlasValue);
-                        break;
-                    case OM_PRIMITIVE_TYPE_STRING:
-                        String stringVal = (String) primitivePropertyValue.getPrimitiveValue();
-                        if (atlasValue != null) {
-                            String toCompare = (String) atlasValue;
-                            bMatch = toCompare.matches(stringVal);
-                        }
-                        break;
-                    case OM_PRIMITIVE_TYPE_DATE:
-                        Date dateVal = (Date) primitivePropertyValue.getPrimitiveValue();
-                        bMatch = dateVal.equals(atlasValue);
-                        break;
-                    default:
-                        if (log.isWarnEnabled()) { log.warn("Unhandled type for mapping: {}", omrsValue); }
-                        break;
-                }
-                break;
-            default:
-                log.warn("Unhandled type for mapping: {}", omrsValue);
-                break;
+        if (omrsValue == null && atlasValue == null) {
+            return true;
+        } else if (omrsValue != null && atlasValue != null) {
+            boolean bMatch = false;
+            switch (omrsValue.getInstancePropertyCategory()) {
+                case ENUM:
+                    EnumPropertyValue enumValue = (EnumPropertyValue) omrsValue;
+                    bMatch = enumValue.getSymbolicName().equals(atlasValue);
+                    break;
+                case PRIMITIVE:
+                    PrimitivePropertyValue primitivePropertyValue = (PrimitivePropertyValue) omrsValue;
+                    switch (primitivePropertyValue.getPrimitiveDefCategory()) {
+                        case OM_PRIMITIVE_TYPE_BIGDECIMAL:
+                            BigDecimal bigDecimal = (BigDecimal) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = bigDecimal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_BIGINTEGER:
+                            BigInteger bigInteger = (BigInteger) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = bigInteger.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_BOOLEAN:
+                            Boolean boolVal = (Boolean) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = boolVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_BYTE:
+                            Byte byteVal = (Byte) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = byteVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_CHAR:
+                            Character charVal = (Character) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = charVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_DOUBLE:
+                            Double doubleVal = (Double) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = doubleVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_FLOAT:
+                            Float floatVal = (Float) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = floatVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_INT:
+                            Integer intVal = (Integer) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = intVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_LONG:
+                            Long longVal = (Long) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = longVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_SHORT:
+                            Short shortVal = (Short) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = shortVal.equals(atlasValue);
+                            break;
+                        case OM_PRIMITIVE_TYPE_STRING:
+                            String stringVal = (String) primitivePropertyValue.getPrimitiveValue();
+                            if (atlasValue != null) {
+                                String toCompare = (String) atlasValue;
+                                bMatch = toCompare.matches(stringVal);
+                            }
+                            break;
+                        case OM_PRIMITIVE_TYPE_DATE:
+                            Date dateVal = (Date) primitivePropertyValue.getPrimitiveValue();
+                            bMatch = dateVal.equals(atlasValue);
+                            break;
+                        default:
+                            if (log.isWarnEnabled()) {
+                                log.warn("Unhandled type for mapping: {}", omrsValue);
+                            }
+                            break;
+                    }
+                    break;
+                default:
+                    log.warn("Unhandled type for mapping: {}", omrsValue);
+                    break;
+            }
+            return bMatch;
+        } else {
+            return false;
         }
-        return bMatch;
 
     }
 
@@ -132,7 +140,7 @@ public abstract class AttributeMapping {
                 resultingProperties = AttributeMapping.addEnumPropertyToInstance(
                         resultingProperties,
                         property,
-                        attributeDefStore.getElementMappingsForOMRSTypeDef(property.getAttributeName()),
+                        attributeDefStore.getElementMappingsForOMRSTypeDef(property.getAttributeType().getName()),
                         propertyValue
                 );
                 break;

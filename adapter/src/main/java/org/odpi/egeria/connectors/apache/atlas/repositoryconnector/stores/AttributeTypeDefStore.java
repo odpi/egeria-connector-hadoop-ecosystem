@@ -6,6 +6,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.MappingFromFile;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.AttributeTypeDef;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.AttributeTypeDefCategory;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumDef;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -207,6 +210,16 @@ public class AttributeTypeDefStore {
         if (!omrsNameToAtlasName.containsKey(name)) {
             omrsNameToAtlasName.put(name, name);
             atlasNameToOmrsName.put(name, name);
+        }
+        // If it is an enumeration that is not otherwise mapped, save the one-to-one mapping
+        if (typeDef.getCategory().equals(AttributeTypeDefCategory.ENUM_DEF) && !omrsNameToElementMap.containsKey(name)) {
+            EnumDef enumDef = (EnumDef) typeDef;
+            Map<String, String> elementMap = new HashMap<>();
+            for (EnumElementDef elementDef : enumDef.getElementDefs()) {
+                elementMap.put(elementDef.getValue(), elementDef.getValue());
+            }
+            omrsNameToElementMap.put(name, elementMap);
+            atlasNameToElementMap.put(name, elementMap);
         }
     }
 
