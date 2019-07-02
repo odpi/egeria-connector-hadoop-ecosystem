@@ -629,7 +629,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 attributeTypeDefStore,
                                 atlasRepositoryConnector
                         );
-                        break;
+                        break;*/
+                    // For now, only create classifications and relationships (no new entity types)
                     case RELATIONSHIP_DEF:
                         RelationshipDefMapping.addRelationshipTypeToAtlas(
                                 (RelationshipDef) newTypeDef,
@@ -637,8 +638,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 attributeTypeDefStore,
                                 atlasRepositoryConnector
                         );
-                        break;*/
-                    // For now, only create classifications (no other new types for open metadata)
+                        break;
                     case CLASSIFICATION_DEF:
                         ClassificationDefMapping.addClassificationTypeToAtlas(
                                 (ClassificationDef) newTypeDef,
