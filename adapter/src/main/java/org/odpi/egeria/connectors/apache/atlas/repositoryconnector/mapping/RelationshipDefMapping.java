@@ -82,7 +82,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         fullyCovered = fullyCovered && setupPropertyMappings(omrsRelationshipDef, relationshipTypeDef, attributeDefStore);
 
         if (fullyCovered) {
-            // Only create the entity if we can fully model it
+            // Only create the relationship if we can fully model it
             AtlasTypesDef atlasTypesDef = new AtlasTypesDef();
             List<AtlasRelationshipDef> relationshipList = new ArrayList<>();
             relationshipList.add(relationshipTypeDef);

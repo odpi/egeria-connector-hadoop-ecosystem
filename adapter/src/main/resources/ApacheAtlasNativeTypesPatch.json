@@ -77,17 +77,6 @@
           "includeInNotification": false
         },
         {
-          "name": "additionalProperties",
-          "typeName": "map<string,string>",
-          "isOptional": true,
-          "cardinality": "SINGLE",
-          "valuesMinCount": 0,
-          "valuesMaxCount": 1,
-          "isUnique": false,
-          "isIndexable": false,
-          "includeInNotification": false
-        },
-        {
           "name": "name",
           "typeName": "string",
           "isOptional": false,
@@ -144,7 +133,8 @@
         }
       ],
       "superTypes": [
-        "__internal"
+        "__internal",
+        "Referenceable"
       ]
     },
     {
@@ -161,17 +151,6 @@
           "valuesMaxCount": 1,
           "isUnique": true,
           "isIndexable": true,
-          "includeInNotification": false
-        },
-        {
-          "name": "additionalProperties",
-          "typeName": "map<string,string>",
-          "isOptional": true,
-          "cardinality": "SINGLE",
-          "valuesMinCount": 0,
-          "valuesMaxCount": 1,
-          "isUnique": false,
-          "isIndexable": false,
           "includeInNotification": false
         },
         {
@@ -209,7 +188,8 @@
         }
       ],
       "superTypes": [
-        "__internal"
+        "__internal",
+        "Referenceable"
       ]
     },
     {
@@ -226,17 +206,6 @@
           "valuesMaxCount": 1,
           "isUnique": true,
           "isIndexable": true,
-          "includeInNotification": false
-        },
-        {
-          "name": "additionalProperties",
-          "typeName": "map<string,string>",
-          "isOptional": true,
-          "cardinality": "SINGLE",
-          "valuesMinCount": 0,
-          "valuesMaxCount": 1,
-          "isUnique": false,
-          "isIndexable": false,
           "includeInNotification": false
         },
         {
@@ -307,7 +276,8 @@
         }
       ],
       "superTypes": [
-        "__internal"
+        "__internal",
+        "Referenceable"
       ]
     }
   ],

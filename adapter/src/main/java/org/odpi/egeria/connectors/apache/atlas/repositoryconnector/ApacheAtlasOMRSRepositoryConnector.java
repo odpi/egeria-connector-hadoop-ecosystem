@@ -2,6 +2,7 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
@@ -21,9 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.atlas.AtlasClientV2;
+import org.springframework.core.io.ClassPathResource;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
@@ -74,7 +78,6 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             log.error("Unable to retrieve types from Apache Atlas.", e);
         }
 
-        /*
         ClassPathResource mappingResource = new ClassPathResource("ApacheAtlasNativeTypesPatch.json");
 
         try {
@@ -90,7 +93,6 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         } catch (AtlasServiceException e) {
             log.error("Unable to patch default Apache Atlas types.", e);
         }
-        */
 
         if (!successfulInit) {
             ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE;
