@@ -44,6 +44,7 @@
                                     <include>org.apache.atlas:atlas-client-v1</include>
                                     <include>org.apache.atlas:atlas-client-v2</include>
                                     <include>org.apache.atlas:atlas-intg</include>
+                                    <include>org.apache.atlas:atlas-notification</include>
                                     <include>org.apache.hadoop:hadoop-auth</include>
                                     <include>org.apache.hadoop:hadoop-common</include>
                                     <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>

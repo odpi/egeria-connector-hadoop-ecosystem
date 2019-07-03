@@ -347,8 +347,15 @@ public abstract class AttributeMapping {
                                         (Date) propertyValue,
                                         methodName
                                 );
-                            } else {
-                                if (log.isWarnEnabled()) { log.warn("Unable to parse date automatically -- must be first converted before passing in: {}", propertyValue); }
+                            } else if (propertyValue != null) {
+                                // Assume if not a date and not null, it is a numeric epoch timestamp
+                                resultingProperties = omrsRepositoryHelper.addDatePropertyToInstance(
+                                        sourceName,
+                                        properties,
+                                        propertyName,
+                                        new Date((Long)propertyValue),
+                                        methodName
+                                );
                             }
                             break;
                         default:

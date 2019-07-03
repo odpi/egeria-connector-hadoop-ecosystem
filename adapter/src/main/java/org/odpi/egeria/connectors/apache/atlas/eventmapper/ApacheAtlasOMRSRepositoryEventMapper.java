@@ -7,6 +7,7 @@ import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.AtlasRelationshipHeader;
 import org.apache.atlas.model.notification.EntityNotification;
+import org.apache.atlas.notification.entity.EntityMessageDeserializer;
 import org.apache.atlas.utils.AtlasJson;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -54,6 +55,8 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private String atlasKafkaBootstrap;
     private String atlasKafkaTopic;
 
+    private EntityMessageDeserializer deserializer;
+
     /**
      * Default constructor
      */
@@ -89,6 +92,8 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         atlasKafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "ApacheAtlasOMRSRepositoryEventMapper_consumer");
         atlasKafkaProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         atlasKafkaProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
+        this.deserializer = new EntityMessageDeserializer();
 
     }
 
@@ -224,17 +229,20 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     public void processEvent(String event) {
         if (log.isInfoEnabled()) { log.info("Processing event: {}", event); }
 
-        EntityNotification.EntityNotificationV2 atlasEvent = AtlasJson.fromJson(event, EntityNotification.EntityNotificationV2.class);
-        if (atlasEvent != null) {
+        // Need to call this with just the 'message' portion of the payload, it seems?
+        EntityNotification atlasEvent = deserializer.deserialize(event);
+        EntityNotification.EntityNotificationV2 entityNotification = (EntityNotification.EntityNotificationV2) atlasEvent;
+
+        if (entityNotification != null) {
 
             // TODO: create examples for and test commented-out operations
 
-            switch(atlasEvent.getOperationType()) {
+            switch(entityNotification.getOperationType()) {
                 case ENTITY_CREATE:
-                    processNewEntity(atlasEvent.getEntity());
+                    processNewEntity(entityNotification.getEntity());
                     break;
                 case ENTITY_UPDATE:
-                    processUpdatedEntity(atlasEvent.getEntity());
+                    processUpdatedEntity(entityNotification.getEntity());
                     break;
                 /*case ENTITY_DELETE:
                     break;
@@ -245,7 +253,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
                 case CLASSIFICATION_DELETE:
                     break;*/
                 case RELATIONSHIP_CREATE:
-                    processNewRelationship(atlasEvent.getRelationship());
+                    processNewRelationship(entityNotification.getRelationship());
                     break;
                 /*case RELATIONSHIP_UPDATE:
                     break;
