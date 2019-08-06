@@ -992,7 +992,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid);
+        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true, false);
         if (entity == null) {
             OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
             String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
@@ -1050,7 +1050,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid);
+        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true, false);
         if (entity == null) {
             OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
             String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
@@ -1154,7 +1154,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
 
             // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
-            AtlasEntity.AtlasEntityWithExtInfo asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false);
+            AtlasEntity.AtlasEntityWithExtInfo asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false, false);
 
             // Ensure the entity actually exists (if not, throw error to that effect)
             if (asset == null) {
