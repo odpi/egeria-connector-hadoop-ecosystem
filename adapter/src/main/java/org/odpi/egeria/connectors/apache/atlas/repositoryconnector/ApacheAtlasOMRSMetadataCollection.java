@@ -2,6 +2,7 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.*;
@@ -1202,7 +1203,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *
      * @param userId unique identifier for requesting user.
      * @param entityTypeGUID String unique identifier for the entity type of interest (null means any entity type).
-     * @param matchProperties Optional list of entity properties to match (contains wildcards).
+     * @param matchProperties Optional list of entity properties to match (where any String property's value should
+     *                        be defined as a Java regular expression, even if it should be an exact match).
      * @param matchCriteria Enum defining how the match properties should be matched to the entities in the repository.
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
@@ -1227,8 +1229,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws PropertyErrorException the properties specified are not valid for any of the requested types of
      *                                  entity.
      * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
-     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
+     * @throws FunctionNotSupportedException the repository does not support one of the provided parameters.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * @see OMRSRepositoryHelper#getExactMatchRegex(String)
      */
     @Override
     public  List<EntityDetail> findEntitiesByProperty(String                    userId,
@@ -1333,7 +1336,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param entityTypeGUID unique identifier for the type of entity requested.  Null means any type of entity
      *                       (but could be slow so not recommended.
      * @param classificationName name of the classification, note a null is not valid.
-     * @param matchClassificationProperties Optional list of classification properties to match (contains wildcards).
+     * @param matchClassificationProperties list of classification properties used to narrow the search (where any String
+     *                                      property's value should be defined as a Java regular expression, even if it
+     *                                      should be an exact match).
      * @param matchClassificationCriteria Enum defining how the match properties should be matched to the classifications in the repository.
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
@@ -1358,8 +1363,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws PropertyErrorException the properties specified are not valid for the requested type of
      *                                  classification.
      * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
-     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
+     * @throws FunctionNotSupportedException the repository does not support one of the provided parameters.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * @see OMRSRepositoryHelper#getExactMatchRegex(String)
      */
     @Override
     public  List<EntityDetail> findEntitiesByClassification(String                    userId,
@@ -1536,9 +1542,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param userId unique identifier for requesting user.
      * @param entityTypeGUID GUID of the type of entity to search for. Null means all types will
      *                       be searched (could be slow so not recommended).
-     * @param searchCriteria String expression contained in any of the property values within the entities
-     *                       of the supplied type. (Retrieve all entities of the supplied type if this is either null
-     *                       or an empty string.)
+     * @param searchCriteria String Java regular expression used to match against any of the String property values
+     *                       within the entities of the supplied type, even if it should be an exact match.
+     *                       (Retrieve all entities of the supplied type if this is either null or an empty string.)
      * @param fromEntityElement the starting element number of the entities to return.
      *                                This is used when retrieving elements
      *                                beyond the first page of results. Zero means start from the first element.
@@ -1562,8 +1568,10 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws PropertyErrorException the sequencing property specified is not valid for any of the requested types of
      *                                  entity.
      * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
-     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
+     * @throws FunctionNotSupportedException the repository does not support one of the provided parameters.
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * @see OMRSRepositoryHelper#getExactMatchRegex(String)
+     * @see OMRSRepositoryHelper#getContainsRegex(String)
      */
     @Override
     public  List<EntityDetail> findEntitiesByPropertyValue(String                userId,
@@ -1612,92 +1620,130 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     errorMessage,
                     errorCode.getSystemAction(),
                     errorCode.getUserAction());
-        } else if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
+        }
 
-            InstanceProperties matchProperties = null;
+        InstanceProperties matchProperties = null;
 
-            // Only need to setup property-based search if some criteria was provided, otherwise we will just get all
-            // entities that match the criteria (no need for matchProperties)
-            if (searchCriteria != null) {
-                matchProperties = new InstanceProperties();
-
-                // Add all textual properties of the provided entity as matchProperties,
-                //  for an OR-based search of their values
-                String omrsTypeName = "Referenceable";
-                if (entityTypeGUID != null) {
-                    TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
-                    omrsTypeName = typeDef.getName();
-                }
-                Map<String, TypeDefAttribute> typeDefAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
-
-                if (typeDefAttributeMap != null) {
-                    // This will look at all OMRS attributes, but buildAndRunDSLSearch (later) should limit to only those mapped to Atlas
-                    for (Map.Entry<String, TypeDefAttribute> attributeEntry : typeDefAttributeMap.entrySet()) {
-                        String attributeName = attributeEntry.getKey();
-                        TypeDefAttribute typeDefAttribute = attributeEntry.getValue();
-                        // Only need to retain string-based attributes for the full text search
-                        AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
-                        switch (attributeTypeDef.getCategory()) {
-                            case PRIMITIVE:
-                                PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
-                                switch (primitiveDef.getPrimitiveDefCategory()) {
-                                    case OM_PRIMITIVE_TYPE_STRING:
-                                    case OM_PRIMITIVE_TYPE_BYTE:
-                                    case OM_PRIMITIVE_TYPE_CHAR:
-                                        matchProperties = repositoryHelper.addStringPropertyToInstance(
-                                                repositoryName,
-                                                matchProperties,
-                                                attributeName,
-                                                "*" + searchCriteria + "*",
-                                                methodName
-                                        );
-                                        break;
-                                    default:
-                                        if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
-                                        break;
-                                }
-                                break;
-                            default:
-                                if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
-                                break;
-                        }
-                    }
-                }
+        if (searchCriteria == null || searchCriteria.equals("")) {
+            // If the search criteria is empty, we want all entities of the specified type
+            if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
+                results = buildAndRunDSLSearch(
+                        methodName,
+                        entityTypeGUID,
+                        limitResultsByClassification,
+                        null,
+                        null,
+                        fromEntityElement,
+                        limitResultsByStatus,
+                        sequencingProperty,
+                        sequencingOrder,
+                        pageSize
+                );
+            } else {
+                results = buildAndRunBasicSearch(
+                        methodName,
+                        entityTypeGUID,
+                        (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
+                        null,
+                        null,
+                        "",
+                        fromEntityElement,
+                        limitResultsByStatus,
+                        pageSize
+                );
             }
-
-            results = buildAndRunDSLSearch(
-                    methodName,
-                    entityTypeGUID,
-                    limitResultsByClassification,
-                    matchProperties,
-                    MatchCriteria.ANY,
-                    fromEntityElement,
-                    limitResultsByStatus,
-                    sequencingProperty,
-                    sequencingOrder,
-                    pageSize
-            );
-
-        } else {
-
-            // If the provided criteria is null, set it to the empty string so that we get the desired behaviour
-            if (searchCriteria == null) {
-                searchCriteria = "";
-            }
-
-            // Only take the first classification for a basic search (if there were multiple, should be handled above
-            // by DSL query)
+        } else if (repositoryHelper.isContainsRegex(searchCriteria) && sequencingOrder == null && (limitResultsByClassification == null || limitResultsByClassification.size() == 1)) {
+            // If the search criteria is a contains regex, no sorting is required, and limiting by classification is at most
+            // one, we can do a full text-based query in Atlas
             results = buildAndRunBasicSearch(
                     methodName,
                     entityTypeGUID,
                     (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
                     null,
                     null,
-                    searchCriteria,
+                    repositoryHelper.getUnqualifiedLiteralString(searchCriteria),
                     fromEntityElement,
                     limitResultsByStatus,
                     pageSize
             );
+        } else {
+
+            // Otherwise we need to do an OR-based search across all string properties in Atlas, using whatever the
+            // regex of searchCriteria contains for each property
+            matchProperties = new InstanceProperties();
+
+            // Add all textual properties of the provided entity as matchProperties,
+            //  for an OR-based search of their values
+            String omrsTypeName = "Referenceable";
+            if (entityTypeGUID != null) {
+                TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID);
+                omrsTypeName = typeDef.getName();
+            }
+            Map<String, TypeDefAttribute> typeDefAttributeMap = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
+
+            if (typeDefAttributeMap != null) {
+                // This will look at all OMRS attributes, but buildAndRunDSLSearch (later) should limit to only those mapped to Atlas
+                for (Map.Entry<String, TypeDefAttribute> attributeEntry : typeDefAttributeMap.entrySet()) {
+                    String attributeName = attributeEntry.getKey();
+                    TypeDefAttribute typeDefAttribute = attributeEntry.getValue();
+                    // Only need to retain string-based attributes for the full text search
+                    AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
+                    switch (attributeTypeDef.getCategory()) {
+                        case PRIMITIVE:
+                            PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
+                            switch (primitiveDef.getPrimitiveDefCategory()) {
+                                case OM_PRIMITIVE_TYPE_STRING:
+                                case OM_PRIMITIVE_TYPE_BYTE:
+                                case OM_PRIMITIVE_TYPE_CHAR:
+                                    matchProperties = repositoryHelper.addStringPropertyToInstance(
+                                            repositoryName,
+                                            matchProperties,
+                                            attributeName,
+                                            searchCriteria,
+                                            methodName
+                                    );
+                                    break;
+                                default:
+                                    if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
+                                    break;
+                            }
+                            break;
+                        default:
+                            if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
+                            break;
+                    }
+                }
+            }
+
+            if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
+                // If we need to do any sequencing or limiting by multiple classifications, then we must run a DSL search
+                results = buildAndRunDSLSearch(
+                        methodName,
+                        entityTypeGUID,
+                        limitResultsByClassification,
+                        matchProperties,
+                        MatchCriteria.ANY,
+                        fromEntityElement,
+                        limitResultsByStatus,
+                        sequencingProperty,
+                        sequencingOrder,
+                        pageSize
+                );
+            } else {
+                // Otherwise we can still do a basic search -- only take the first classification for a basic search
+                // (if there were multiple, should be handled above by DSL query)
+                results = buildAndRunBasicSearch(
+                        methodName,
+                        entityTypeGUID,
+                        (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
+                        matchProperties,
+                        MatchCriteria.ANY,
+                        null,
+                        fromEntityElement,
+                        limitResultsByStatus,
+                        pageSize
+                );
+            }
 
         }
 
@@ -1952,6 +1998,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                 unrestricted return results size.
      * @return {@code List<AtlasEntityHeader>}
      * @throws FunctionNotSupportedException when trying to search using a status that is not supported in Atlas
+     * @throws RepositoryErrorException when a regular expression is used for the search that is not supported
      */
     private List<AtlasEntityHeader> buildAndRunDSLSearch(String methodName,
                                                          String entityTypeGUID,
@@ -1962,7 +2009,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                          List<InstanceStatus> limitResultsByStatus,
                                                          String sequencingProperty,
                                                          SequencingOrder sequencingOrder,
-                                                         int pageSize) throws FunctionNotSupportedException {
+                                                         int pageSize)
+            throws FunctionNotSupportedException, RepositoryErrorException {
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
@@ -2194,7 +2242,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                            String fullTextQuery,
                                                            int fromEntityElement,
                                                            List<InstanceStatus> limitResultsByStatus,
-                                                           int pageSize) throws FunctionNotSupportedException {
+                                                           int pageSize)
+            throws FunctionNotSupportedException {
 
         String omrsTypeName = null;
         Map<String, String> atlasTypeNamesByPrefix = new HashMap<>();
@@ -2273,6 +2322,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     searchParameters.setEntityFilters(entityFilters);
                 }
             } else if (fullTextQuery != null) {
+                // TODO: escape regex here?
                 searchParameters.setQuery(fullTextQuery);
             }
 
@@ -2420,6 +2470,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param omrsToAtlasPropertyMap the mappings from OMRS property name to Atlas property name
      * @param omrsTypeDefAttrMap the mappings from OMRS property name to TypeDefAttribute definition of the property
      * @param negateCondition if true, negate (invert) the condition / operator
+     * @throws FunctionNotSupportedException when a regular expression is used for the search that is not supported
      */
     private <T> void addSearchConditionFromValue(List<T> criteria,
                                                  String omrsPropertyName,
@@ -2427,7 +2478,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                  Map<String, String> omrsToAtlasPropertyMap,
                                                  Map<String, TypeDefAttribute> omrsTypeDefAttrMap,
                                                  boolean negateCondition,
-                                                 boolean dslQuery) {
+                                                 boolean dslQuery) throws FunctionNotSupportedException {
+
+        final String methodName = "addSearchConditionFromValue";
 
         if (omrsPropertyName != null) {
             String atlasPropertyName = omrsToAtlasPropertyMap.get(omrsPropertyName);
@@ -2514,38 +2567,47 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 atlasCriterion.setAttributeName(atlasPropertyName);
                                 sbCriterion.append(atlasPropertyName);
                                 String candidateValue = actualValue.getPrimitiveValue().toString();
-                                if (candidateValue.startsWith("*") && candidateValue.endsWith("*")) {
-                                    sbCriterion.append(" LIKE \"");
-                                    sbCriterion.append(candidateValue);
-                                    sbCriterion.append("\"");
+                                String unqualifiedValue = repositoryHelper.getUnqualifiedLiteralString(candidateValue);
+                                if (repositoryHelper.isContainsRegex(candidateValue)) {
+                                    sbCriterion.append(" LIKE \"*");
+                                    sbCriterion.append(unqualifiedValue);
+                                    sbCriterion.append("\"*");
                                     atlasCriterion.setOperator(SearchParameters.Operator.CONTAINS);
-                                    candidateValue = candidateValue.substring(1, candidateValue.length() - 1);
-                                } else if (candidateValue.startsWith("*")) {
-                                    sbCriterion.append(" LIKE \"");
-                                    sbCriterion.append(candidateValue);
+                                } else if (repositoryHelper.isEndsWithRegex(candidateValue)) {
+                                    sbCriterion.append(" LIKE \"*");
+                                    sbCriterion.append(unqualifiedValue);
                                     sbCriterion.append("\"");
                                     atlasCriterion.setOperator(SearchParameters.Operator.ENDS_WITH);
-                                    candidateValue = candidateValue.substring(1);
-                                } else if (candidateValue.endsWith("*")) {
+                                } else if (repositoryHelper.isStartsWithRegex(candidateValue)) {
                                     sbCriterion.append(" LIKE \"");
-                                    sbCriterion.append(candidateValue);
-                                    sbCriterion.append("\"");
+                                    sbCriterion.append(unqualifiedValue);
+                                    sbCriterion.append("*\"");
                                     atlasCriterion.setOperator(SearchParameters.Operator.STARTS_WITH);
-                                    candidateValue = candidateValue.substring(0, candidateValue.length() - 1);
-                                } else {
+                                } else if (repositoryHelper.isExactMatchRegex(candidateValue)) {
                                     if (negateCondition) {
                                         atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
                                         sbCriterion.append(" != \"");
-                                        sbCriterion.append(candidateValue);
+                                        sbCriterion.append(unqualifiedValue);
                                         sbCriterion.append("\"");
                                     } else {
                                         atlasCriterion.setOperator(SearchParameters.Operator.EQ);
                                         sbCriterion.append(" = \"");
-                                        sbCriterion.append(candidateValue);
+                                        sbCriterion.append(unqualifiedValue);
                                         sbCriterion.append("\"");
                                     }
+                                } else {
+                                    ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED;
+                                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
+                                            repositoryName,
+                                            candidateValue);
+                                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                                            ApacheAtlasOMRSMetadataCollection.class.getName(),
+                                            methodName,
+                                            errorMessage,
+                                            errorCode.getSystemAction(),
+                                            errorCode.getUserAction());
                                 }
-                                atlasCriterion.setAttributeValue(candidateValue);
+                                atlasCriterion.setAttributeValue(unqualifiedValue);
                                 if (dslQuery) {
                                     criteria.add((T) sbCriterion.toString());
                                 } else {
