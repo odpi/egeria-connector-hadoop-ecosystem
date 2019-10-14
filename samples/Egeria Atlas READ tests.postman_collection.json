@@ -532,8 +532,7 @@
 							"    pm.expect(jsonData.entity.type.typeDefName).to.equal(\"RelationalTable\");",
 							"});",
 							"pm.test(\"Proper RelationalTable entity\", function() {",
-							"    pm.expect(jsonData.entity.properties.instanceProperties.name.primitiveValue).to.equal(\"test_hive_table1\");",
-							"    pm.expect(jsonData.entity.properties.instanceProperties.comment.primitiveValue).to.contain(\"Imported by sqoop on\");",
+							"    pm.expect(jsonData.entity.properties.instanceProperties.displayName.primitiveValue).to.equal(\"test_hive_table1\");",
 							"    pm.expect(jsonData.entity.properties.instanceProperties.qualifiedName.primitiveValue).to.equal(\"default.test_hive_table1@Sandbox\");",
 							"});",
 							""

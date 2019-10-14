@@ -695,7 +695,7 @@
       },
       {
         "atlas": "name",
-        "omrs": "name"
+        "omrs": "displayName"
       },
       {
         "atlas": "description",
@@ -754,7 +754,7 @@
       },
       {
         "atlas": "name",
-        "omrs": "name"
+        "omrs": "displayName"
       },
       {
         "atlas": "position",
@@ -1005,7 +1005,7 @@
       },
       {
         "atlas": "name",
-        "omrs": "name"
+        "omrs": "displayName"
       },
       {
         "atlas": "description",
