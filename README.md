@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Copyright Contributors to the ODPi Egeria project. -->
 
-[![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-apache-atlas)](LICENSE.md) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-apache-atlas)](https://dev.azure.com/odpi/Egeria/_build)
+[![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-apache-atlas)](LICENSE) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-apache-atlas)](https://dev.azure.com/odpi/Egeria/_build)
 
 # Apache Atlas Repository Connector
 
