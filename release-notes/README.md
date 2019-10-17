@@ -28,6 +28,7 @@ The draft release notes for our future planned releases are below:
     - Migration of Apache Atlas connector repository to a broader Hadoop-focused repository
     - Tech Preview of OMRS metadata maintenance operations for Apache Atlas connector
 - [Release 1.3](release-notes-1-3.md) - Planned December 2019
+    - Add mappings for data processing, to feed into lineage
     - OMRS metadata maintenance conformance for Apache Atlas connector
 
 ----

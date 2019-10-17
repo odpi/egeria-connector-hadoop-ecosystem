@@ -9,6 +9,9 @@ Below are the highlights:
 
 - Conformance to the metadata maintenance profile of [Open Metadata Conformance Repository Workbench](https://egeria.odpi.org/open-metadata-conformance-suite/docs/repository-workbench/).
 
+- Add further mappings for Process entities and their relationships, to integrate
+    Apache Atlas lineage information with Egeria.
+
 - Built on release 1.3 of Egeria, and compatible with Apache Atlas version 2.0
     onwards.
 
