@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Copyright Contributors to the ODPi Egeria project. -->
 
+[![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-apache-atlas)](LICENSE) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-apache-atlas)](https://dev.azure.com/odpi/Egeria/_build)
+
 # Apache Atlas Repository Connector
 
 [Apache Atlas](https://atlas.apache.org) is an open source metadata repository. This connector provides an example
@@ -111,22 +113,31 @@ For example payloads and endpoints, see the [Postman samples](samples).
 
     ```json
     {
-        "apache.atlas.rest.url": "http://{{atlas_host}}:{{atlas_port}}",
-        "apache.atlas.username": "{{atlas_user}}",
-        "apache.atlas.password": "{{atlas_password}}"
+        "class": "Connection",
+        "connectorType": {
+            "class": "ConnectorType",
+            "connectorProviderClassName": "org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider"
+        },
+        "endpoint": {
+            "class": "Endpoint",
+            "address": "{{atlas_host}}:{{atlas_port}}",
+            "protocol": "http"
+        },
+        "userId": "{{atlas_user}}",
+        "clearPassword": "{{atlas_password}}"
     }
     ```
 
     to:
 
     ```
-    {{baseURL}}/open-metadata/admin-services/users/{{user}}/servers/{{server}}/local-repository/mode/repository-proxy/details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider
+    {{baseURL}}/open-metadata/admin-services/users/{{user}}/servers/{{server}}/local-repository/mode/repository-proxy/connection
     ```
 
     The payload should include the hostname and port of your Apache Atlas environment, and a `username` and `password`
     through which the REST API can be accessed.
 
-    Note that you also need to provide the `connectorProvider` parameter, set to the name of the Apache Atlas
+    Note that you also need to provide the `connectorProviderClassName` parameter, set to the name of the Apache Atlas
     connectorProvider class (value as given above).
 
 1. Configure the event mapper for Apache Atlas, by POSTing something like the following:

@@ -239,10 +239,10 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"apache.atlas.rest.url\": \"http://{{atlas_host}}:{{atlas_port}}\",\n\t\"apache.atlas.username\": \"{{atlas_user}}\",\n\t\"apache.atlas.password\": \"{{atlas_password}}\"\n}"
+					"raw": "{\n    \"class\": \"Connection\",\n    \"connectorType\": {\n        \"class\": \"ConnectorType\",\n        \"connectorProviderClassName\": \"org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider\"\n    },\n    \"endpoint\": {\n        \"class\": \"Endpoint\",\n        \"address\": \"{{atlas_host}}:{{atlas_port}}\",\n        \"protocol\": \"http\"\n    },\n    \"userId\": \"{{atlas_user}}\",\n    \"clearPassword\": \"{{atlas_password}}\"\n}\n"
 				},
 				"url": {
-					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{user}}/servers/{{server}}/local-repository/mode/repository-proxy/details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider",
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{user}}/servers/{{server}}/local-repository/mode/repository-proxy/connection",
 					"host": [
 						"{{baseURL}}"
 					],
@@ -256,13 +256,7 @@
 						"local-repository",
 						"mode",
 						"repository-proxy",
-						"details"
-					],
-					"query": [
-						{
-							"key": "connectorProvider",
-							"value": "org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider"
-						}
+						"connection"
 					]
 				}
 			},
