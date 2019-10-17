@@ -15,6 +15,7 @@ import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
+import org.odpi.openmetadata.frameworks.connectors.properties.EndpointProperties;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.OMRSRuntimeException;
@@ -28,7 +29,6 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
 
@@ -61,11 +61,23 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         final String methodName = "initialize";
         if (log.isDebugEnabled()) { log.debug("Initializing ApacheAtlasOMRSRepositoryConnector..."); }
 
-        // Retrieve connection details
-        Map<String, Object> proxyProperties = this.connectionBean.getConfigurationProperties();
-        this.url = (String) proxyProperties.get("apache.atlas.rest.url");
-        String username = (String) proxyProperties.get("apache.atlas.username");
-        String password = (String) proxyProperties.get("apache.atlas.password");
+        EndpointProperties endpointProperties = connectionProperties.getEndpoint();
+        if (endpointProperties == null) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage("null");
+            throw new OMRSRuntimeException(
+                    errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction()
+            );
+        }
+        this.url = endpointProperties.getProtocol() + "://" + endpointProperties.getAddress();
+
+        String username = connectionProperties.getUserId();
+        String password = connectionProperties.getClearPassword();
 
         this.atlasClient = new AtlasClientV2(new String[]{ getBaseURL() }, new String[]{ username, password });
 
