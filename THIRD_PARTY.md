@@ -13,7 +13,7 @@ for each one.
 - FasterXML
     - [jackson-core](https://github.com/FasterXML/jackson-core) licensed under [Apache License 2.0](https://github.com/FasterXML/jackson-core/blob/master/LICENSE)
     - [jackson-annotations](https://github.com/FasterXML/jackson-annotations) licensed under [Apache License 2.0](https://github.com/FasterXML/jackson-annotations/blob/master/LICENSE)
-    - [jackson--databind](https://github.com/FasterXML/jackson-databind) licensed under [Apache License 2.0](https://github.com/FasterXML/jackson-databind/blob/master/LICENSE)
+    - [jackson-databind](https://github.com/FasterXML/jackson-databind) licensed under [Apache License 2.0](https://github.com/FasterXML/jackson-databind/blob/master/LICENSE)
 - [Apache Kafka clients](https://github.com/apache/kafka) licensed under [Apache License 2.0](https://github.com/apache/kafka/blob/trunk/LICENSE) 
 - [Apache Atlas](https://github.com/apache/atlas) common, client-common, client-v2, notification, intg licensed under [Apache License 2.0](https://github.com/apache/atlas/blob/master/LICENSE)
 - [jsr311-api](https://mvnrepository.com/artifact/javax.ws.rs/jsr311-api) licensed under [Common Development and Distribution License 1.0](https://mvnrepository.com/artifact/javax.ws.rs/jsr311-api)
