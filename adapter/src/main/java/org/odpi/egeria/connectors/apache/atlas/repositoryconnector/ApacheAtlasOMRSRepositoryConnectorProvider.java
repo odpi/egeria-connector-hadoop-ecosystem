@@ -26,8 +26,10 @@ public class ApacheAtlasOMRSRepositoryConnectorProvider extends OMRSRepositoryCo
      * OMRS Connector implementation.
      */
     public ApacheAtlasOMRSRepositoryConnectorProvider() {
+
         Class connectorClass = ApacheAtlasOMRSRepositoryConnector.class;
         super.setConnectorClassName(connectorClass.getName());
+
         ConnectorType connectorType = new ConnectorType();
         connectorType.setType(ConnectorType.getConnectorTypeType());
         connectorType.setGUID(connectorTypeGUID);
@@ -35,6 +37,8 @@ public class ApacheAtlasOMRSRepositoryConnectorProvider extends OMRSRepositoryCo
         connectorType.setDisplayName(connectorTypeName);
         connectorType.setDescription(connectorTypeDescription);
         connectorType.setConnectorProviderClassName(this.getClass().getName());
+
         super.connectorTypeBean = connectorType;
+
     }
 }
