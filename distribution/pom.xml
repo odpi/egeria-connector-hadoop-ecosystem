@@ -13,6 +13,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Egeria Connector for Apache Atlas - packaging</name>
+    <description>
+        Bundling of the connectors for distribution and use within an OMAG Server Platform
+    </description>
+
     <artifactId>egeria-connector-apache-atlas-package</artifactId>
 
     <dependencies>
