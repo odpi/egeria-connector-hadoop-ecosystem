@@ -8,7 +8,6 @@ import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.AtlasRelationshipHeader;
 import org.apache.atlas.model.notification.EntityNotification;
 import org.apache.atlas.notification.entity.EntityMessageDeserializer;
-import org.apache.atlas.utils.AtlasJson;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSMetadataCollection;
@@ -30,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ApacheAtlasOMRSRepositoryEventMapper supports the event mapper function for Apache Atlas
@@ -52,9 +52,9 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private String originatorServerType;
 
     private Properties atlasKafkaProperties;
-    private String atlasKafkaBootstrap;
     private String atlasKafkaTopic;
 
+    private KafkaConsumerThread kafkaConsumer;
     private EntityMessageDeserializer deserializer;
 
     /**
@@ -86,7 +86,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         this.atlasKafkaTopic = "ATLAS_ENTITIES";
 
         // Retrieve connection details to configure Kafka connectivity
-        this.atlasKafkaBootstrap = this.connectionBean.getEndpoint().getAddress();
+        String atlasKafkaBootstrap = this.connectionBean.getEndpoint().getAddress();
         atlasKafkaProperties = new Properties();
         atlasKafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, atlasKafkaBootstrap);
         atlasKafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "ApacheAtlasOMRSRepositoryEventMapper_consumer");
@@ -108,6 +108,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
 
         super.start();
         log.info("Apache Atlas Event Mapper starting...");
+        this.kafkaConsumer = new KafkaConsumerThread();
         try {
             this.atlasMetadataCollection = (ApacheAtlasOMRSMetadataCollection) atlasRepositoryConnector.getMetadataCollection();
         } catch (RepositoryErrorException e) {
@@ -173,7 +174,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         }
 
         log.info("Starting consumption from Apache Atlas Kafka bus.");
-        new Thread(new KafkaConsumerThread()).start();
+        kafkaConsumer.start();
 
     }
 
@@ -183,17 +184,30 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      */
     private class KafkaConsumerThread implements Runnable {
 
+        private Thread worker;
+        private final AtomicBoolean running = new AtomicBoolean(false);
+
+        public void start() {
+            worker = new Thread(this);
+            worker.start();
+        }
+
+        public void stop() {
+            running.set(false);
+        }
+
         /**
          * Read Apache Atlas Kafka events.
          */
         @Override
         public void run() {
 
+            running.set(true);
             log.info("Starting Apache Atlas Event Mapper consumer thread.");
             final Consumer<Long, String> consumer = new KafkaConsumer<>(atlasKafkaProperties);
             consumer.subscribe(Collections.singletonList(atlasKafkaTopic));
 
-            while (true) {
+            while (running.get()) {
                 try {
                     ConsumerRecords<Long, String> events = consumer.poll(100);
                     for (ConsumerRecord<Long, String> event : events) {
@@ -472,6 +486,17 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
             log.error("Unable to map relationship to OMRS Relationship: {}", atlasRelationship, e);
         }
         return result;
+    }
+
+    /**
+     * Free up any resources held since the connector is no longer needed.
+     *
+     * @throws ConnectorCheckedException there is a problem within the connector.
+     */
+    @Override
+    public void disconnect() throws ConnectorCheckedException {
+        super.disconnect();
+        kafkaConsumer.stop();
     }
 
 }
