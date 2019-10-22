@@ -28,6 +28,7 @@ import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorEx
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +43,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private List<OpenMetadataTopicConnector> eventBusConnectors = new ArrayList<>();
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSRepositoryEventMapper.class);
+    private static final Duration pollDuration = Duration.ofMillis(100);
 
     private String sourceName;
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
@@ -209,7 +211,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
 
             while (running.get()) {
                 try {
-                    ConsumerRecords<Long, String> events = consumer.poll(100);
+                    ConsumerRecords<Long, String> events = consumer.poll(pollDuration);
                     for (ConsumerRecord<Long, String> event : events) {
                         processEvent(event.value());
                     }
