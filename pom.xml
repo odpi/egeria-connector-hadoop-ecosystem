@@ -91,7 +91,6 @@
         <apacheatlas.version>2.0.0</apacheatlas.version>
         <slf4j.version>1.7.28</slf4j.version>
         <jackson.version>2.10.0</jackson.version>
-        <jackson.databind.version>2.9.9.3</jackson.databind.version>
         <spring.version>5.1.5.RELEASE</spring.version>
         <maven-source-plugin.version>3.1.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>

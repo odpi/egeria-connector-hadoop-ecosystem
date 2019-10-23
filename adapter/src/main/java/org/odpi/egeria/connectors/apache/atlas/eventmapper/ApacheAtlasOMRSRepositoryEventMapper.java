@@ -8,7 +8,6 @@ import org.apache.atlas.model.instance.AtlasRelationship;
 import org.apache.atlas.model.instance.AtlasRelationshipHeader;
 import org.apache.atlas.model.notification.EntityNotification;
 import org.apache.atlas.notification.entity.EntityMessageDeserializer;
-import org.apache.atlas.utils.AtlasJson;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSMetadataCollection;
@@ -29,7 +28,9 @@ import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorEx
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ApacheAtlasOMRSRepositoryEventMapper supports the event mapper function for Apache Atlas
@@ -42,6 +43,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private List<OpenMetadataTopicConnector> eventBusConnectors = new ArrayList<>();
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSRepositoryEventMapper.class);
+    private static final Duration pollDuration = Duration.ofMillis(100);
 
     private String sourceName;
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
@@ -52,9 +54,9 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     private String originatorServerType;
 
     private Properties atlasKafkaProperties;
-    private String atlasKafkaBootstrap;
     private String atlasKafkaTopic;
 
+    private KafkaConsumerThread kafkaConsumer;
     private EntityMessageDeserializer deserializer;
 
     /**
@@ -86,7 +88,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         this.atlasKafkaTopic = "ATLAS_ENTITIES";
 
         // Retrieve connection details to configure Kafka connectivity
-        this.atlasKafkaBootstrap = this.connectionBean.getEndpoint().getAddress();
+        String atlasKafkaBootstrap = this.connectionBean.getEndpoint().getAddress();
         atlasKafkaProperties = new Properties();
         atlasKafkaProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, atlasKafkaBootstrap);
         atlasKafkaProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "ApacheAtlasOMRSRepositoryEventMapper_consumer");
@@ -108,6 +110,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
 
         super.start();
         log.info("Apache Atlas Event Mapper starting...");
+        this.kafkaConsumer = new KafkaConsumerThread();
         try {
             this.atlasMetadataCollection = (ApacheAtlasOMRSMetadataCollection) atlasRepositoryConnector.getMetadataCollection();
         } catch (RepositoryErrorException e) {
@@ -125,55 +128,8 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         this.metadataCollectionId = atlasRepositoryConnector.getMetadataCollectionId();
         this.originatorServerName = atlasRepositoryConnector.getServerName();
         this.originatorServerType = atlasRepositoryConnector.getServerType();
-
-        final String  methodName = "start";
-
-        /*
-         * Step through the embedded connectors, selecting only the OpenMetadataTopicConnectors
-         * to use.
-         */
-        if (embeddedConnectors != null) {
-
-            for (Connector  embeddedConnector : embeddedConnectors) {
-                if (embeddedConnector instanceof OpenMetadataTopicConnector) {
-                    /*
-                     * Successfully found an event bus connector of the right type.
-                     */
-                    OpenMetadataTopicConnector realTopicConnector = (OpenMetadataTopicConnector)embeddedConnector;
-
-                    String   topicName = realTopicConnector.registerListener(this);
-                    this.eventBusConnectors.add(realTopicConnector);
-
-                    if (auditLog != null) {
-                        OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_REGISTERED;
-                        auditLog.logRecord(methodName,
-                                auditCode.getLogMessageId(),
-                                auditCode.getSeverity(),
-                                auditCode.getFormattedLogMessage(repositoryEventMapperName, topicName),
-                                this.getConnection().toString(),
-                                auditCode.getSystemAction(),
-                                auditCode.getUserAction());
-                    }
-                }
-            }
-        }
-
-        /*
-         * OMRSTopicConnector needs at least one event bus connector to operate successfully.
-         */
-        if (this.eventBusConnectors.isEmpty() && auditLog != null) {
-            OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_DEAF;
-            auditLog.logRecord(methodName,
-                    auditCode.getLogMessageId(),
-                    auditCode.getSeverity(),
-                    auditCode.getFormattedLogMessage(repositoryEventMapperName),
-                    this.getConnection().toString(),
-                    auditCode.getSystemAction(),
-                    auditCode.getUserAction());
-        }
-
         log.info("Starting consumption from Apache Atlas Kafka bus.");
-        new Thread(new KafkaConsumerThread()).start();
+        kafkaConsumer.start();
 
     }
 
@@ -183,19 +139,32 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      */
     private class KafkaConsumerThread implements Runnable {
 
+        private Thread worker;
+        private final AtomicBoolean running = new AtomicBoolean(false);
+
+        public void start() {
+            worker = new Thread(this);
+            worker.start();
+        }
+
+        public void stop() {
+            running.set(false);
+        }
+
         /**
          * Read Apache Atlas Kafka events.
          */
         @Override
         public void run() {
 
+            running.set(true);
             log.info("Starting Apache Atlas Event Mapper consumer thread.");
             final Consumer<Long, String> consumer = new KafkaConsumer<>(atlasKafkaProperties);
             consumer.subscribe(Collections.singletonList(atlasKafkaTopic));
 
-            while (true) {
+            while (running.get()) {
                 try {
-                    ConsumerRecords<Long, String> events = consumer.poll(100);
+                    ConsumerRecords<Long, String> events = consumer.poll(pollDuration);
                     for (ConsumerRecord<Long, String> event : events) {
                         processEvent(event.value());
                     }
@@ -472,6 +441,17 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
             log.error("Unable to map relationship to OMRS Relationship: {}", atlasRelationship, e);
         }
         return result;
+    }
+
+    /**
+     * Free up any resources held since the connector is no longer needed.
+     *
+     * @throws ConnectorCheckedException there is a problem within the connector.
+     */
+    @Override
+    public void disconnect() throws ConnectorCheckedException {
+        super.disconnect();
+        kafkaConsumer.stop();
     }
 
 }
