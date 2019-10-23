@@ -128,53 +128,6 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         this.metadataCollectionId = atlasRepositoryConnector.getMetadataCollectionId();
         this.originatorServerName = atlasRepositoryConnector.getServerName();
         this.originatorServerType = atlasRepositoryConnector.getServerType();
-
-        final String  methodName = "start";
-
-        /*
-         * Step through the embedded connectors, selecting only the OpenMetadataTopicConnectors
-         * to use.
-         */
-        if (embeddedConnectors != null) {
-
-            for (Connector  embeddedConnector : embeddedConnectors) {
-                if (embeddedConnector instanceof OpenMetadataTopicConnector) {
-                    /*
-                     * Successfully found an event bus connector of the right type.
-                     */
-                    OpenMetadataTopicConnector realTopicConnector = (OpenMetadataTopicConnector)embeddedConnector;
-
-                    String   topicName = realTopicConnector.registerListener(this);
-                    this.eventBusConnectors.add(realTopicConnector);
-
-                    if (auditLog != null) {
-                        OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_REGISTERED;
-                        auditLog.logRecord(methodName,
-                                auditCode.getLogMessageId(),
-                                auditCode.getSeverity(),
-                                auditCode.getFormattedLogMessage(repositoryEventMapperName, topicName),
-                                this.getConnection().toString(),
-                                auditCode.getSystemAction(),
-                                auditCode.getUserAction());
-                    }
-                }
-            }
-        }
-
-        /*
-         * OMRSTopicConnector needs at least one event bus connector to operate successfully.
-         */
-        if (this.eventBusConnectors.isEmpty() && auditLog != null) {
-            OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_DEAF;
-            auditLog.logRecord(methodName,
-                    auditCode.getLogMessageId(),
-                    auditCode.getSeverity(),
-                    auditCode.getFormattedLogMessage(repositoryEventMapperName),
-                    this.getConnection().toString(),
-                    auditCode.getSystemAction(),
-                    auditCode.getUserAction());
-        }
-
         log.info("Starting consumption from Apache Atlas Kafka bus.");
         kafkaConsumer.start();
 
