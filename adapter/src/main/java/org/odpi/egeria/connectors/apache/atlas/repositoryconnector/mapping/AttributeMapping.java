@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -20,8 +19,6 @@ import java.util.*;
 public abstract class AttributeMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AttributeMapping.class);
-
-    public static final SimpleDateFormat ATLAS_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     /**
      * Indicates whether the provided OMRS and Apache Atlas values match (true) or not (false).
@@ -199,8 +196,7 @@ public abstract class AttributeMapping {
             case ENUM:
                 Map<String, String> enumElementMap = attributeDefStore.getElementMappingsForOMRSTypeDef(omrsTypeDefName);
                 EnumPropertyValue enumPropertyValue = (EnumPropertyValue) omrsValue;
-                String atlasValue = enumElementMap.get(enumPropertyValue.getSymbolicName());
-                value = atlasValue;
+                value = enumElementMap.get(enumPropertyValue.getSymbolicName());
                 break;
             case ARRAY:
                 ArrayPropertyValue arrayPropertyValue = (ArrayPropertyValue) omrsValue;
