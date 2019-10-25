@@ -15,11 +15,7 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMappingAtlas2OMRS;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.RelationshipMapping;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
-import org.odpi.openmetadata.frameworks.connectors.Connector;
-import org.odpi.openmetadata.frameworks.connectors.VirtualConnectorExtension;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
-import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditCode;
-import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicListener;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
@@ -37,10 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * when used as an open metadata repository.
  */
 public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMapperBase
-        implements VirtualConnectorExtension, OpenMetadataTopicListener {
-
-    private List<Connector> embeddedConnectors = null;
-    private List<OpenMetadataTopicConnector> eventBusConnectors = new ArrayList<>();
+        implements OpenMetadataTopicListener {
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSRepositoryEventMapper.class);
     private static final Duration pollDuration = Duration.ofMillis(100);
@@ -139,15 +132,14 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      */
     private class KafkaConsumerThread implements Runnable {
 
-        private Thread worker;
         private final AtomicBoolean running = new AtomicBoolean(false);
 
-        public void start() {
-            worker = new Thread(this);
+        void start() {
+            Thread worker = new Thread(this);
             worker.start();
         }
 
-        public void stop() {
+        void stop() {
             running.set(false);
         }
 
@@ -159,33 +151,21 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
 
             running.set(true);
             log.info("Starting Apache Atlas Event Mapper consumer thread.");
-            final Consumer<Long, String> consumer = new KafkaConsumer<>(atlasKafkaProperties);
-            consumer.subscribe(Collections.singletonList(atlasKafkaTopic));
-
-            while (running.get()) {
-                try {
-                    ConsumerRecords<Long, String> events = consumer.poll(pollDuration);
-                    for (ConsumerRecord<Long, String> event : events) {
-                        processEvent(event.value());
+            try (final Consumer<Long, String> consumer = new KafkaConsumer<>(atlasKafkaProperties)) {
+                consumer.subscribe(Collections.singletonList(atlasKafkaTopic));
+                while (running.get()) {
+                    try {
+                        ConsumerRecords<Long, String> events = consumer.poll(pollDuration);
+                        for (ConsumerRecord<Long, String> event : events) {
+                            processEvent(event.value());
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed trying to consume Apache Atlas events from Kafka.", e);
                     }
-                } catch (Exception e) {
-                    log.error("Failed trying to consume Apache Atlas events from Kafka.", e);
                 }
             }
         }
 
-    }
-
-
-    /**
-     * Registers itself as a listener of any OpenMetadataTopicConnectors that are passed as
-     * embedded connectors.
-     *
-     * @param embeddedConnectors  list of connectors
-     */
-    @Override
-    public void initializeEmbeddedConnectors(List<Connector> embeddedConnectors) {
-        this.embeddedConnectors = embeddedConnectors;
     }
 
 
@@ -319,9 +299,9 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     /**
      * Generate any pseudo-relationships for the provided entity.
      *
-     * @param atlasEntityHeader
-     * @param entityDetail
-     * @return
+     * @param atlasEntityHeader the Atlas entity for which to generate pseudo-relationships
+     * @param entityDetail the EntityDetail for which to generate pseudo-relationships
+     * @return {@code List<Relationship>}
      */
     private List<Relationship> getGeneratedRelationshipsForEntity(AtlasEntityHeader atlasEntityHeader,
                                                                   EntityDetail entityDetail) {

@@ -2,7 +2,6 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.*;
@@ -21,15 +20,17 @@ import org.odpi.openmetadata.repositoryservices.ffdc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBase {
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSMetadataCollection.class);
 
-    public static final String GENERATED_TYPE_PREFIX = "__|";
-    public static final String GENERATED_TYPE_POSTFIX = "|__";
+    private static final String GENERATED_TYPE_PREFIX = "__|";
+    private static final String GENERATED_TYPE_POSTFIX = "|__";
 
+    private final SimpleDateFormat ATLAS_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeTypeDefStore;
@@ -2543,7 +2544,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 break;
                             case OM_PRIMITIVE_TYPE_DATE:
                                 Date date = (Date) actualValue.getPrimitiveValue();
-                                String formattedDate = AttributeMapping.ATLAS_DATE_FORMAT.format(date);
+                                String formattedDate = ATLAS_DATE_FORMAT.format(date);
                                 atlasCriterion.setAttributeName(atlasPropertyName);
                                 sbCriterion.append(atlasPropertyName);
                                 if (negateCondition) {
