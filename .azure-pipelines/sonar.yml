@@ -11,6 +11,8 @@ variables:
   - group: SonarCloud
   - name: projectKey
     value: 'egeria-connector-apache-atlas'
+  - name: projectName
+    value: 'Egeria - Connector Apache Atlas'
 
 stages:
   - stage: Sonar
