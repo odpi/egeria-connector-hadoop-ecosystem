@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "78bb3df9-b4fa-4568-8eb9-5555610a284c",
-		"name": "Egeria Atlas repo connector",
+		"name": "Egeria-Apache-Atlas-config",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
