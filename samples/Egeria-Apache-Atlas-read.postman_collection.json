@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "0a7b6a12-da4b-4e87-9dec-77a50b8565a7",
-		"name": "Egeria Atlas READ tests",
+		"name": "Egeria-Apache-Atlas-read",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
