@@ -596,6 +596,7 @@ public class TypeDefStore {
          * Retrieve the corresponding Apache Atlas endpoint given an OMRS endpoint attribute name.
          *
          * @param omrsEndpointName the OMRS endpoint attribute name
+         * @param entityPrefix the prefix (if any) for the entity
          * @return Endpoint
          */
         public Endpoint getMatchingAtlasEndpoint(String omrsEndpointName, String entityPrefix) {
