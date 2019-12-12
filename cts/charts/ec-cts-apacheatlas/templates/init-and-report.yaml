@@ -63,8 +63,8 @@ spec:
               - "/bin/bash"
               - "-c"
               - >
-                  until $(curl -s -f --connect-timeout 5 --url ${ATLAS_ENDPOINT}/login.jsp &>/dev/null); do
-                  echo waiting for ${ATLAS_ENDPOINT} to be accessible;
+                  until $(curl -s -f --connect-timeout 5 --url http://${ATLAS_HOST}:${ATLAS_PORT}/login.jsp &>/dev/null); do
+                  echo waiting for http://${ATLAS_HOST}:${ATLAS_PORT}/login.jsp to be accessible;
                   sleep 2;
                   done;
       # Then configure and startup the CTS, and eventually produce the reports
