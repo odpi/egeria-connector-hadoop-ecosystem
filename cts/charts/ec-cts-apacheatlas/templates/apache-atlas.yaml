@@ -18,8 +18,6 @@ spec:
       port: 8080
     - name: web
       port: 21000
-    - name: zookeeper
-      port: 9026
     - name: kafka
       port: 9027
   selector:
