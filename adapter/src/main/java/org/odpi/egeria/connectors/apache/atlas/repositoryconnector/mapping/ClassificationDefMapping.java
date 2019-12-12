@@ -30,6 +30,7 @@ public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
      *
      * @param omrsClassificationDef the OMRS ClassificationDef to add to Apache Atlas
      * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
+     * @param attributeDefStore the store of mapped / implemented AttributeTypeDefs in Apache Atlas
      * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
      * @throws TypeDefNotSupportedException when classification cannot be fully represented in Atlas
      */

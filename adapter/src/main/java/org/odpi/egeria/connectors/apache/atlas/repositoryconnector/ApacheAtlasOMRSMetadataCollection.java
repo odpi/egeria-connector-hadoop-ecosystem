@@ -69,7 +69,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param userId unique identifier for requesting user.
      * @return TypeDefGalleryResponse List of different categories of type definitions.
      * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     @Override
     public TypeDefGallery getAllTypes(String   userId) throws RepositoryErrorException,
