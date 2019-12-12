@@ -22,8 +22,10 @@ release:
 image:
   egeria:
     name: egeria
+    pullPolicy: Always
   configure:
     name: egeria-configure
+    pullPolicy: Always
   apacheatlas:
     name: apache-atlas
 
