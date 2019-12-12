@@ -119,7 +119,7 @@ spec:
                   {{ if (.Values.image.apacheatlas.namespace | default .Values.imageDefaults.namespace) }}{{ .Values.image.apacheatlas.namespace | default .Values.imageDefaults.namespace }}/{{ end }}\
                   {{ .Values.image.apacheatlas.name }}\
                   :{{ .Values.image.apacheatlas.tag | default .Values.imageDefaults.tag }}"
-          imagePullPolicy: {{ .Values.image.ibmigc.pullPolicy | default .Values.imageDefaults.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.apacheatlas.pullPolicy | default .Values.imageDefaults.pullPolicy }}
           securityContext:
             privileged: true
           ports:
