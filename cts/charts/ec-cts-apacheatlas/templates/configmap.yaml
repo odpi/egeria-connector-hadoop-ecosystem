@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright Contributors to the Egeria project.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+  labels:
+    app.kubernetes.io/name: {{ include "myapp.name" . }}
+    helm.sh/chart: {{ include "myapp.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  # General cluster configuration - for core egeria, kafka - these must be used
+  EGERIA_USER: {{ .Values.egeria.user }}
+  EGERIA_COHORT: {{ .Values.egeria.cohort }}
+  EGERIA_SERVER: {{ .Values.egeria.server }}
+  KAFKA_ENDPOINT: {{ .Release.Name }}-kafka:9092
+
+  # Used by Apache Atlas
+  STRICT_SSL: "false"
+  LOGGING_LEVEL_ROOT: {{ .Values.logging.level }}
+  ATLAS_ENDPOINT: http://{{ .Release.Name }}-apache-atlas-service:8080
+  ATLAS_HOST: atlas
+  ATLAS_PORT: "21000"
+  ATLAS_KAFKA_ENDPOINT: atlas:9027
+  ATLAS_USER: {{ .Values.apacheatlas.user }}
+  ATLAS_PASS: {{ .Values.apacheatlas.password }}
+  ATLAS_SERVER: {{ .Values.apacheatlas.proxyserver }}
+
+  # Used for downloads
+  CONNECTOR_URL: https://odpi.jfrog.io/odpi/egeria-{{ .Values.release.repo }}-local/org/odpi/egeria/egeria-connector-apache-atlas-package/{{ .Values.release.version }}/egeria-connector-apache-atlas-package-{{ .Values.release.version }}.jar
+  CTS_REPORT_NAME: {{ .Release.Name }}
