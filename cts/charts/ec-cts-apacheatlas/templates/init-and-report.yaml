@@ -154,8 +154,8 @@ spec:
                 &&
                 testcount=$(cat /tmp/openmetadata.conformance.testlab.results | jq '.testLabResults.testCaseCount')
                 &&
-                until [ ${testcount} -ge 399 ]; do
-                echo "... waiting for CTS to complete (${testcount} / 399 tests completed)";
+                until [ ${testcount} -ge 523 ]; do
+                echo "... waiting for CTS to complete (${testcount} / 523 tests completed)";
                 sleep 20;
                 curl -f --silent --basic admin:admin -X GET --max-time 900 ${ATLAS_ENDPOINT}/servers/cts/open-metadata/conformance-suite/users/${EGERIA_USER}/report > /tmp/openmetadata.conformance.testlab.results;
                 testcount=$(cat /tmp/openmetadata.conformance.testlab.results | jq '.testLabResults.testCaseCount');
