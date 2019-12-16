@@ -1132,10 +1132,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Immediately throw unimplemented exception if trying to retrieve historical view or sequence by property
         if (asOfTime != null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    this.getClass().getName(),
-                    repositoryName);
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
             throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
                     this.getClass().getName(),
                     methodName,
@@ -1271,10 +1269,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    this.getClass().getName(),
-                    repositoryName);
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
             throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
                     this.getClass().getName(),
                     methodName,
@@ -1406,10 +1402,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    this.getClass().getName(),
-                    repositoryName);
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
             throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
                     this.getClass().getName(),
                     methodName,
@@ -1610,10 +1604,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    this.getClass().getName(),
-                    repositoryName);
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
             throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
                     this.getClass().getName(),
                     methodName,
@@ -2354,7 +2346,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
 
             AtlasSearchResult results = atlasRepositoryConnector.searchForEntities(searchParameters);
-            totalResults.add(results);
+            if (results != null) {
+                totalResults.add(results);
+            }
 
         }
 
@@ -2376,7 +2370,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         } else {
             List<AtlasEntityHeader> totalResults = new ArrayList<>();
             for (AtlasSearchResult result : resultsList) {
-                totalResults.addAll(result.getEntities());
+                if (result != null) {
+                    List<AtlasEntityHeader> entityResults = result.getEntities();
+                    if (entityResults != null) {
+                        totalResults.addAll(entityResults);
+                    }
+                }
             }
             return totalResults;
         }
@@ -2542,8 +2541,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 }
                                 break;
                             case OM_PRIMITIVE_TYPE_DATE:
-                                Date date = (Date) actualValue.getPrimitiveValue();
-                                String formattedDate = ATLAS_DATE_FORMAT.format(date);
+                                Long epoch = (Long) actualValue.getPrimitiveValue();
+                                String formattedDate = ATLAS_DATE_FORMAT.format(new Date(epoch));
                                 atlasCriterion.setAttributeName(atlasPropertyName);
                                 sbCriterion.append(atlasPropertyName);
                                 if (negateCondition) {

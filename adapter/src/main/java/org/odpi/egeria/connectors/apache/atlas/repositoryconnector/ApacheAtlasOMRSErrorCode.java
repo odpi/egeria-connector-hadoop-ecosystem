@@ -31,6 +31,11 @@ public enum ApacheAtlasOMRSErrorCode {
             "This repository has a fixed subset of regular expressions it can support.",
             "No action required, this is a limitation of the technology. To search using such regular expressions, the metadata of interest" +
                     " must be synchronized to a cohort repository that can support such regular expressions."),
+    NO_HISTORY(501, "OMRS-ATLAS-REPOSITORY-501-002 ",
+            "Repository {0} is not able to service historical queries",
+            "This repository does not retain historical metadata, so cannot support historical queries.",
+            "No action required, this is a limitation of the technology. To search such history, the metadata of interest" +
+                    " must be synchronized to a cohort repository that can support history."),
     INSTANCE_NOT_PROVIDED(404, "OMRS-ATLAS-REPOSITORY-404-001 ",
             "The instance provided to the method \"{0}\" of repository \"{1}\" was null",
             "The system was unable to process the instance provided, because no instance was provided.",
