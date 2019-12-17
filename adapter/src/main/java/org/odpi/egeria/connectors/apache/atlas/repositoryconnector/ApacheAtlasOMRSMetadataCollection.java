@@ -5,6 +5,7 @@ package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.*;
+import org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
@@ -35,6 +36,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeTypeDefStore;
     private Set<InstanceStatus> availableStates;
+    private ApacheAtlasOMRSRepositoryEventMapper eventMapper = null;
 
     /**
      * @param parentConnector      connector that this metadata collection supports.
@@ -674,6 +676,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             );
         }
 
+        checkEventMapperIsConfigured(methodName);
+        eventMapper.sendNewTypeDefEvent(newTypeDef);
+
     }
 
     /**
@@ -751,6 +756,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     "Request support through Egeria GitHub issue."
             );
         }
+
+        checkEventMapperIsConfigured(methodName);
+        eventMapper.sendNewAttributeTypeDefEvent(newAttributeTypeDef);
 
     }
 
@@ -1948,6 +1956,139 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     */
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void refreshEntityReferenceCopy(String userId,
+                                           String entityGUID,
+                                           String typeDefGUID,
+                                           String typeDefName,
+                                           String homeMetadataCollectionId) throws
+            InvalidParameterException,
+            RepositoryErrorException,
+            HomeEntityException,
+            UserNotAuthorizedException {
+
+        final String methodName = "refreshEntityReferenceCopy";
+        final String entityParameterName = "entityGUID";
+        final String homeParameterName = "homeMetadataCollectionId";
+
+        /*
+         * Validate parameters
+         */
+        super.manageReferenceInstanceParameterValidation(userId,
+                entityGUID,
+                typeDefGUID,
+                typeDefName,
+                entityParameterName,
+                homeMetadataCollectionId,
+                homeParameterName,
+                methodName);
+
+        /*
+         * Validate that the entity GUID is ok
+         */
+        EntityDetail entity = this.isEntityKnown(userId, entityGUID);
+        if (entity != null) {
+            if (metadataCollectionId.equals(entity.getMetadataCollectionId())) {
+                OMRSErrorCode errorCode = OMRSErrorCode.HOME_REFRESH;
+                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                        entityGUID,
+                        metadataCollectionId,
+                        repositoryName);
+                throw new HomeEntityException(errorCode.getHTTPErrorCode(),
+                        this.getClass().getName(),
+                        methodName,
+                        errorMessage,
+                        errorCode.getSystemAction(),
+                        errorCode.getUserAction());
+            }
+        }
+
+        /*
+         * Send refresh message
+         */
+        checkEventMapperIsConfigured(methodName);
+        eventMapper.sendRefreshEntityRequest(
+                typeDefGUID,
+                typeDefName,
+                entityGUID,
+                homeMetadataCollectionId
+        );
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void refreshRelationshipReferenceCopy(String userId,
+                                                 String relationshipGUID,
+                                                 String typeDefGUID,
+                                                 String typeDefName,
+                                                 String homeMetadataCollectionId) throws
+            InvalidParameterException,
+            RepositoryErrorException,
+            HomeRelationshipException,
+            UserNotAuthorizedException {
+
+        final String methodName = "refreshRelationshipReferenceCopy";
+        final String relationshipParameterName = "relationshipGUID";
+        final String homeParameterName = "homeMetadataCollectionId";
+
+        /*
+         * Validate parameters
+         */
+        super.manageReferenceInstanceParameterValidation(userId,
+                relationshipGUID,
+                typeDefGUID,
+                typeDefName,
+                relationshipParameterName,
+                homeMetadataCollectionId,
+                homeParameterName,
+                methodName);
+
+        Relationship relationship = this.isRelationshipKnown(userId, relationshipGUID);
+        if (relationship != null) {
+            if (metadataCollectionId.equals(relationship.getMetadataCollectionId())) {
+                OMRSErrorCode errorCode = OMRSErrorCode.HOME_REFRESH;
+                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
+                        relationshipGUID,
+                        metadataCollectionId,
+                        repositoryName);
+
+                throw new HomeRelationshipException(errorCode.getHTTPErrorCode(),
+                        this.getClass().getName(),
+                        methodName,
+                        errorMessage,
+                        errorCode.getSystemAction(),
+                        errorCode.getUserAction());
+            }
+        }
+
+        /*
+         * Process refresh request
+         */
+        checkEventMapperIsConfigured(methodName);
+        eventMapper.sendRefreshRelationshipRequest(
+                typeDefGUID,
+                typeDefName,
+                relationshipGUID,
+                homeMetadataCollectionId
+        );
+
+    }
+
+    /**
+     * Configure the event mapper that should be used to send any outbound events.
+     *
+     * @param eventMapper the event mapper to use
+     */
+    public void setEventMapper(ApacheAtlasOMRSRepositoryEventMapper eventMapper) {
+        this.eventMapper = eventMapper;
+    }
+
+    /**
      * Retrieve the type definitions that are mapped for this repository.
      *
      * @return TypeDefStore
@@ -1967,6 +2108,24 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @return {@code Set<InstanceStatus>}
      */
     public Set<InstanceStatus> getAvailableStates() { return this.availableStates; }
+
+    /**
+     * Ensure that the event mapper is configured and throw exception if it is not.
+     *
+     * @param methodName the method attempting to use the event mapper
+     */
+    private void checkEventMapperIsConfigured(String methodName) throws RepositoryErrorException {
+        if (eventMapper == null) {
+            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.EVENT_MAPPER_NOT_INITIALIZED;
+            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
+            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                    this.getClass().getName(),
+                    methodName,
+                    errorMessage,
+                    errorCode.getSystemAction(),
+                    errorCode.getUserAction());
+        }
+    }
 
     /**
      * Build an Atlas domain-specific language (DSL) query based on the provided parameters, and return its results.
