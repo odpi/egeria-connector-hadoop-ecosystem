@@ -15,7 +15,7 @@
 
     <name>Egeria Connector for Apache Atlas - packaging</name>
     <description>
-        Bundling of the connectors for distribution and use within an OMAG Server Platform
+        Bundling of the Apache Atlas connectors for distribution and use within an OMAG Server Platform
     </description>
 
     <artifactId>egeria-connector-apache-atlas-package</artifactId>
@@ -31,37 +31,22 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade.version}</version>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>assemble</id>
-                        <phase>package</phase>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>single</goal>
                         </goals>
+                        <phase>prepare-package</phase>
                         <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>org.odpi.egeria:egeria-connector-apache-atlas-adapter</include>
-                                    <include>org.apache.atlas:atlas-client-common</include>
-                                    <include>org.apache.atlas:atlas-client-v1</include>
-                                    <include>org.apache.atlas:atlas-client-v2</include>
-                                    <include>org.apache.atlas:atlas-intg</include>
-                                    <include>org.apache.atlas:atlas-notification</include>
-                                    <include>org.apache.hadoop:hadoop-auth</include>
-                                    <include>org.apache.hadoop:hadoop-common</include>
-                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
-                                    <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
-                                    <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
-                                    <include>com.sun.jersey:jersey-client</include>
-                                    <include>com.sun.jersey:jersey-core</include>
-                                    <include>com.sun.jersey:jersey-json</include>
-                                    <include>com.sun.jersey.contribs:jersey-multipart</include>
-                                    <include>javax.ws.rs:jsr311-api</include>
-                                </includes>
-                            </artifactSet>
+                            <skipAssembly>false</skipAssembly>
+                            <descriptors>
+                                <descriptor>src/main/assemblies/src.xml</descriptor>
+                                <descriptor>src/main/assemblies/javadoc.xml</descriptor>
+                                <descriptor>src/main/assemblies/connector.xml</descriptor>
+                            </descriptors>
+                            <finalName>egeria-connector-apache-atlas-${open-metadata.version}</finalName>
+                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>

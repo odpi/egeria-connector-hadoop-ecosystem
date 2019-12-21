@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright Contributors to the ODPi Egeria project.  -->
+
+<assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>jar-with-dependencies</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <unpack>true</unpack>
+            <scope>compile</scope>
+            <includes>
+                <include>org.odpi.egeria:egeria-connector-apache-atlas-adapter</include>
+                <include>org.apache.atlas:atlas-client-common</include>
+                <include>org.apache.atlas:atlas-client-v1</include>
+                <include>org.apache.atlas:atlas-client-v2</include>
+                <include>org.apache.atlas:atlas-intg</include>
+                <include>org.apache.atlas:atlas-notification</include>
+                <include>org.apache.hadoop:hadoop-auth</include>
+                <include>org.apache.hadoop:hadoop-common</include>
+                <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
+                <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
+                <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
+                <include>com.sun.jersey:jersey-client</include>
+                <include>com.sun.jersey:jersey-core</include>
+                <include>com.sun.jersey:jersey-json</include>
+                <include>com.sun.jersey.contribs:jersey-multipart</include>
+                <include>javax.ws.rs:jsr311-api</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
