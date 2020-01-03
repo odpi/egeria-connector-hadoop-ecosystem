@@ -24,6 +24,10 @@ public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
 
     private static final Logger log = LoggerFactory.getLogger(ClassificationDefMapping.class);
 
+    private ClassificationDefMapping() {
+        // Do nothing...
+    }
+
     /**
      * Adds the provided OMRS type definition to Apache Atlas (if possible), or throws a TypeDefNotSupportedException
      * if not possible.

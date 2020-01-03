@@ -18,6 +18,10 @@ import java.util.List;
  */
 public abstract class EnumDefMapping {
 
+    private EnumDefMapping() {
+        // Do nothing...
+    }
+
     public static void addEnumToAtlas(EnumDef omrsEnumDef,
                                       AttributeTypeDefStore attributeDefStore,
                                       ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector) {

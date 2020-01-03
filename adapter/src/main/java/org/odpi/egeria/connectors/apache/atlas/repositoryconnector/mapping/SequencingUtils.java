@@ -12,6 +12,10 @@ import java.util.Comparator;
 
 public class SequencingUtils {
 
+    private SequencingUtils() {
+        // Do nothing...
+    }
+
     public static final Comparator<Relationship> getRelationshipComparator(SequencingOrder sequencingOrder,
                                                                            String sequencingProperty) {
 

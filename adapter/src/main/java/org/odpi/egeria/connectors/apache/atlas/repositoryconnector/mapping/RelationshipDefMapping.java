@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Class that generically handles converting between Apache Atlas and OMRS Relationship TypeDefs.
@@ -26,6 +25,10 @@ import java.util.Map;
 public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
 
     private static final Logger log = LoggerFactory.getLogger(RelationshipDefMapping.class);
+
+    private RelationshipDefMapping() {
+        // Do nothing...
+    }
 
     /**
      * Adds the provided OMRS type definition to Apache Atlas (if possible), or throws a TypeDefNotSupportedException

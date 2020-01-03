@@ -113,8 +113,8 @@ public class AttributeTypeDefStore {
         if (omrsGuidToTypeDef.containsKey(guid)) {
             return omrsGuidToTypeDef.get(guid);
         } else {
-            if (warnIfNotFound) {
-                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS AttributeTypeDef by GUID: {}", guid); }
+            if (warnIfNotFound && log.isWarnEnabled()) {
+                log.warn("Unable to find OMRS AttributeTypeDef by GUID: {}", guid);
             }
             return null;
         }
@@ -142,8 +142,8 @@ public class AttributeTypeDefStore {
             String guid = omrsNameToGuid.get(name);
             return getAttributeTypeDefByGUID(guid, warnIfNotFound);
         } else {
-            if (warnIfNotFound) {
-                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS AttributeTypeDef by Name: {}", name); }
+            if (warnIfNotFound && log.isWarnEnabled()) {
+                log.warn("Unable to find OMRS AttributeTypeDef by Name: {}", name);
             }
             return null;
         }

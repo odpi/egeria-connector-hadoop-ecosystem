@@ -20,6 +20,10 @@ public abstract class AttributeMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AttributeMapping.class);
 
+    private AttributeMapping() {
+        // Do nothing...
+    }
+
     /**
      * Indicates whether the provided OMRS and Apache Atlas values match (true) or not (false).
      *
@@ -83,7 +87,7 @@ public abstract class AttributeMapping {
                             break;
                         case OM_PRIMITIVE_TYPE_STRING:
                             String stringVal = (String) primitivePropertyValue.getPrimitiveValue();
-                            if (atlasValue != null) {
+                            if (stringVal != null) {
                                 String toCompare = (String) atlasValue;
                                 bMatch = toCompare.matches(stringVal);
                             }
@@ -134,7 +138,7 @@ public abstract class AttributeMapping {
 
         switch (property.getAttributeType().getCategory()) {
             case ENUM_DEF:
-                resultingProperties = AttributeMapping.addEnumPropertyToInstance(
+                AttributeMapping.addEnumPropertyToInstance(
                         resultingProperties,
                         property,
                         attributeDefStore.getElementMappingsForOMRSTypeDef(property.getAttributeType().getName()),
@@ -247,7 +251,7 @@ public abstract class AttributeMapping {
 
         if (propertyValue != null) {
             String propertyName = property.getAttributeName();
-            if (log.isDebugEnabled()) { log.debug("Adding property " + propertyName + " for " + methodName); }
+            if (log.isDebugEnabled()) { log.debug("Adding property {} for {}", propertyName, methodName); }
 
             if (property.getAttributeType().getCategory() == AttributeTypeDefCategory.PRIMITIVE) {
                 try {
@@ -343,7 +347,7 @@ public abstract class AttributeMapping {
                                         (Date) propertyValue,
                                         methodName
                                 );
-                            } else if (propertyValue != null) {
+                            } else {
                                 // Assume if not a date and not null, it is a numeric epoch timestamp
                                 resultingProperties = omrsRepositoryHelper.addDatePropertyToInstance(
                                         sourceName,

@@ -1322,6 +1322,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         if (results != null) {
             entityDetails = sortAndLimitFinalResults(
                     results,
+                    entityTypeGUID,
                     fromEntityElement,
                     sequencingProperty,
                     sequencingOrder,
@@ -1527,6 +1528,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         List<EntityDetail> entityDetails = sortAndLimitFinalResults(
                 atlasEntities,
+                entityTypeGUID,
                 fromEntityElement,
                 sequencingProperty,
                 sequencingOrder,
@@ -1646,7 +1648,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
                         null,
                         null,
-                        "",
+                        null,
                         fromEntityElement,
                         limitResultsByStatus,
                         pageSize
@@ -1661,7 +1663,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
                     null,
                     null,
-                    repositoryHelper.getUnqualifiedLiteralString(searchCriteria),
+                    searchCriteria,
                     fromEntityElement,
                     limitResultsByStatus,
                     pageSize
@@ -1688,29 +1690,23 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     TypeDefAttribute typeDefAttribute = attributeEntry.getValue();
                     // Only need to retain string-based attributes for the full text search
                     AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
-                    switch (attributeTypeDef.getCategory()) {
-                        case PRIMITIVE:
-                            PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
-                            switch (primitiveDef.getPrimitiveDefCategory()) {
-                                case OM_PRIMITIVE_TYPE_STRING:
-                                case OM_PRIMITIVE_TYPE_BYTE:
-                                case OM_PRIMITIVE_TYPE_CHAR:
-                                    matchProperties = repositoryHelper.addStringPropertyToInstance(
-                                            repositoryName,
-                                            matchProperties,
-                                            attributeName,
-                                            searchCriteria,
-                                            methodName
-                                    );
-                                    break;
-                                default:
-                                    if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
-                                    break;
-                            }
-                            break;
-                        default:
+                    if (attributeTypeDef.getCategory().equals(AttributeTypeDefCategory.PRIMITIVE)) {
+                        PrimitiveDefCategory primitiveDefCategory = ((PrimitiveDef) attributeTypeDef).getPrimitiveDefCategory();
+                        if (primitiveDefCategory.equals(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING)
+                                || primitiveDefCategory.equals(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_BYTE)
+                                || primitiveDefCategory.equals(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_CHAR)) {
+                            matchProperties = repositoryHelper.addStringPropertyToInstance(
+                                    repositoryName,
+                                    matchProperties,
+                                    attributeName,
+                                    searchCriteria,
+                                    methodName
+                            );
+                        } else {
                             if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
-                            break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
                     }
                 }
             }
@@ -1751,6 +1747,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         if (results != null) {
             entityDetails = sortAndLimitFinalResults(
                     results,
+                    entityTypeGUID,
                     fromEntityElement,
                     sequencingProperty,
                     sequencingOrder,
@@ -2149,7 +2146,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                 unrestricted return results size.
      * @return {@code List<AtlasEntityHeader>}
      * @throws FunctionNotSupportedException when trying to search using a status that is not supported in Atlas
-     * @throws RepositoryErrorException when a regular expression is used for the search that is not supported
      */
     private List<AtlasEntityHeader> buildAndRunDSLSearch(String methodName,
                                                          String entityTypeGUID,
@@ -2161,7 +2157,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                          String sequencingProperty,
                                                          SequencingOrder sequencingOrder,
                                                          int pageSize)
-            throws FunctionNotSupportedException, RepositoryErrorException {
+            throws FunctionNotSupportedException {
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
@@ -2430,14 +2426,15 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             searchParameters.setOffset(fromEntityElement);
             searchParameters.setLimit(pageSize);
 
+            Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName, prefix);
+            Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
+            List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
+
             if (matchProperties != null) {
                 Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
                 // By default, include only Referenceable's properties (as these will be the only properties that exist
                 // across ALL entity types)
-                Map<String, String> omrsPropertyMap = typeDefStore.getPropertyMappingsForOMRSTypeDef(omrsTypeName, prefix);
-                Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
                 if (properties != null) {
-                    List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
                     for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
                         String omrsPropertyName = property.getKey();
                         InstancePropertyValue value = property.getValue();
@@ -2451,31 +2448,79 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 false
                         );
                     }
-                    SearchParameters.FilterCriteria entityFilters = new SearchParameters.FilterCriteria();
-                    if (criteria.size() > 1) {
-                        entityFilters.setCriterion(criteria);
-                        if (matchCriteria != null) {
-                            switch (matchCriteria) {
-                                case ALL:
-                                case NONE:
-                                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
-                                    break;
-                                case ANY:
-                                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
-                                    break;
-                            }
-                        } else {
-                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
-                        }
-                    } else {
-                        entityFilters = criteria.get(0);
-                    }
-                    searchParameters.setEntityFilters(entityFilters);
                 }
             } else if (fullTextQuery != null) {
-                // TODO: escape regex here?
-                searchParameters.setQuery(fullTextQuery);
+
+                // Note that while it would be great to use the 'setQuery' of Atlas for this, it unfortunately does
+                // not work for all kinds of cases where things like '.' or '/' are involved (which even appear in
+                // Atlas's own sample metadata for properties like qualifiedName). Therefore we must do an OR-based
+                // search explicitly across all string-based properties.
+
+                // Setup a new PrimitivePropertyValue for the full text itself, that we can use for all of the
+                // various string attributes
+                PrimitivePropertyValue primitivePropertyValue = new PrimitivePropertyValue();
+                primitivePropertyValue.setPrimitiveDefCategory(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING);
+                primitivePropertyValue.setPrimitiveValue(fullTextQuery);
+                primitivePropertyValue.setTypeName(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING.getName());
+                primitivePropertyValue.setTypeGUID(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING.getGUID());
+
+                // Iterate through all of the string attributes, and for any that are actually mapped to OMRS
+                // add a search condition for them
+                for (Map.Entry<String, TypeDefAttribute> mapEntry : omrsAttrTypeDefs.entrySet()) {
+                    String omrsPropertyName = mapEntry.getKey();
+                    TypeDefAttribute typeDefAttribute = mapEntry.getValue();
+                    log.debug("Considering attribute: {}", omrsPropertyName);
+                    AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();
+                    if (attributeTypeDef.getCategory().equals(AttributeTypeDefCategory.PRIMITIVE)) {
+                        PrimitiveDef primitiveDef = (PrimitiveDef) attributeTypeDef;
+                        if (primitiveDef.getPrimitiveDefCategory().equals(PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING)) {
+                            log.debug(" ... attribute is a String, continuing ...");
+                            if (omrsPropertyMap.containsKey(omrsPropertyName)) {
+                                String atlasPropertyName = omrsPropertyMap.get(omrsPropertyName);
+                                log.debug(" ... attribute is mapped, to: {}", atlasPropertyName);
+                                if (atlasPropertyName != null) {
+                                    log.debug(" ... adding criterion for value: {}", primitivePropertyValue);
+                                    addSearchConditionFromValue(
+                                            criteria,
+                                            omrsPropertyName,
+                                            primitivePropertyValue,
+                                            omrsPropertyMap,
+                                            omrsAttrTypeDefs,
+                                            (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
+                                            false
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
+            SearchParameters.FilterCriteria entityFilters = new SearchParameters.FilterCriteria();
+            if (criteria.size() > 1) {
+                entityFilters.setCriterion(criteria);
+                if (matchCriteria != null) {
+                    // If matchCriteria were provided, use them
+                    switch (matchCriteria) {
+                        case ALL:
+                        case NONE:
+                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                            break;
+                        case ANY:
+                            entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                            break;
+                    }
+                } else if (fullTextQuery != null) {
+                    // If none were provided, but a fullTextQuery was, we should use an OR-based semantic
+                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                } else {
+                    // Otherwise we should default to an AND-based semantic
+                    entityFilters.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+                }
+            } else if (criteria.size() == 1) {
+                entityFilters = criteria.get(0);
+            }
+            searchParameters.setEntityFilters(entityFilters);
 
             if (limitResultsByStatus != null) {
                 Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
@@ -2544,6 +2589,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * Sort the list of results and limit based on the provided parameters.
      *
      * @param results the Apache Atlas results to sort and limit
+     * @param entityTypeGUID the type of entity that was requested (or null for all)
      * @param fromElement the starting element to include in the limited results
      * @param sequencingProperty the property by which to sort the results (or null, if not sorting by property)
      * @param sequencingOrder the order by which to sort the results
@@ -2556,6 +2602,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     private List<EntityDetail> sortAndLimitFinalResults(List<AtlasEntityHeader> results,
+                                                        String entityTypeGUID,
                                                         int fromElement,
                                                         String sequencingProperty,
                                                         SequencingOrder sequencingOrder,
@@ -2566,7 +2613,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             UserNotAuthorizedException {
 
         List<EntityDetail> totalResults = new ArrayList<>();
-        totalResults.addAll(getEntityDetailsFromAtlasResults(results, userId));
+        totalResults.addAll(getEntityDetailsFromAtlasResults(results, entityTypeGUID, userId));
 
         // TODO: send something in that determines whether re-sorting the results is actually necessary?
         // Need to potentially re-sort and re-limit the results, if we ran the search against more than one type
@@ -2587,6 +2634,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * Retrieves a list of EntityDetail objects given a list of AtlasEntityHeader objects.
      *
      * @param atlasEntities the Atlas entities for which to retrieve details
+     * @param entityTypeGUID the type of entity that was requested (or null for all)
      * @param userId the user through which to do the retrieval
      * @return {@code List<EntityDetail>}
      * @throws InvalidParameterException the guid is null.
@@ -2595,6 +2643,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
      */
     private List<EntityDetail> getEntityDetailsFromAtlasResults(List<AtlasEntityHeader> atlasEntities,
+                                                                String entityTypeGUID,
                                                                 String userId) throws
             InvalidParameterException,
             RepositoryErrorException,
@@ -2606,11 +2655,24 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             for (AtlasEntityHeader atlasEntityHeader : atlasEntities) {
                 try {
                     EntityDetail detail = getEntityDetail(userId, atlasEntityHeader.getGuid());
-                    entityDetails.add(detail);
-                } catch (EntityNotKnownException e) {
-                    if (log.isErrorEnabled()) {
-                        log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
+                    // Depending on prefix, this could come back with results that should not be included
+                    // (ie. for generated types or non-generated types, depending on requested entityTypeGUID),
+                    // so only include those that were requested
+                    if (detail != null) {
+                        String typeName = detail.getType().getTypeDefName();
+                        try {
+                            TypeDef typeDef = repositoryHelper.getTypeDef(repositoryName, "entityTypeGUID", entityTypeGUID, "getEntityDetailsFromAtlasResults");
+                            if (repositoryHelper.isTypeOf(repositoryName, typeName, typeDef.getName())) {
+                                entityDetails.add(detail);
+                            }
+                        } catch (TypeErrorException e) {
+                            log.error("Unable to find any TypeDef for entityTypeGUID: {}", entityTypeGUID);
+                        }
+                    } else {
+                        if (log.isErrorEnabled()) { log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid()); }
                     }
+                } catch (EntityNotKnownException e) {
+                    if (log.isErrorEnabled()) { log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid()); }
                 }
             }
         }
@@ -2743,16 +2805,22 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     atlasCriterion.setOperator(SearchParameters.Operator.STARTS_WITH);
                                 } else if (repositoryHelper.isExactMatchRegex(candidateValue)) {
                                     if (negateCondition) {
-                                        atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                        if (unqualifiedValue.equals("")) {
+                                            atlasCriterion.setOperator(SearchParameters.Operator.NOT_NULL);
+                                        } else {
+                                            atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                        }
                                         sbCriterion.append(" != \"");
-                                        sbCriterion.append(unqualifiedValue);
-                                        sbCriterion.append("\"");
                                     } else {
-                                        atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                        if (unqualifiedValue.equals("")) {
+                                            atlasCriterion.setOperator(SearchParameters.Operator.IS_NULL);
+                                        } else {
+                                            atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                        }
                                         sbCriterion.append(" = \"");
-                                        sbCriterion.append(unqualifiedValue);
-                                        sbCriterion.append("\"");
                                     }
+                                    sbCriterion.append(unqualifiedValue);
+                                    sbCriterion.append("\"");
                                 } else {
                                     ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED;
                                     String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
