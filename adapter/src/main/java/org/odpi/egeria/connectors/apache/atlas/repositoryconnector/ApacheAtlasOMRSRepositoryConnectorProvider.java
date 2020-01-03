@@ -17,9 +17,9 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollec
  */
 public class ApacheAtlasOMRSRepositoryConnectorProvider extends OMRSRepositoryConnectorProviderBase {
 
-    static final String  connectorTypeGUID = "7b200ca2-655b-4106-917b-abddf2ec3aa4";
-    static final String  connectorTypeName = "OMRS Apache Atlas Repository Connector";
-    static final String  connectorTypeDescription = "OMRS Apache Atlas Repository Connector that processes events from the Apache Atlas repository store.";
+    static final String CONNECTOR_TYPE_GUID = "7b200ca2-655b-4106-917b-abddf2ec3aa4";
+    static final String CONNECTOR_TYPE_NAME = "OMRS Apache Atlas Repository Connector";
+    static final String CONNECTOR_TYPE_DESC = "OMRS Apache Atlas Repository Connector that processes events from the Apache Atlas repository store.";
 
     /**
      * Constructor used to initialize the ConnectorProviderBase with the Java class name of the specific
@@ -27,15 +27,15 @@ public class ApacheAtlasOMRSRepositoryConnectorProvider extends OMRSRepositoryCo
      */
     public ApacheAtlasOMRSRepositoryConnectorProvider() {
 
-        Class connectorClass = ApacheAtlasOMRSRepositoryConnector.class;
+        Class<?> connectorClass = ApacheAtlasOMRSRepositoryConnector.class;
         super.setConnectorClassName(connectorClass.getName());
 
         ConnectorType connectorType = new ConnectorType();
         connectorType.setType(ConnectorType.getConnectorTypeType());
-        connectorType.setGUID(connectorTypeGUID);
-        connectorType.setQualifiedName(connectorTypeName);
-        connectorType.setDisplayName(connectorTypeName);
-        connectorType.setDescription(connectorTypeDescription);
+        connectorType.setGUID(CONNECTOR_TYPE_GUID);
+        connectorType.setQualifiedName(CONNECTOR_TYPE_NAME);
+        connectorType.setDisplayName(CONNECTOR_TYPE_NAME);
+        connectorType.setDescription(CONNECTOR_TYPE_DESC);
         connectorType.setConnectorProviderClassName(this.getClass().getName());
 
         super.connectorTypeBean = connectorType;

@@ -366,11 +366,11 @@ public class EntityMappingAtlas2OMRS {
                 String omrsTypeDefName = typeDef.getName();
                 Map<String, String> atlasTypesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeDefName);
                 for (Map.Entry<String, String> entry : atlasTypesByPrefix.entrySet()) {
-                    String prefix = entry.getKey();
+                    String prefixForType = entry.getKey();
                     String atlasTypeName = entry.getValue();
                     // TODO: Only generate the generated relationships (normally-mapped should be covered already above)
-                    if (prefix != null) {
-                        log.info("Have not yet implemented this relationship: ({}) {}", prefix, atlasTypeName);
+                    if (prefixForType != null) {
+                        log.info("Have not yet implemented this relationship: ({}) {}", prefixForType, atlasTypeName);
                     }
                 }
             }

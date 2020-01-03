@@ -90,22 +90,6 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             log.error("Unable to retrieve types from Apache Atlas.", e);
         }
 
-        ClassPathResource mappingResource = new ClassPathResource("ApacheAtlasNativeTypesPatch.json");
-
-        try {
-
-            // Apply Open Metadata patch to the out-of-the-box Apache Atlas types
-            InputStream stream = mappingResource.getInputStream();
-            ObjectMapper mapper = new ObjectMapper();
-            AtlasTypesDef atlasTypesDef = mapper.readValue(stream, AtlasTypesDef.class);
-            atlasClient.updateAtlasTypeDefs(atlasTypesDef);
-
-        } catch (IOException e) {
-            log.error("Unable to load ApacheAtlasNativeTypesPatch.json from jar file -- cannot patch default Apache Atlas types.", e);
-        } catch (AtlasServiceException e) {
-            log.error("Unable to patch default Apache Atlas types.", e);
-        }
-
         if (!successfulInit) {
             ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE;
             String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(this.url);

@@ -17,6 +17,10 @@ class BaseTypeDefMapping {
 
     private static final Logger log = LoggerFactory.getLogger(BaseTypeDefMapping.class);
 
+    protected BaseTypeDefMapping() {
+        // Do nothing...
+    }
+
     /**
      * Sets up the basic mapping of the provided OMRS type definition to the provided Apache Atlas type definition.
      *
@@ -82,11 +86,7 @@ class BaseTypeDefMapping {
                 atlasAttribute.setIncludeInNotification(true);
                 atlasAttribute.setIsIndexable(typeDefAttribute.isIndexable());
                 int minValues = typeDefAttribute.getValuesMinCount();
-                if (minValues >= 1) {
-                    atlasAttribute.setIsOptional(false);
-                } else {
-                    atlasAttribute.setIsOptional(true);
-                }
+                atlasAttribute.setIsOptional(minValues < 1);
                 atlasAttribute.setIsUnique(typeDefAttribute.isUnique());
                 atlasAttribute.setName(typeDefAttribute.getAttributeName());
                 AttributeTypeDef attributeTypeDef = typeDefAttribute.getAttributeType();

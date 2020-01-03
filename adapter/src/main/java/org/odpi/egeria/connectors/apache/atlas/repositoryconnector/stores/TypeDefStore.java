@@ -435,8 +435,8 @@ public class TypeDefStore {
         if (omrsGuidToTypeDef.containsKey(guid)) {
             return omrsGuidToTypeDef.get(guid);
         } else {
-            if (warnIfNotFound) {
-                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS TypeDef by GUID: {}", guid); }
+            if (warnIfNotFound && log.isWarnEnabled()) {
+                log.warn("Unable to find OMRS TypeDef by GUID: {}", guid);
             }
             return null;
         }
@@ -464,8 +464,8 @@ public class TypeDefStore {
             String guid = omrsNameToGuid.get(name);
             return getTypeDefByGUID(guid, warnIfNotFound);
         } else {
-            if (warnIfNotFound) {
-                if (log.isWarnEnabled()) { log.warn("Unable to find OMRS TypeDef by Name: {}", name); }
+            if (warnIfNotFound && log.isWarnEnabled()) {
+                log.warn("Unable to find OMRS TypeDef by Name: {}", name);
             }
             return null;
         }

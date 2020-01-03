@@ -20,6 +20,10 @@ import java.util.Set;
  */
 public abstract class EntityDefMapping extends BaseTypeDefMapping {
 
+    private EntityDefMapping() {
+        // Do nothing...
+    }
+
     /**
      * Adds the provided OMRS type definition to Apache Atlas (if possible), or throws a TypeDefNotSupportedException
      * if not possible.

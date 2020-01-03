@@ -36,6 +36,10 @@ public enum ApacheAtlasOMRSErrorCode {
             "This repository does not retain historical metadata, so cannot support historical queries.",
             "No action required, this is a limitation of the technology. To search such history, the metadata of interest" +
                     " must be synchronized to a cohort repository that can support history."),
+    EVENT_MAPPER_NOT_INITIALIZED(400, "OMRS-ATLAS-REPOSITORY-400-001 ",
+            "There is no valid event mapper for repository \"{1}\"",
+            "Appropriate event could not be produced for request",
+            "Check the system logs and diagnose or report the problem."),
     INSTANCE_NOT_PROVIDED(404, "OMRS-ATLAS-REPOSITORY-404-001 ",
             "The instance provided to the method \"{0}\" of repository \"{1}\" was null",
             "The system was unable to process the instance provided, because no instance was provided.",
