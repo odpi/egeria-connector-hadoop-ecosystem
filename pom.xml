@@ -106,7 +106,7 @@
         <mockito.version>3.2.4</mockito.version>
         <testng.version>7.1.1</testng.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
-        <spotbugs.version>4.0.0-beta4</spotbugs.version>
+        <spotbugs.version>4.0.0-beta5</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
         <!-- Configuration of sonar code scanning-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -352,7 +352,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>5.2.4</version>
+                    <version>5.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
