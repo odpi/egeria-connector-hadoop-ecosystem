@@ -1,0 +1,1125 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright Contributors to the ODPi Egeria project. */
+package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
+
+import org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapper;
+import org.odpi.egeria.connectors.apache.atlas.mocks.MockConnection;
+import org.odpi.egeria.connectors.apache.atlas.mocks.MockConstants;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.AttributeMapping;
+import org.odpi.openmetadata.adapters.eventbus.topic.inmemory.InMemoryOpenMetadataTopicConnector;
+import org.odpi.openmetadata.adapters.repositoryservices.ConnectorConfigurationFactory;
+import org.odpi.openmetadata.adminservices.configuration.properties.OpenMetadataExchangeRule;
+import org.odpi.openmetadata.frameworks.connectors.Connector;
+import org.odpi.openmetadata.frameworks.connectors.ConnectorBroker;
+import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectionCheckedException;
+import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
+import org.odpi.openmetadata.frameworks.connectors.properties.beans.Connection;
+import org.odpi.openmetadata.opentypes.OpenMetadataTypesArchive;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditLog;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditLogDestination;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditingComponent;
+import org.odpi.openmetadata.repositoryservices.connectors.omrstopic.OMRSTopicConnector;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.properties.OpenMetadataArchive;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.properties.OpenMetadataArchiveTypeStore;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollection;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.MatchCriteria;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
+import org.odpi.openmetadata.repositoryservices.eventmanagement.OMRSRepositoryEventExchangeRule;
+import org.odpi.openmetadata.repositoryservices.eventmanagement.OMRSRepositoryEventManager;
+import org.odpi.openmetadata.repositoryservices.eventmanagement.OMRSRepositoryEventPublisher;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.*;
+import org.odpi.openmetadata.repositoryservices.localrepository.repositorycontentmanager.OMRSRepositoryContentHelper;
+import org.odpi.openmetadata.repositoryservices.localrepository.repositorycontentmanager.OMRSRepositoryContentManager;
+import org.odpi.openmetadata.repositoryservices.localrepository.repositorycontentmanager.OMRSRepositoryContentValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.testng.Assert.*;
+
+/**
+ * Test the connector(s) using the mocked server resources.
+ */
+public class ConnectorTest {
+
+    private static final Logger log = LoggerFactory.getLogger(ConnectorTest.class);
+
+    private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
+    private ApacheAtlasOMRSMetadataCollection atlasMetadataCollection;
+    private ApacheAtlasOMRSRepositoryEventMapper atlasRepositoryEventMapper;
+    private OMRSRepositoryContentManager contentManager;
+    private OMRSRepositoryEventManager eventManager;
+    private InMemoryOpenMetadataTopicConnector inMemoryEventConnector;
+    private OMRSRepositoryHelper repositoryHelper;
+    private String sourceName;
+
+    private String metadataCollectionId;
+    private String otherMetadataCollectionId;
+
+    private List<AttributeTypeDef> supportedAttributeTypeDefs;
+    private List<TypeDef> supportedTypeDefs;
+
+    /**
+     * Construct base objects.
+     */
+    public ConnectorTest() {
+
+        metadataCollectionId = UUID.randomUUID().toString();
+        otherMetadataCollectionId = UUID.randomUUID().toString();
+        supportedAttributeTypeDefs = new ArrayList<>();
+        supportedTypeDefs = new ArrayList<>();
+        inMemoryEventConnector = new InMemoryOpenMetadataTopicConnector();
+
+    }
+
+    /**
+     * Initialize the connector with some basic values.
+     */
+    @BeforeSuite
+    public void startConnector() {
+
+        Connection mockConnection = new MockConnection();
+        OMRSAuditLogDestination destination = new OMRSAuditLogDestination(null);
+        OMRSAuditLog auditLog = new OMRSAuditLog(destination, -1, "ConnectorTest", "Testing of the connector", null);
+        contentManager = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
+        eventManager = new OMRSRepositoryEventManager("Mock Outbound EventManager",
+                new OMRSRepositoryEventExchangeRule(OpenMetadataExchangeRule.SELECTED_TYPES, Collections.emptyList()),
+                new OMRSRepositoryContentValidator(contentManager),
+                new OMRSAuditLog(destination, OMRSAuditingComponent.REPOSITORY_EVENT_MANAGER));
+
+        // TODO: setup eventManager with the InMemoryTopicConnector, so that it writes to memory rather than Kafka
+        List<Connector> inMemoryConnector = new ArrayList<>();
+        inMemoryConnector.add(inMemoryEventConnector);
+        OMRSTopicConnector omrsTopicConnector = new OMRSTopicConnector();
+        omrsTopicConnector.initializeEmbeddedConnectors(inMemoryConnector);
+        OMRSRepositoryEventPublisher publisher = new OMRSRepositoryEventPublisher("Mock EventPublisher",
+                omrsTopicConnector,
+                auditLog.createNewAuditLog(OMRSAuditingComponent.EVENT_PUBLISHER));
+        eventManager.registerRepositoryEventProcessor(publisher);
+
+        ConnectorBroker connectorBroker = new ConnectorBroker();
+
+        try {
+            Object connector = connectorBroker.getConnector(mockConnection);
+            assertTrue(connector instanceof ApacheAtlasOMRSRepositoryConnector);
+            atlasRepositoryConnector = (ApacheAtlasOMRSRepositoryConnector) connector;
+            atlasRepositoryConnector.setAuditLog(auditLog);
+            atlasRepositoryConnector.setRepositoryHelper(new OMRSRepositoryContentHelper(contentManager));
+            atlasRepositoryConnector.setRepositoryValidator(new OMRSRepositoryContentValidator(contentManager));
+            atlasRepositoryConnector.setMetadataCollectionId(metadataCollectionId);
+            atlasRepositoryConnector.start();
+        } catch (ConnectionCheckedException | ConnectorCheckedException e) {
+            log.error("Unable to get connector via the broker.", e);
+            assertNull(e);
+        }
+
+        try {
+            OMRSMetadataCollection collection = atlasRepositoryConnector.getMetadataCollection();
+            assertTrue(collection instanceof ApacheAtlasOMRSMetadataCollection);
+            atlasMetadataCollection = (ApacheAtlasOMRSMetadataCollection) collection;
+            assertEquals(atlasMetadataCollection.getMetadataCollectionId(MockConstants.EGERIA_USER), metadataCollectionId);
+        } catch (RepositoryErrorException e) {
+            log.error("Unable to match metadata collection IDs.", e);
+            assertNotNull(e);
+        }
+
+        ConnectorConfigurationFactory connectorConfigurationFactory = new ConnectorConfigurationFactory();
+        try {
+            Connection eventMapperConnection = connectorConfigurationFactory.getRepositoryEventMapperConnection(
+                    "MockApacheAtlasServer",
+                    "org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider",
+                    null,
+                    "localhost:1080"
+            );
+            Object connector = connectorBroker.getConnector(eventMapperConnection);
+            assertTrue(connector instanceof ApacheAtlasOMRSRepositoryEventMapper);
+            atlasRepositoryEventMapper = (ApacheAtlasOMRSRepositoryEventMapper) connector;
+            atlasRepositoryEventMapper.setAuditLog(auditLog);
+            atlasRepositoryEventMapper.setRepositoryEventProcessor(eventManager);
+            atlasRepositoryEventMapper.initialize("Mock Apache Atlas Event Mapper", atlasRepositoryConnector);
+            atlasRepositoryEventMapper.start();
+        } catch (ConnectorCheckedException e) {
+            log.info("As expected, could not fully start due to lack of Kafka.", e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to start event mapper!", e);
+            assertNull(e);
+        }
+
+        repositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
+        sourceName = atlasRepositoryConnector.getRepositoryName();
+
+    }
+
+    /**
+     * Initialize all of the open metadata types that the connector could support, before running any of the actual
+     * tests.
+     */
+    @BeforeTest
+    public void initAllOpenTypes() {
+
+        OpenMetadataArchive archive = new OpenMetadataTypesArchive().getOpenMetadataArchive();
+        OpenMetadataArchiveTypeStore typeStore = archive.getArchiveTypeStore();
+        List<AttributeTypeDef> attributeTypeDefList = typeStore.getAttributeTypeDefs();
+        List<TypeDef> typeDefList = typeStore.getNewTypeDefs();
+        for (AttributeTypeDef attributeTypeDef : attributeTypeDefList) {
+            boolean supported = false;
+            try {
+                atlasMetadataCollection.addAttributeTypeDef(MockConstants.EGERIA_USER, attributeTypeDef);
+                supported = true;
+            } catch (TypeDefNotSupportedException e) {
+                log.debug("AttributeTypeDef is not supported -- skipping: {}", attributeTypeDef.getName());
+            } catch (RepositoryErrorException e) {
+                if (e.getErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
+                    log.debug("AttributeTypeDef is supported: {}", attributeTypeDef.getName());
+                    supported = true;
+                }
+            } catch (InvalidParameterException | TypeDefKnownException | TypeDefConflictException | InvalidTypeDefException e) {
+                log.error("Unable to process the AttributeTypeDef: {}", attributeTypeDef.getName(), e);
+                assertNull(e);
+            } catch (Exception e) {
+                log.error("Unexpected exception trying to setup attribute type definitions.", e);
+                assertNull(e);
+            }
+            if (supported) {
+                supportedAttributeTypeDefs.add(attributeTypeDef);
+            }
+            contentManager.addAttributeTypeDef(atlasRepositoryConnector.getRepositoryName(), attributeTypeDef);
+        }
+        for (TypeDef typeDef : typeDefList) {
+            boolean supported = false;
+            try {
+                atlasMetadataCollection.addTypeDef(MockConstants.EGERIA_USER, typeDef);
+                supported = true;
+            } catch (TypeDefNotSupportedException e) {
+                log.debug("TypeDef is not supported -- skipping: {}", typeDef.getName());
+            } catch (RepositoryErrorException e) {
+                if (e.getErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
+                    log.debug("TypeDef is supported: {}", typeDef.getName());
+                    supported = true;
+                }
+            } catch (InvalidParameterException | TypeDefKnownException | TypeDefConflictException | InvalidTypeDefException e) {
+                log.error("Unable to process the TypeDef: {}", typeDef.getName(), e);
+                assertNull(e);
+            } catch (Exception e) {
+                log.error("Unexpected exception trying to setup type definitions.", e);
+                assertNull(e);
+            }
+            if (supported) {
+                supportedTypeDefs.add(typeDef);
+            }
+            contentManager.addTypeDef(atlasRepositoryConnector.getRepositoryName(), typeDef);
+        }
+    }
+
+    @Test
+    public void verifySupportedTypes() {
+
+        for (AttributeTypeDef attributeTypeDef : supportedAttributeTypeDefs) {
+            try {
+                assertTrue(atlasMetadataCollection.verifyAttributeTypeDef(MockConstants.EGERIA_USER, attributeTypeDef));
+            } catch (InvalidParameterException | RepositoryErrorException | InvalidTypeDefException e) {
+                log.error("Unable to verify attribute type definition: {}", attributeTypeDef.getName(), e);
+                assertNull(e);
+            } catch (Exception e) {
+                log.error("Unexpected exception trying to verify attribute type definitions.", e);
+                assertNull(e);
+            }
+        }
+
+        for (TypeDef typeDef : supportedTypeDefs) {
+            try {
+                assertTrue(atlasMetadataCollection.verifyTypeDef(MockConstants.EGERIA_USER, typeDef));
+            } catch (InvalidParameterException | RepositoryErrorException | InvalidTypeDefException | TypeDefNotSupportedException e) {
+                log.error("Unable to verify type definition: {}", typeDef.getName(), e);
+                assertNull(e);
+            } catch (Exception e) {
+                log.error("Unexpected exception trying to verify type definitions.", e);
+                assertNull(e);
+            }
+        }
+
+        try {
+            TypeDefGallery typeDefGallery = atlasMetadataCollection.getAllTypes(MockConstants.EGERIA_USER);
+            assertNotNull(typeDefGallery);
+            List<AttributeTypeDef> fromGalleryATD = typeDefGallery.getAttributeTypeDefs();
+            List<TypeDef> fromGalleryTD = typeDefGallery.getTypeDefs();
+            assertTrue(fromGalleryATD.containsAll(supportedAttributeTypeDefs));
+            assertTrue(supportedAttributeTypeDefs.containsAll(fromGalleryATD));
+            assertTrue(fromGalleryTD.containsAll(supportedTypeDefs));
+            assertTrue(supportedTypeDefs.containsAll(fromGalleryTD));
+        } catch (RepositoryErrorException | InvalidParameterException e) {
+            log.error("Unable to retrieve all types.", e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to retrieve all types.", e);
+            assertNull(e);
+        }
+
+    }
+
+    @Test
+    public void testFindTypes() {
+
+        List<TypeDef> entityTypeDefs = findTypeDefsByCategory(TypeDefCategory.ENTITY_DEF);
+        applyAssertionsToTypeDefs(entityTypeDefs, TypeDefCategory.ENTITY_DEF);
+
+        List<TypeDef> classificationTypeDefs = findTypeDefsByCategory(TypeDefCategory.CLASSIFICATION_DEF);
+        applyAssertionsToTypeDefs(classificationTypeDefs, TypeDefCategory.CLASSIFICATION_DEF);
+
+        List<TypeDef> relationshipTypeDefs = findTypeDefsByCategory(TypeDefCategory.RELATIONSHIP_DEF);
+        applyAssertionsToTypeDefs(relationshipTypeDefs, TypeDefCategory.RELATIONSHIP_DEF);
+
+        Map<String, Object> typeDefProperties = new HashMap<>();
+        typeDefProperties.put("qualifiedName", null);
+        TypeDefProperties matchProperties = new TypeDefProperties();
+        matchProperties.setTypeDefProperties(typeDefProperties);
+
+        try {
+            List<TypeDef> searchResults = atlasMetadataCollection.searchForTypeDefs(MockConstants.EGERIA_USER, ".*a.*");
+            assertNotNull(searchResults);
+            assertFalse(searchResults.isEmpty());
+            List<String> names = searchResults.stream().map(TypeDef::getName).collect(Collectors.toList());
+            assertTrue(names.contains("DataSet"));
+            assertTrue(names.contains("Database"));
+            assertTrue(names.contains("AssetSchemaType"));
+            assertTrue(names.contains("RelationalDBSchemaType"));
+            assertTrue(names.contains("AttributeForSchema"));
+            assertTrue(names.contains("RelationalTable"));
+            List<TypeDef> typeDefsByProperty = atlasMetadataCollection.findTypeDefsByProperty(MockConstants.EGERIA_USER, matchProperties);
+            assertNotNull(typeDefsByProperty);
+            names = typeDefsByProperty.stream().map(TypeDef::getName).collect(Collectors.toList());
+            assertTrue(names.contains("Referenceable"));
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            log.error("Unable to search for TypeDefs with contains string.", e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception searching for TypeDefs.", e);
+            assertNull(e);
+        }
+
+    }
+
+    private List<TypeDef> findTypeDefsByCategory(TypeDefCategory typeDefCategory) {
+        List<TypeDef> typeDefs = null;
+        try {
+            typeDefs = atlasMetadataCollection.findTypeDefsByCategory(MockConstants.EGERIA_USER, typeDefCategory);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            log.error("Unable to search for TypeDefs from category: {}", typeDefCategory.getName(), e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for TypeDefs by category.", e);
+            assertNull(e);
+        }
+        return typeDefs;
+    }
+
+    private void applyAssertionsToTypeDefs(List<TypeDef> typeDefs, TypeDefCategory typeDefCategory) {
+        assertNotNull(typeDefs);
+        assertFalse(typeDefs.isEmpty());
+        for (TypeDef typeDef : typeDefs) {
+            assertEquals(typeDef.getCategory(), typeDefCategory);
+        }
+    }
+
+    @Test
+    public void testTypeDefRetrievals() {
+
+        final String relationalTableGUID = "ce7e72b8-396a-4013-8688-f9d973067425";
+        final String relationalTableName = "RelationalTable";
+
+        final String unknownTypeGUID = "6b60a73e-47bc-4096-9073-f94cab975958";
+        final String unknownTypeName = "DesignPattern";
+
+        try {
+            TypeDef byGUID = atlasMetadataCollection.getTypeDefByGUID(MockConstants.EGERIA_USER, relationalTableGUID);
+            TypeDef byName = atlasMetadataCollection.getTypeDefByName(MockConstants.EGERIA_USER, relationalTableName);
+            assertNotNull(byGUID);
+            assertNotNull(byName);
+            assertEquals(byGUID.getName(), relationalTableName);
+            assertEquals(byName.getGUID(), relationalTableGUID);
+            assertEquals(byGUID, byName);
+            assertThrows(TypeDefNotKnownException.class, () -> atlasMetadataCollection.getTypeDefByGUID(MockConstants.EGERIA_USER, unknownTypeGUID));
+            assertThrows(TypeDefNotKnownException.class, () -> atlasMetadataCollection.getTypeDefByName(MockConstants.EGERIA_USER, unknownTypeName));
+        } catch (InvalidParameterException | RepositoryErrorException | TypeDefNotKnownException e) {
+            log.error("Unable to retrieve type definition: {} / {}", relationalTableGUID, relationalTableName, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying retrieve type definition.", e);
+            assertNull(e);
+        }
+
+    }
+
+    @Test
+    public void testAttributeTypeDefSearches() {
+
+        try {
+            List<AttributeTypeDef> enums = atlasMetadataCollection.findAttributeTypeDefsByCategory(MockConstants.EGERIA_USER, AttributeTypeDefCategory.ENUM_DEF);
+            assertNotNull(enums);
+            assertEquals(enums.size(), 30);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            log.error("Unable to search for attribute type defs by ENUM category.", e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for attribute type definitions.", e);
+            assertNull(e);
+        }
+
+    }
+
+    @Test
+    public void testFindTypeDefsByExternalID() {
+
+        try {
+            assertThrows(InvalidParameterException.class, () -> atlasMetadataCollection.findTypesByExternalID(MockConstants.EGERIA_USER, null, null, null));
+            List<TypeDef> noTypes = atlasMetadataCollection.findTypesByExternalID(MockConstants.EGERIA_USER, "some", "org", "id");
+            assertNull(noTypes);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            log.error("Unable to search for type defs by external ID.", e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for type defs by external ID.", e);
+            assertNull(e);
+        }
+
+    }
+
+    @Test
+    public void testAttributeTypeDefRetrievals() {
+
+        final String assetOwnerTypeGUID = "9548390c-69f5-4dc6-950d-6feeee257b56";
+        final String assetOwnerTypeName = "AssetOwnerType";
+
+        final String unknownTypeGUID = "123-456-789-abc-defghijklmnop";
+        final String unknownTypeName = "NonExistentTypeName";
+
+        try {
+            AttributeTypeDef byGUID = atlasMetadataCollection.getAttributeTypeDefByGUID(MockConstants.EGERIA_USER, assetOwnerTypeGUID);
+            AttributeTypeDef byName = atlasMetadataCollection.getAttributeTypeDefByName(MockConstants.EGERIA_USER, assetOwnerTypeName);
+            assertNotNull(byGUID);
+            assertNotNull(byName);
+            assertEquals(byGUID.getName(), assetOwnerTypeName);
+            assertEquals(byName.getGUID(), assetOwnerTypeGUID);
+            assertEquals(byGUID, byName);
+            assertThrows(TypeDefNotKnownException.class, () -> atlasMetadataCollection.getAttributeTypeDefByGUID(MockConstants.EGERIA_USER, unknownTypeGUID));
+            assertThrows(TypeDefNotKnownException.class, () -> atlasMetadataCollection.getAttributeTypeDefByName(MockConstants.EGERIA_USER, unknownTypeName));
+        } catch (InvalidParameterException | RepositoryErrorException | TypeDefNotKnownException e) {
+            log.error("Unable to retrieve attribute type definition: {} / {}", assetOwnerTypeGUID, assetOwnerTypeName, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying retrieve attribute type definition.", e);
+            assertNull(e);
+        }
+
+    }
+
+    @Test
+    public void testAsOfTimeMethods() {
+
+        String ignoredEntityTypeGUID = "ce7e72b8-396a-4013-8688-f9d973067425";
+        String ignoredRelationshipTypeGUID = "86b176a2-015c-44a6-8106-54d5d69ba661";
+        Date now = new Date();
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.getRelationshipsForEntity(MockConstants.EGERIA_USER,
+                ignoredEntityTypeGUID,
+                ignoredRelationshipTypeGUID,
+                0,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.findEntitiesByProperty(MockConstants.EGERIA_USER,
+                ignoredEntityTypeGUID,
+                null,
+                null,
+                0,
+                null,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.findEntitiesByClassification(MockConstants.EGERIA_USER,
+                ignoredEntityTypeGUID,
+                "Confidentiality",
+                null,
+                null,
+                0,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.findEntitiesByPropertyValue(MockConstants.EGERIA_USER,
+                ignoredEntityTypeGUID,
+                "ignore",
+                0,
+                null,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.findRelationshipsByProperty(MockConstants.EGERIA_USER,
+                ignoredRelationshipTypeGUID,
+                null,
+                null,
+                0,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        assertThrows(FunctionNotSupportedException.class, () -> atlasMetadataCollection.findRelationshipsByPropertyValue(MockConstants.EGERIA_USER,
+                ignoredRelationshipTypeGUID,
+                "ignore",
+                0,
+                null,
+                now,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+    }
+
+    @Test
+    public void testNegativeRetrievals() {
+
+        assertThrows(EntityNotKnownException.class, () -> atlasMetadataCollection.getEntityDetail(MockConstants.EGERIA_USER, "123"));
+        assertThrows(RelationshipNotKnownException.class, () -> atlasMetadataCollection.getRelationship(MockConstants.EGERIA_USER, "123"));
+
+    }
+
+    @AfterSuite
+    public void stopConnector() {
+        try {
+            atlasRepositoryEventMapper.disconnect();
+            atlasRepositoryConnector.disconnect();
+        } catch (ConnectorCheckedException e) {
+            log.error("Unable to property disconnect connector.", e);
+        }
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
+     * value.
+     *
+     * @param typeGUID the entity type GUID to search
+     * @param typeName the name of the type to search
+     * @param queryString the string criteria by which to search
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByPropertyValue(String typeGUID,
+                                                               String typeName,
+                                                               String queryString,
+                                                               int totalNumberExpected) {
+        Set<String> types = new HashSet<>();
+        if (typeName != null) {
+            types.add(typeName);
+        }
+        return testFindEntitiesByPropertyValue(typeGUID, types, null, queryString, totalNumberExpected);
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
+     * value.
+     *
+     * @param possibleTypes the names of the types that could be returned by the search
+     * @param queryString the string criteria by which to search
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByPropertyValue(Set<String> possibleTypes,
+                                                               String queryString,
+                                                               int totalNumberExpected) {
+        return testFindEntitiesByPropertyValue(null, possibleTypes, null, queryString, totalNumberExpected);
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
+     * value.
+     *
+     * @param possibleTypes the names of the types that could be returned by the search
+     * @param classificationLimiters the names of classifications by which to limit the results (or null if not to limit)
+     * @param queryString the string criteria by which to search
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByPropertyValue(Set<String> possibleTypes,
+                                                               Set<String> classificationLimiters,
+                                                               String queryString,
+                                                               int totalNumberExpected) {
+        return testFindEntitiesByPropertyValue(null, possibleTypes, classificationLimiters, queryString, totalNumberExpected);
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
+     * value.
+     *
+     * @param typeGUID the entity type GUID to search
+     * @param possibleTypes the names of the types that could be returned by the search
+     * @param classificationLimiters the names of classifications by which to limit the results (or null if not to limit)
+     * @param queryString the string criteria by which to search
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByPropertyValue(String typeGUID,
+                                                               Set<String> possibleTypes,
+                                                               Set<String> classificationLimiters,
+                                                               String queryString,
+                                                               int totalNumberExpected) {
+
+        List<EntityDetail> results = null;
+        List<String> classifications = null;
+        if (classificationLimiters != null) {
+            classifications = new ArrayList<>(classificationLimiters);
+        }
+
+        try {
+            results = atlasMetadataCollection.findEntitiesByPropertyValue(
+                    MockConstants.EGERIA_USER,
+                    typeGUID,
+                    queryString,
+                    0,
+                    null,
+                    classifications,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to search for entities of type '{}' by property value.", typeGUID, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for entities of type '{}' by property value.", typeGUID, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(results == null || results.isEmpty());
+        } else {
+            assertNotNull(results);
+            assertFalse(results.isEmpty());
+            assertEquals(results.size(), totalNumberExpected);
+            for (EntityDetail result : results) {
+                assertTrue(possibleTypes.contains(result.getType().getTypeDefName()));
+                assertTrue(result.getVersion() > 1);
+            }
+        }
+
+        return results;
+
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property.
+     *
+     * @param typeGUID the entity type GUID to search
+     * @param typeName the name of the type to search
+     * @param matchProperties the properties to match against
+     * @param matchCriteria the criteria by which to match
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByProperty(String typeGUID,
+                                                          String typeName,
+                                                          InstanceProperties matchProperties,
+                                                          MatchCriteria matchCriteria,
+                                                          int totalNumberExpected) {
+
+        List<EntityDetail> results = null;
+
+        try {
+            results = atlasMetadataCollection.findEntitiesByProperty(
+                    MockConstants.EGERIA_USER,
+                    typeGUID,
+                    matchProperties,
+                    matchCriteria,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to search for {} entities by property: {}", typeName, matchProperties, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for {} entities by property: {}", typeName, matchProperties, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(results == null || results.isEmpty());
+        } else {
+            assertNotNull(results);
+            assertFalse(results.isEmpty());
+            assertEquals(results.size(), totalNumberExpected);
+            for (EntityDetail result : results) {
+                assertEquals(result.getType().getTypeDefName(), typeName);
+                assertTrue(result.getVersion() > 1);
+
+                // TODO: need to understand how the refresh request methods are actually meant to work...
+                /*
+                try {
+                    atlasMetadataCollection.refreshEntityReferenceCopy(MockConstants.EGERIA_USER,
+                            result.getGUID(),
+                            result.getType().getTypeDefGUID(),
+                            result.getType().getTypeDefName(),
+                            result.getMetadataCollectionId());
+                } catch (InvalidParameterException | RepositoryErrorException | HomeEntityException | UserNotAuthorizedException e) {
+                    log.error("Unable to send a refresh event for entity GUID: {}", result.getGUID());
+                    assertNull(e);
+                } catch (Exception e) {
+                    log.error("Unexpected exception trying to send a refresh event for entity GUID: {}", result.getGUID(), e);
+                    assertNull(e);
+                }*/
+
+            }
+        }
+
+        return results;
+
+    }
+
+    /**
+     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by
+     * classification property.
+     *
+     * @param typeGUID the entity type GUID to search
+     * @param typeName the name of the type to search
+     * @param classificationName the name of the classification by which to limit the results
+     * @param matchClassificationProperties the properties of the classification to match against
+     * @param matchCriteria the criteria by which to match
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<EntityDetail>} the results of the query
+     */
+    private List<EntityDetail> testFindEntitiesByClassification(String typeGUID,
+                                                                String typeName,
+                                                                String classificationName,
+                                                                InstanceProperties matchClassificationProperties,
+                                                                MatchCriteria matchCriteria,
+                                                                int totalNumberExpected) {
+
+        List<EntityDetail> results = null;
+
+        try {
+            results = atlasMetadataCollection.findEntitiesByClassification(
+                    MockConstants.EGERIA_USER,
+                    typeGUID,
+                    classificationName,
+                    matchClassificationProperties,
+                    matchCriteria,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to search for {} entities by classification {} with properties: {}", typeName, classificationName, matchClassificationProperties, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for {} entities by classification {} with properties: {}", typeName, classificationName, matchClassificationProperties, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(results == null || results.isEmpty());
+        } else {
+            assertNotNull(results);
+            assertFalse(results.isEmpty());
+            assertEquals(results.size(), totalNumberExpected);
+            for (EntityDetail result : results) {
+                assertEquals(result.getType().getTypeDefName(), typeName);
+                assertTrue(result.getVersion() > 1);
+            }
+        }
+
+        return results;
+
+    }
+
+    /**
+     * Executes a common set of tests against a list of Relationship objects after first searching for them by property.
+     *
+     * @param typeGUID the relationship type GUID to search
+     * @param typeName the name of the type to search
+     * @param matchProperties the properties to match against
+     * @param matchCriteria the criteria by which to match
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<Relationship>} the results of the query
+     */
+    private List<Relationship> testFindRelationshipsByProperty(String typeGUID,
+                                                               String typeName,
+                                                               InstanceProperties matchProperties,
+                                                               MatchCriteria matchCriteria,
+                                                               int totalNumberExpected) {
+
+        List<Relationship> results = null;
+
+        try {
+            results = atlasMetadataCollection.findRelationshipsByProperty(
+                    MockConstants.EGERIA_USER,
+                    typeGUID,
+                    matchProperties,
+                    matchCriteria,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to search for {} relationships by property: {}", typeName, matchProperties, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for {} relationships by property: {}", typeName, matchProperties, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(results == null || results.isEmpty());
+        } else {
+            assertNotNull(results);
+            assertFalse(results.isEmpty());
+            assertEquals(results.size(), totalNumberExpected);
+            testRelationshipsAreRetrievable(results, typeName);
+        }
+
+        return results;
+
+    }
+
+    /**
+     * Executes a common set of tests against a list of Relationship objects after first searching for them by property
+     * value.
+     *
+     * @param typeGUID the relationship type GUID to search
+     * @param typeName the name of the type to search
+     * @param searchCriteria the string to use for the search
+     * @param totalNumberExpected the total number of expected results
+     * @return {@code List<Relationship>} the results of the query
+     */
+    private List<Relationship> testFindRelationshipsByPropertyValue(String typeGUID,
+                                                                    String typeName,
+                                                                    String searchCriteria,
+                                                                    int totalNumberExpected) {
+
+        List<Relationship> results = null;
+
+        try {
+            results = atlasMetadataCollection.findRelationshipsByPropertyValue(
+                    MockConstants.EGERIA_USER,
+                    typeGUID,
+                    searchCriteria,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to search for {} relationships by criteria: {}", typeName, searchCriteria, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to search for {} relationships by criteria: {}", typeName, searchCriteria, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(results == null || results.isEmpty());
+        } else {
+            assertNotNull(results);
+            assertFalse(results.isEmpty());
+            assertEquals(results.size(), totalNumberExpected);
+            testRelationshipsAreRetrievable(results, typeName);
+        }
+
+        return results;
+
+    }
+
+    /**
+     * Executes a common set of tests against an EntityDetail object after first directly retrieving it.
+     *
+     * @param omrsType the type of OMRS object
+     * @param guid the GUID of the object
+     * @param expectedValues a map of any expected values that will be asserted for equality (property name to value)
+     * @return EntityDetail that is retrieved
+     */
+    private EntityDetail testEntityDetail(String omrsType, String guid, Map<String, String> expectedValues) {
+
+        EntityDetail detail = null;
+
+        try {
+            detail = atlasMetadataCollection.isEntityKnown(MockConstants.EGERIA_USER, guid);
+        } catch (RepositoryErrorException | InvalidParameterException e) {
+            log.error("Unable to retrieve entity detail for {}.", omrsType, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception retrieving {} detail.", omrsType, e);
+            assertNull(e);
+        }
+
+        assertNotNull(detail);
+        assertEquals(detail.getType().getTypeDefName(), omrsType);
+        assertTrue(detail.getVersion() > 1);
+        assertNotNull(detail.getMetadataCollectionId());
+
+        testExpectedValuesForEquality(detail.getProperties(), expectedValues);
+
+        return detail;
+
+    }
+
+    /**
+     * Executes a common set of tests against an EntitySummary object after first directly retrieving it.
+     *
+     * @param omrsType the type of OMRS object
+     * @param guid the GUID of the object
+     * @return EntitySummary that is retrieved
+     */
+    private EntitySummary testEntitySummary(String omrsType, String guid) {
+
+        EntitySummary summary = null;
+
+        try {
+            summary = atlasMetadataCollection.getEntitySummary(MockConstants.EGERIA_USER, guid);
+        } catch (RepositoryErrorException | InvalidParameterException | EntityNotKnownException e) {
+            log.error("Unable to retrieve entity detail for {}.", omrsType, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception retrieving {} detail.", omrsType, e);
+            assertNull(e);
+        }
+
+        assertNotNull(summary);
+        assertEquals(summary.getType().getTypeDefName(), omrsType);
+        assertTrue(summary.getVersion() > 1);
+        assertNotNull(summary.getMetadataCollectionId());
+
+        return summary;
+
+    }
+
+    /**
+     * Tests whether the provided properties have values equal to those that are expected.
+     *
+     * @param properties the properties to check
+     * @param expectedValues the expected values of the properties (property name to value)
+     */
+    private void testExpectedValuesForEquality(InstanceProperties properties, Map<String, String> expectedValues) {
+        if (expectedValues != null) {
+            for (Map.Entry<String, String> expected : expectedValues.entrySet()) {
+                String propertyName = expected.getKey();
+                String expectedValue = expected.getValue();
+                assertTrue(AttributeMapping.valuesMatch(properties.getPropertyValue(propertyName), expectedValue));
+            }
+        }
+    }
+
+    /**
+     * Executes a common set of tests against a list of Relationship objects after first directly retrieving them.
+     *
+     * @param omrsType the type of OMRS object
+     * @param guid the GUID of the relationship object
+     * @param totalNumberExpected the total number of relationships expected
+     * @param relationshipExpectations a list of relationship expectations
+     * @return {@code List<Relationship>} the list of relationships retrieved
+     */
+    private List<Relationship> testRelationshipsForEntity(String omrsType,
+                                                          String guid,
+                                                          int totalNumberExpected,
+                                                          List<RelationshipExpectation> relationshipExpectations) {
+
+        List<Relationship> relationships = null;
+
+        try {
+            relationships = atlasMetadataCollection.getRelationshipsForEntity(
+                    MockConstants.EGERIA_USER,
+                    guid,
+                    null,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    MockConstants.EGERIA_PAGESIZE
+            );
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | EntityNotKnownException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+            log.error("Unable to retrieve relationships for {}.", omrsType, e);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception retrieving {} relationships.", omrsType, e);
+            assertNull(e);
+        }
+
+        if (totalNumberExpected <= 0) {
+            assertTrue(relationships == null || relationships.isEmpty());
+        } else {
+            assertNotNull(relationships);
+            assertFalse(relationships.isEmpty());
+            assertEquals(relationships.size(), totalNumberExpected);
+            for (RelationshipExpectation relationshipExpectation : relationshipExpectations) {
+                for (int i = relationshipExpectation.getStartIndex(); i < relationshipExpectation.getFinishIndex(); i++) {
+
+                    Relationship candidate = relationships.get(i);
+                    assertEquals(candidate.getType().getTypeDefName(), relationshipExpectation.getOmrsType());
+                    EntityProxy one = candidate.getEntityOneProxy();
+                    EntityProxy two = candidate.getEntityTwoProxy();
+                    assertTrue(relationshipExpectation.getProxyOneTypes().contains(one.getType().getTypeDefName()));
+                    assertTrue(one.getVersion() > 1);
+                    testQualifiedNameEquality(relationshipExpectation.getExpectedProxyOneQN(), one.getUniqueProperties().getPropertyValue("qualifiedName"));
+                    assertTrue(relationshipExpectation.getProxyTwoTypes().contains(two.getType().getTypeDefName()));
+                    assertTrue(two.getVersion() > 1);
+                    testQualifiedNameEquality(relationshipExpectation.getExpectedProxyTwoQN(), two.getUniqueProperties().getPropertyValue("qualifiedName"));
+
+                    // TODO: need to understand how the refresh request methods are actually meant to work...
+                    /*
+                    try {
+                        atlasMetadataCollection.refreshRelationshipReferenceCopy(MockConstants.EGERIA_USER,
+                                candidate.getGUID(),
+                                candidate.getType().getTypeDefGUID(),
+                                candidate.getType().getTypeDefName(),
+                                otherMetadataCollectionId);
+                    } catch (InvalidParameterException | RepositoryErrorException | HomeRelationshipException | UserNotAuthorizedException e) {
+                        log.error("Unable to send a refresh event for relationship GUID: {}", candidate.getGUID());
+                        assertNull(e);
+                    } catch (Exception e) {
+                        log.error("Unexpected exception trying to send a refresh event for relationship GUID: {}", candidate.getGUID(), e);
+                        assertNull(e);
+                    }*/
+
+                }
+
+            }
+        }
+
+        return relationships;
+
+    }
+
+    /**
+     * Attempt to re-retrieve the provided relationships by their GUID.
+     *
+     * @param relationships list of relationships to test re-retrieval
+     * @param typeName the expected type of the relationship
+     */
+    private void testRelationshipsAreRetrievable(List<Relationship> relationships, String typeName) {
+
+        for (Relationship result : relationships) {
+            assertEquals(result.getType().getTypeDefName(), typeName);
+            assertTrue(result.getVersion() > 1);
+
+            try {
+                Relationship foundAgain = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, result.getGUID());
+                assertNotNull(foundAgain);
+                assertEquals(foundAgain, result);
+            } catch (InvalidParameterException | RepositoryErrorException e) {
+                log.error("Unable to find relationship again by GUID: {}", result.getGUID());
+                assertNull(e);
+            } catch (Exception e) {
+                log.error("Unexpected exception trying to find relationship again by GUID: {}", result.getGUID(), e);
+                assertNull(e);
+            }
+
+        }
+
+    }
+
+    /**
+     * Test whether the provided qualifiedNames are equal or not.
+     * @param expectedQN the expected qualifiedName
+     * @param foundValue the found qualifiedName
+     */
+    private void testQualifiedNameEquality(String expectedQN, InstancePropertyValue foundValue) {
+        if (expectedQN != null) {
+            assertTrue(AttributeMapping.valuesMatch(foundValue, expectedQN));
+        }
+    }
+
+    /**
+     * Utility class for defining the expectations to check against a set of relationships.
+     */
+    protected class RelationshipExpectation {
+
+        private int startIndex;
+        private int finishIndex;
+        private String omrsType;
+        private Set<String> proxyOneTypes;
+        private Set<String> proxyTwoTypes;
+        private String expectedProxyOneQN;
+        private String expectedProxyTwoQN;
+
+        private RelationshipExpectation() {
+            proxyOneTypes = new HashSet<>();
+            proxyTwoTypes = new HashSet<>();
+        }
+
+        RelationshipExpectation(int startIndex, int finishIndex, String omrsType, String proxyOneType, String proxyTwoType) {
+            this();
+            this.startIndex = startIndex;
+            this.finishIndex = finishIndex;
+            this.omrsType = omrsType;
+            this.proxyOneTypes.add(proxyOneType);
+            this.proxyTwoTypes.add(proxyTwoType);
+        }
+
+        RelationshipExpectation(int startIndex,
+                                int finishIndex,
+                                String omrsType,
+                                String proxyOneType,
+                                String proxyTwoType,
+                                String expectedProxyOneQN,
+                                String expectedProxyTwoQN) {
+            this(startIndex, finishIndex, omrsType, proxyOneType, proxyTwoType);
+            this.expectedProxyOneQN = expectedProxyOneQN;
+            this.expectedProxyTwoQN = expectedProxyTwoQN;
+        }
+
+        RelationshipExpectation(int startIndex,
+                                int finishIndex,
+                                String omrsType,
+                                Set<String> proxyOneTypes,
+                                Set<String> proxyTwoTypes,
+                                String expectedProxyOneQN,
+                                String expectedProxyTwoQN) {
+            this.startIndex = startIndex;
+            this.finishIndex = finishIndex;
+            this.omrsType = omrsType;
+            this.proxyOneTypes = proxyOneTypes;
+            this.proxyTwoTypes = proxyTwoTypes;
+            this.expectedProxyOneQN = expectedProxyOneQN;
+            this.expectedProxyTwoQN = expectedProxyTwoQN;
+        }
+
+        int getStartIndex() { return startIndex; }
+        int getFinishIndex() { return finishIndex; }
+        String getOmrsType() { return omrsType; }
+        Set<String> getProxyOneTypes() { return proxyOneTypes; }
+        Set<String> getProxyTwoTypes() { return proxyTwoTypes; }
+        String getExpectedProxyOneQN() { return expectedProxyOneQN; }
+        String getExpectedProxyTwoQN() { return expectedProxyTwoQN; }
+
+    }
+
+}

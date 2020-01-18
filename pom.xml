@@ -105,6 +105,9 @@
         <surefire.plugin.version>3.0.0-M4</surefire.plugin.version>
         <mockito.version>3.2.4</mockito.version>
         <testng.version>7.1.1</testng.version>
+        <mock-server.version>5.8.1</mock-server.version>
+        <sleepycat.version>18.3.12</sleepycat.version>
+        <rhino.version>1.7.12</rhino.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.0.0-beta5</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
@@ -136,6 +139,18 @@
                 <artifactId>testng</artifactId>
                 <scope>test</scope>
                 <version>${testng.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-client-java</artifactId>
+                <scope>test</scope>
+                <version>${mock-server.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-core</artifactId>
+                <scope>test</scope>
+                <version>${mock-server.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -290,6 +305,50 @@
                 <scope>compile</scope>
                 <version>1.1.1</version>
             </dependency>
+            <!-- Testing dependencies -->
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>repository-services-implementation</artifactId>
+                <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>open-metadata-types</artifactId>
+                <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>admin-services-api</artifactId>
+                <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>connector-configuration-factory</artifactId>
+                <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
+                <artifactId>inmemory-open-metadata-topic-connector</artifactId>
+                <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Following dependencies are to ensure we use updated versions of libraries that others are dependent upon -->
+            <dependency>
+                <groupId>com.sleepycat</groupId>
+                <artifactId>je</artifactId>
+                <version>${sleepycat.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mozilla</groupId>
+                <artifactId>rhino</artifactId>
+                <version>${rhino.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -387,6 +446,11 @@
                             <version>${mockito.version}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.mock-server</groupId>
+                    <artifactId>mockserver-maven-plugin</artifactId>
+                    <version>${mock-server.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
