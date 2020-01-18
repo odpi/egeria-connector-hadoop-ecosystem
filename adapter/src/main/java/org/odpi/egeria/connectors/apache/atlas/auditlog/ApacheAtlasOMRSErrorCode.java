@@ -28,7 +28,7 @@ public enum ApacheAtlasOMRSErrorCode {
             "There is no valid event mapper for repository \"{1}\"",
             "Appropriate event could not be produced for request",
             "Check the system logs and diagnose or report the problem."),
-    EVENT_MAPPER_IMPROPERLY_INITIALIZED(400, "OMRS-IGC-REPOSITORY-400-002 ",
+    EVENT_MAPPER_IMPROPERLY_INITIALIZED(400, "OMRS-ATLAS-REPOSITORY-400-002 ",
             "The event mapper has been improperly initialized for repository \"{1}\"",
             "The system will be unable to process any events",
             "Check the system logs and diagnose or report the problem."),
@@ -44,6 +44,7 @@ public enum ApacheAtlasOMRSErrorCode {
             "The relationship identified with guid {0} passed on the {1} call is not known to the open metadata repository {2}",
             "The system is unable to retrieve the properties for the requested relationship because the supplied guid is not recognized.",
             "The guid is supplied by the caller to the OMRS.  It may have a logic problem that has corrupted the guid, or the relationship has been deleted since the guid was retrieved."),
+
     ;
 
     private int    httpErrorCode;

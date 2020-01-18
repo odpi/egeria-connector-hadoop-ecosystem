@@ -65,32 +65,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns the list of different types of metadata organized into two groups.  The first are the
-     * attribute type definitions (AttributeTypeDefs).  These provide types for properties in full
-     * type definitions.  Full type definitions (TypeDefs) describe types for entities, relationships
-     * and classifications.
-     *
-     * @param userId unique identifier for requesting user.
-     * @return TypeDefGalleryResponse List of different categories of type definitions.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
+     * {@inheritDoc}
      */
     @Override
-    public TypeDefGallery getAllTypes(String   userId) throws RepositoryErrorException,
+    public TypeDefGallery getAllTypes(String userId) throws
+            RepositoryErrorException,
             InvalidParameterException {
 
-        final String                       methodName = "getAllTypes";
+        final String methodName = "getAllTypes";
+        super.basicRequestValidation(userId, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-
-        /*
-         * Perform operation
-         */
         TypeDefGallery typeDefGallery = new TypeDefGallery();
         List<TypeDef> typeDefs = typeDefStore.getAllTypeDefs();
         if (log.isDebugEnabled()) { log.debug("Retrieved {} implemented TypeDefs for this repository.", typeDefs.size()); }
@@ -105,32 +89,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns all of the TypeDefs for a specific category.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param category enum value for the category of TypeDef to return.
-     * @return TypeDefs list.
-     * @throws InvalidParameterException the TypeDefCategory is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public List<TypeDef> findTypeDefsByCategory(String          userId,
-                                                TypeDefCategory category) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public List<TypeDef> findTypeDefsByCategory(String userId,
+                                                TypeDefCategory category) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String methodName            = "findTypeDefsByCategory";
+        final String methodName = "findTypeDefsByCategory";
         final String categoryParameterName = "category";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateTypeDefCategory(repositoryName, categoryParameterName, category, methodName);
+        super.typeDefCategoryParameterValidation(userId, category, categoryParameterName, methodName);
 
         List<TypeDef> typeDefs = new ArrayList<>();
         for (TypeDef candidate : typeDefStore.getAllTypeDefs()) {
@@ -143,32 +112,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns all of the AttributeTypeDefs for a specific category.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param category enum value for the category of an AttributeTypeDef to return.
-     * @return TypeDefs list.
-     * @throws InvalidParameterException the TypeDefCategory is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public List<AttributeTypeDef> findAttributeTypeDefsByCategory(String                   userId,
-                                                                  AttributeTypeDefCategory category) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public List<AttributeTypeDef> findAttributeTypeDefsByCategory(String userId,
+                                                                  AttributeTypeDefCategory category) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String methodName            = "findAttributeTypeDefsByCategory";
+        final String methodName = "findAttributeTypeDefsByCategory";
         final String categoryParameterName = "category";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateAttributeTypeDefCategory(repositoryName, categoryParameterName, category, methodName);
+        super.attributeTypeDefCategoryParameterValidation(userId, category, categoryParameterName, methodName);
 
         List<AttributeTypeDef> typeDefs = new ArrayList<>();
         for (AttributeTypeDef candidate : attributeTypeDefStore.getAllAttributeTypeDefs()) {
@@ -181,110 +135,35 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return the TypeDefs that have the properties matching the supplied match criteria.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param matchCriteria TypeDefProperties containing a list of property names.
-     * @return TypeDefs list.
-     * @throws InvalidParameterException the matchCriteria is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public List<TypeDef> findTypeDefsByProperty(String            userId,
-                                                TypeDefProperties matchCriteria) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public List<TypeDef> findTypeDefsByProperty(String userId,
+                                                TypeDefProperties matchCriteria) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String  methodName                 = "findTypeDefsByProperty";
-        final String  matchCriteriaParameterName = "matchCriteria";
+        final String methodName = "findTypeDefsByProperty";
+        final String matchCriteriaParameterName = "matchCriteria";
+        super.typeDefPropertyParameterValidation(userId, matchCriteria, matchCriteriaParameterName, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateMatchCriteria(repositoryName, matchCriteriaParameterName, matchCriteria, methodName);
-
-        /*
-         * Perform operation
-         */
         List<TypeDef> typeDefs = typeDefStore.getAllTypeDefs();
         List<TypeDef> results = new ArrayList<>();
         if (matchCriteria != null) {
             Map<String, Object> properties = matchCriteria.getTypeDefProperties();
             for (TypeDef candidate : typeDefs) {
                 List<TypeDefAttribute> candidateProperties = candidate.getPropertiesDefinition();
-                for (TypeDefAttribute candidateAttribute : candidateProperties) {
-                    String candidateName = candidateAttribute.getAttributeName();
-                    if (properties.containsKey(candidateName)) {
-                        results.add(candidate);
+                if (candidateProperties != null) {
+                    for (TypeDefAttribute candidateAttribute : candidateProperties) {
+                        String candidateName = candidateAttribute.getAttributeName();
+                        if (properties.containsKey(candidateName)) {
+                            results.add(candidate);
+                        }
                     }
                 }
             }
-            results = typeDefs;
-        }
-
-        return results;
-
-    }
-
-    /**
-     * Return the types that are linked to the elements from the specified standard.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param standard name of the standard; null means any.
-     * @param organization name of the organization; null means any.
-     * @param identifier identifier of the element in the standard; null means any.
-     * @return TypeDefs list each entry in the list contains a typedef.  This is is a structure
-     * describing the TypeDef's category and properties.
-     * @throws InvalidParameterException all attributes of the external id are null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
-     */
-    @Override
-    public List<TypeDef> findTypesByExternalID(String    userId,
-                                               String    standard,
-                                               String    organization,
-                                               String    identifier) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
-
-        final String                       methodName = "findTypesByExternalID";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateExternalId(repositoryName, standard, organization, identifier, methodName);
-
-        /*
-         * Perform operation
-         */
-        List<TypeDef> typeDefs = typeDefStore.getAllTypeDefs();
-        List<TypeDef> results;
-        if (standard == null && organization == null && identifier == null) {
-            results = typeDefs;
         } else {
-            results = new ArrayList<>();
-            for (TypeDef typeDef : typeDefs) {
-                List<ExternalStandardMapping> externalStandardMappings = typeDef.getExternalStandardMappings();
-                for (ExternalStandardMapping externalStandardMapping : externalStandardMappings) {
-                    String candidateStandard = externalStandardMapping.getStandardName();
-                    String candidateOrg = externalStandardMapping.getStandardOrganization();
-                    String candidateId = externalStandardMapping.getStandardTypeName();
-                    if ( (standard == null || standard.equals(candidateStandard))
-                            && (organization == null || organization.equals(candidateOrg))
-                            && (identifier == null || identifier.equals(candidateId))) {
-                        results.add(typeDef);
-                    }
-                }
-            }
+            results = typeDefs;
         }
 
         return results;
@@ -292,37 +171,18 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return the TypeDefs that match the search criteria.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param searchCriteria String search criteria.
-     * @return TypeDefs list where each entry in the list contains a typedef.  This is is a structure
-     * describing the TypeDef's category and properties.
-     * @throws InvalidParameterException the searchCriteria is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
     public List<TypeDef> searchForTypeDefs(String userId,
-                                           String searchCriteria) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+                                           String searchCriteria) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String methodName                  = "searchForTypeDefs";
+        final String methodName = "searchForTypeDefs";
         final String searchCriteriaParameterName = "searchCriteria";
+        super.typeDefSearchParameterValidation(userId, searchCriteria, searchCriteriaParameterName, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateSearchCriteria(repositoryName, searchCriteriaParameterName, searchCriteria, methodName);
-
-        /*
-         * Perform operation
-         */
         List<TypeDef> typeDefs = new ArrayList<>();
         for (TypeDef candidate : typeDefStore.getAllTypeDefs()) {
             if (candidate.getName().matches(searchCriteria)) {
@@ -334,51 +194,23 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return the TypeDef identified by the GUID.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique id of the TypeDef.
-     * @return TypeDef structure describing its category and properties.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotKnownException The requested TypeDef is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public TypeDef getTypeDefByGUID(String    userId,
-                                    String    guid) throws InvalidParameterException,
+    public TypeDef getTypeDefByGUID(String userId,
+                                    String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            TypeDefNotKnownException,
-            UserNotAuthorizedException {
+            TypeDefNotKnownException {
 
-        final String methodName        = "getTypeDefByGUID";
+        final String methodName = "getTypeDefByGUID";
         final String guidParameterName = "guid";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
+        super.typeGUIDParameterValidation(userId, guid, guidParameterName, methodName);
 
         TypeDef found = typeDefStore.getTypeDefByGUID(guid);
 
         if (found == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.TYPEDEF_ID_NOT_KNOWN;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                    guid,
-                    guidParameterName,
-                    methodName,
-                    repositoryName);
-            throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, guid, repositoryName);
         }
 
         return found;
@@ -386,103 +218,45 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return the AttributeTypeDef identified by the GUID.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique id of the TypeDef
-     * @return TypeDef structure describing its category and properties.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotKnownException The requested TypeDef is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public  AttributeTypeDef getAttributeTypeDefByGUID(String    userId,
-                                                       String    guid) throws InvalidParameterException,
+    public AttributeTypeDef getAttributeTypeDefByGUID(String userId,
+                                                       String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            TypeDefNotKnownException,
-            UserNotAuthorizedException {
+            TypeDefNotKnownException {
 
-        final String methodName        = "getAttributeTypeDefByGUID";
+        final String methodName = "getAttributeTypeDefByGUID";
         final String guidParameterName = "guid";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
+        super.typeGUIDParameterValidation(userId, guid, guidParameterName, methodName);
 
         AttributeTypeDef found = attributeTypeDefStore.getAttributeTypeDefByGUID(guid);
         if (found == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.ATTRIBUTE_TYPEDEF_ID_NOT_KNOWN;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                    "unknown",
-                    guid,
-                    methodName,
-                    repositoryName);
-            throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, guid, repositoryName);
         }
         return found;
 
     }
 
     /**
-     * Return the TypeDef identified by the unique name.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param name String name of the TypeDef.
-     * @return TypeDef structure describing its category and properties.
-     * @throws InvalidParameterException the name is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotKnownException the requested TypeDef is not found in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public TypeDef getTypeDefByName(String    userId,
-                                    String    name) throws InvalidParameterException,
+    public TypeDef getTypeDefByName(String userId,
+                                    String name) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            TypeDefNotKnownException,
-            UserNotAuthorizedException {
+            TypeDefNotKnownException {
 
-        final String  methodName = "getTypeDefByName";
-        final String  nameParameterName = "name";
+        final String methodName = "getTypeDefByName";
+        final String nameParameterName = "name";
+        super.typeNameParameterValidation(userId, name, nameParameterName, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateTypeName(repositoryName, nameParameterName, name, methodName);
-
-        /*
-         * Perform operation
-         */
         TypeDef found = typeDefStore.getTypeDefByName(name);
 
         if (found == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.TYPEDEF_NAME_NOT_KNOWN;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                    name,
-                    methodName,
-                    repositoryName);
-            throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, name, repositoryName);
         }
 
         return found;
@@ -490,89 +264,42 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return the AttributeTypeDef identified by the unique name.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param name String name of the TypeDef.
-     * @return TypeDef structure describing its category and properties.
-     * @throws InvalidParameterException the name is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotKnownException the requested TypeDef is not found in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public  AttributeTypeDef getAttributeTypeDefByName(String    userId,
-                                                       String    name) throws InvalidParameterException,
+    public AttributeTypeDef getAttributeTypeDefByName(String userId,
+                                                       String name) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            TypeDefNotKnownException,
-            UserNotAuthorizedException {
+            TypeDefNotKnownException {
 
-        final String  methodName = "getAttributeTypeDefByName";
-        final String  nameParameterName = "name";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateTypeName(repositoryName, nameParameterName, name, methodName);
+        final String methodName = "getAttributeTypeDefByName";
+        final String nameParameterName = "name";
+        super.typeNameParameterValidation(userId, name, nameParameterName, methodName);
 
         AttributeTypeDef found = attributeTypeDefStore.getAttributeTypeDefByName(name);
         if (found == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.ATTRIBUTE_TYPEDEF_NAME_NOT_KNOWN;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                    name,
-                    methodName,
-                    repositoryName);
-            throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, name, repositoryName);
         }
         return found;
     }
 
     /**
-     * Create a definition of a new TypeDef.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param newTypeDef TypeDef structure describing the new TypeDef.
-     * @throws InvalidParameterException the new TypeDef is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotSupportedException the repository is not able to support this TypeDef.
-     * @throws TypeDefKnownException the TypeDef is already stored in the repository.
-     * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
-     * @throws InvalidTypeDefException the new TypeDef has invalid contents.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public void addTypeDef(String  userId,
-                           TypeDef newTypeDef) throws InvalidParameterException,
+    public void addTypeDef(String userId,
+                           TypeDef newTypeDef) throws
+            InvalidParameterException,
             RepositoryErrorException,
             TypeDefNotSupportedException,
             TypeDefKnownException,
             TypeDefConflictException,
-            InvalidTypeDefException,
-            UserNotAuthorizedException {
+            InvalidTypeDefException {
 
-        final String  methodName = "addTypeDef";
-        final String  typeDefParameterName = "newTypeDef";
-
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateTypeDef(repositoryName, typeDefParameterName, newTypeDef, methodName);
-        repositoryValidator.validateUnknownTypeDef(repositoryName, typeDefParameterName, newTypeDef, methodName);
+        final String methodName = "addTypeDef";
+        final String typeDefParameterName = "newTypeDef";
+        super.newTypeDefParameterValidation(userId, newTypeDef, typeDefParameterName, methodName);
 
         TypeDefCategory typeDefCategory = newTypeDef.getCategory();
         String omrsTypeDefName = newTypeDef.getName();
@@ -654,28 +381,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         break;
                     default:
                         typeDefStore.addUnimplementedTypeDef(newTypeDef);
-                        throw new TypeDefNotSupportedException(
-                                404,
-                                ApacheAtlasOMRSMetadataCollection.class.getName(),
-                                methodName,
-                                omrsTypeDefName + " is not supported.",
-                                "",
-                                "Request support through Egeria GitHub issue."
-                        );
+                        raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
                 }
             }
 
         } else {
             // Otherwise, we'll drop it as unimplemented
             typeDefStore.addUnimplementedTypeDef(newTypeDef);
-            throw new TypeDefNotSupportedException(
-                    404,
-                    ApacheAtlasOMRSMetadataCollection.class.getName(),
-                    methodName,
-                    omrsTypeDefName + " is not supported.",
-                    "",
-                    "Request support through Egeria GitHub issue."
-            );
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
         }
 
         checkEventMapperIsConfigured(methodName);
@@ -684,18 +397,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Create a definition of a new AttributeTypeDef.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param newAttributeTypeDef TypeDef structure describing the new TypeDef.
-     * @throws InvalidParameterException the new TypeDef is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotSupportedException the repository is not able to support this TypeDef.
-     * @throws TypeDefKnownException the TypeDef is already stored in the repository.
-     * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
-     * @throws InvalidTypeDefException the new TypeDef has invalid contents.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
     public  void addAttributeTypeDef(String             userId,
@@ -704,8 +406,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             TypeDefNotSupportedException,
             TypeDefKnownException,
             TypeDefConflictException,
-            InvalidTypeDefException,
-            UserNotAuthorizedException {
+            InvalidTypeDefException {
 
         final String  methodName           = "addAttributeTypeDef";
         final String  typeDefParameterName = "newAttributeTypeDef";
@@ -749,14 +450,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         } else {
             // Otherwise, we'll drop it as unimplemented
             attributeTypeDefStore.addUnimplementedTypeDef(newAttributeTypeDef);
-            throw new TypeDefNotSupportedException(
-                    404,
-                    ApacheAtlasOMRSMetadataCollection.class.getName(),
-                    methodName,
-                    omrsTypeDefName + " is not supported.",
-                    "",
-                    "Request support through Egeria GitHub issue."
-            );
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
         }
 
         checkEventMapperIsConfigured(methodName);
@@ -765,27 +459,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Verify that a definition of a TypeDef is either new or matches the definition already stored.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param typeDef TypeDef structure describing the TypeDef to test.
-     * @return boolean true means the TypeDef matches the local definition; false means the TypeDef is not known.
-     * @throws InvalidParameterException the TypeDef is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws TypeDefNotSupportedException the repository is not able to support this TypeDef.
-     * @throws TypeDefConflictException the new TypeDef conflicts with an existing TypeDef.
-     * @throws InvalidTypeDefException the new TypeDef has invalid contents.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
     public boolean verifyTypeDef(String  userId,
                                  TypeDef typeDef) throws InvalidParameterException,
             RepositoryErrorException,
             TypeDefNotSupportedException,
-            TypeDefConflictException,
-            InvalidTypeDefException,
-            UserNotAuthorizedException {
+            InvalidTypeDefException {
 
         final String  methodName           = "verifyTypeDef";
         final String  typeDefParameterName = "typeDef";
@@ -802,27 +483,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // If we know the TypeDef is unimplemented, immediately throw an exception stating as much
         if (typeDefStore.getUnimplementedTypeDefByGUID(guid) != null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.TYPEDEF_NOT_KNOWN;
-            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                    typeDef.getName(),
-                    guid,
-                    typeDefParameterName,
-                    methodName,
-                    repositoryName
-            );
-            throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
-        } else if (typeDefStore.getTypeDefByGUID(guid) != null) {
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, typeDef.getName(), repositoryName);
+        }
+        /*} else if (typeDefStore.getTypeDefByGUID(guid) != null) {
 
+            // For a read-only connector, leave the status validation to when we try to write a status (throw exception at that point if we cannot support it)
             List<String> issues = new ArrayList<>();
-
             boolean bVerified = true;
 
-            /* For a read-only connector, leave the status validation to when we try to write a status (throw exception at that point if we cannot support it)
             Set<InstanceStatus> validStatuses = new HashSet<>(typeDef.getValidInstanceStatusList());
             boolean bVerified = validStatuses.equals(availableStates);
             if (!bVerified) {
@@ -843,7 +511,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         issues.add("property '" + omrsPropertyName + "' is not mapped");
                     }
                 }
-            } */
+            }
 
             // If we were unable to verify everything, throw exception indicating it is not a supported TypeDef
             if (!bVerified) {
@@ -862,10 +530,13 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 return true;
             }
 
-        } else {
-            // It is completely unknown to us, so go ahead and try to addTypeDef
-            return false;
-        }
+            } else {
+                // It is completely unknown to us, so go ahead and try to addTypeDef
+                return false;
+            }
+        }*/
+
+        return typeDefStore.getTypeDefByGUID(guid) != null;
 
     }
 
@@ -1134,14 +805,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // Immediately throw unimplemented exception if trying to retrieve historical view or sequence by property
         if (asOfTime != null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
-            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.NO_HISTORY, methodName, repositoryName);
         } else if (limitResultsByStatus == null
                 || (limitResultsByStatus.size() == 1 && limitResultsByStatus.contains(InstanceStatus.ACTIVE))) {
 
@@ -1263,18 +927,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        List<AtlasEntityHeader> results;
+        List<AtlasEntityHeader> results = null;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
-            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.NO_HISTORY, methodName, repositoryName);
         } else if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
 
             results = buildAndRunDSLSearch(
@@ -1397,18 +1054,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        List<AtlasEntityHeader> results;
+        List<AtlasEntityHeader> results = null;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
-            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.NO_HISTORY, methodName, repositoryName);
         } else if (sequencingOrder != null) {
 
             List<String> limitResultsByClassification = new ArrayList<>();
@@ -1600,18 +1250,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 pageSize
         );
 
-        List<AtlasEntityHeader> results;
+        List<AtlasEntityHeader> results = null;
 
         // Immediately throw unimplemented exception if trying to retrieve historical view
         if (asOfTime != null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.NO_HISTORY;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
-            throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.NO_HISTORY, methodName, repositoryName);
         }
 
         InstanceProperties matchProperties = null;
@@ -2149,6 +1792,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
+        boolean skipSearch = false;
         StringBuilder sb = new StringBuilder();
 
         // For this kind of query, we MUST have an entity type (for Atlas),
@@ -2229,28 +1873,22 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
 
             // Add status limiters, if requested
+            boolean unsupportedStatusRequested = false;
             if (limitResultsByStatus != null) {
                 List<String> states = new ArrayList<>();
                 Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
-                if (limitSet.equals(availableStates)) {
-                    states.add("__state = 'DELETED'");
-                    states.add("__state = 'ACTIVE'");
-                } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED)) {
-                    states.add("__state = 'DELETED'");
-                } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
-                    states.add("__state = 'ACTIVE'");
-                } else {
-                    // Otherwise we must be searching for states that Atlas does not support
-                    OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                            this.getClass().getName(),
-                            repositoryName);
-                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                            this.getClass().getName(),
-                            methodName,
-                            errorMessage,
-                            errorCode.getSystemAction(),
-                            errorCode.getUserAction());
+                for (InstanceStatus requestedStatus : limitSet) {
+                    switch (requestedStatus) {
+                        case ACTIVE:
+                            states.add("__state = 'ACTIVE'");
+                            break;
+                        case DELETED:
+                            states.add("__state = 'DELETED'");
+                            break;
+                        default:
+                            unsupportedStatusRequested = true;
+                            break;
+                    }
                 }
                 if (!states.isEmpty()) {
                     if (!bWhereClauseAdded) {
@@ -2258,92 +1896,98 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                     }
                     sb.append(" ");
                     sb.append(String.join(" or ", states));
+                } else if (unsupportedStatusRequested) {
+                    // We are searching only for a state that Atlas does not support, so we should ensure no
+                    // results are returned (in fact, skip searching entirely).
+                    skipSearch = true;
                 }
             }
 
-            // Add sorting criteria, if requested
-            if (sequencingOrder != null) {
-                switch (sequencingOrder) {
-                    case GUID:
-                        sb.append(" orderby __guid asc");
-                        break;
-                    case LAST_UPDATE_OLDEST:
-                        sb.append(" orderby __modificationTimestamp asc");
-                        break;
-                    case LAST_UPDATE_RECENT:
-                        sb.append(" orderby __modificationTimestamp desc");
-                        break;
-                    case CREATION_DATE_OLDEST:
-                        sb.append(" orderby __timestamp asc");
-                        break;
-                    case CREATION_DATE_RECENT:
-                        sb.append(" orderby __timestamp desc");
-                        break;
-                    case PROPERTY_ASCENDING:
-                        if (sequencingProperty != null) {
-                            String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
-                            if (atlasPropertyName != null) {
-                                sb.append(" orderby ");
-                                sb.append(atlasPropertyName);
-                                sb.append(" asc");
-                            } else {
-                                if (log.isWarnEnabled()) {
-                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
-                                }
-                                sb.append(" orderby __guid asc");
-                            }
-                        } else {
-                            if (log.isWarnEnabled()) {
-                                log.warn("No property for sorting provided, defaulting to GUID.");
-                            }
+            if (!skipSearch) {
+                // Add sorting criteria, if requested
+                if (sequencingOrder != null) {
+                    switch (sequencingOrder) {
+                        case GUID:
                             sb.append(" orderby __guid asc");
-                        }
-                        break;
-                    case PROPERTY_DESCENDING:
-                        if (sequencingProperty != null) {
-                            String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
-                            if (atlasPropertyName != null) {
-                                sb.append(" orderby ");
-                                sb.append(atlasPropertyName);
-                                sb.append(" desc");
+                            break;
+                        case LAST_UPDATE_OLDEST:
+                            sb.append(" orderby __modificationTimestamp asc");
+                            break;
+                        case LAST_UPDATE_RECENT:
+                            sb.append(" orderby __modificationTimestamp desc");
+                            break;
+                        case CREATION_DATE_OLDEST:
+                            sb.append(" orderby __timestamp asc");
+                            break;
+                        case CREATION_DATE_RECENT:
+                            sb.append(" orderby __timestamp desc");
+                            break;
+                        case PROPERTY_ASCENDING:
+                            if (sequencingProperty != null) {
+                                String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
+                                if (atlasPropertyName != null) {
+                                    sb.append(" orderby ");
+                                    sb.append(atlasPropertyName);
+                                    sb.append(" asc");
+                                } else {
+                                    if (log.isWarnEnabled()) {
+                                        log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
+                                    }
+                                    sb.append(" orderby __guid asc");
+                                }
                             } else {
                                 if (log.isWarnEnabled()) {
-                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
+                                    log.warn("No property for sorting provided, defaulting to GUID.");
                                 }
                                 sb.append(" orderby __guid asc");
                             }
-                        } else {
-                            if (log.isWarnEnabled()) {
-                                log.warn("No property for sorting provided, defaulting to GUID.");
+                            break;
+                        case PROPERTY_DESCENDING:
+                            if (sequencingProperty != null) {
+                                String atlasPropertyName = omrsPropertyMap.get(sequencingProperty);
+                                if (atlasPropertyName != null) {
+                                    sb.append(" orderby ");
+                                    sb.append(atlasPropertyName);
+                                    sb.append(" desc");
+                                } else {
+                                    if (log.isWarnEnabled()) {
+                                        log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
+                                    }
+                                    sb.append(" orderby __guid asc");
+                                }
+                            } else {
+                                if (log.isWarnEnabled()) {
+                                    log.warn("No property for sorting provided, defaulting to GUID.");
+                                }
+                                sb.append(" orderby __guid desc");
                             }
-                            sb.append(" orderby __guid desc");
-                        }
-                        break;
-                    default:
-                        // Do nothing -- no sorting
-                        break;
+                            break;
+                        default:
+                            // Do nothing -- no sorting
+                            break;
+                    }
                 }
-            }
 
-            // Add paging criteria, if requested
-            if (pageSize > 0) {
-                sb.append(" limit ");
-                sb.append(pageSize);
-            }
-            // TODO: can we use fromEntityElement already here if there is a multi-type map?
-            if (fromEntityElement > 0) {
-                sb.append(" offset ");
-                sb.append(fromEntityElement);
-            }
+                // Add paging criteria, if requested
+                if (pageSize > 0) {
+                    sb.append(" limit ");
+                    sb.append(pageSize);
+                }
+                // TODO: can we use fromEntityElement already here if there is a multi-type map?
+                if (fromEntityElement > 0) {
+                    sb.append(" offset ");
+                    sb.append(fromEntityElement);
+                }
 
-            AtlasSearchResult results = null;
-            try {
-                results = atlasRepositoryConnector.searchWithDSL(sb.toString());
-            } catch (AtlasServiceException e) {
-                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, sb.toString());
-            }
-            if (results != null) {
-                totalResults.add(results);
+                AtlasSearchResult results = null;
+                try {
+                    results = atlasRepositoryConnector.searchWithDSL(sb.toString());
+                } catch (AtlasServiceException e) {
+                    raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, sb.toString());
+                }
+                if (results != null) {
+                    totalResults.add(results);
+                }
             }
 
         }
@@ -2517,6 +2161,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
             searchParameters.setEntityFilters(entityFilters);
 
+            boolean skipSearch = false;
+
             if (limitResultsByStatus != null) {
                 Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
                 if (limitSet.equals(availableStates) || (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED))) {
@@ -2525,33 +2171,29 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 } else if (limitSet.size() == 1 && limitSet.contains(InstanceStatus.ACTIVE)) {
                     // Otherwise if we are only after active, do exclude deleted
                     searchParameters.setExcludeDeletedEntities(true);
-                } else {
-                    // Otherwise we must be searching for states that Atlas does not support
-                    OMRSErrorCode errorCode = OMRSErrorCode.METHOD_NOT_IMPLEMENTED;
-                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                            this.getClass().getName(),
-                            repositoryName);
-                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                            this.getClass().getName(),
-                            methodName,
-                            errorMessage,
-                            errorCode.getSystemAction(),
-                            errorCode.getUserAction());
+                } else if (!limitSet.isEmpty()) {
+                    // Otherwise we must be searching only for states that Atlas does not support, so we should ensure
+                    // that no results are returned (by skipping the search entirely).
+                    skipSearch = true;
                 }
             }
 
-            if (limitResultsByClassification != null) {
-                searchParameters.setClassification(limitResultsByClassification);
-            }
+            if (!skipSearch) {
 
-            AtlasSearchResult results = null;
-            try {
-                results = atlasRepositoryConnector.searchForEntities(searchParameters);
-            } catch (AtlasServiceException e) {
-                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, searchParameters.toString());
-            }
-            if (results != null) {
-                totalResults.add(results);
+                if (limitResultsByClassification != null) {
+                    searchParameters.setClassification(limitResultsByClassification);
+                }
+
+                AtlasSearchResult results = null;
+                try {
+                    results = atlasRepositoryConnector.searchForEntities(searchParameters);
+                } catch (AtlasServiceException e) {
+                    raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, searchParameters.toString());
+                }
+                if (results != null) {
+                    totalResults.add(results);
+                }
+
             }
 
         }
@@ -2822,16 +2464,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     sbCriterion.append(unqualifiedValue);
                                     sbCriterion.append("\"");
                                 } else {
-                                    ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED;
-                                    String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                                            repositoryName,
-                                            candidateValue);
-                                    throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
-                                            ApacheAtlasOMRSMetadataCollection.class.getName(),
-                                            methodName,
-                                            errorMessage,
-                                            errorCode.getSystemAction(),
-                                            errorCode.getUserAction());
+                                    raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED, methodName, repositoryName, candidateValue);
                                 }
                                 atlasCriterion.setAttributeValue(unqualifiedValue);
                                 if (dslQuery) {
@@ -3117,6 +2750,61 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 errorCode.getSystemAction(),
                 errorCode.getUserAction(),
                 cause);
+    }
+
+    /**
+     * Throw a TypeDefNotKnownException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws TypeDefNotKnownException always
+     */
+    private void raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotKnownException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
+    }
+
+    /**
+     * Throw a TypeDefNotSupportedException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws TypeDefNotSupportedException always
+     */
+    private void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
+    }
+
+    /**
+     * Throw a FunctionNotSupportedException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param params any parameters for formatting the error message
+     * @throws FunctionNotSupportedException always
+     */
+    private void raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, String ...params) throws FunctionNotSupportedException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction());
     }
 
 }
