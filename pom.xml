@@ -106,6 +106,8 @@
         <mockito.version>3.2.4</mockito.version>
         <testng.version>7.1.1</testng.version>
         <mock-server.version>5.8.1</mock-server.version>
+        <sleepycat.version>18.3.12</sleepycat.version>
+        <rhino.version>1.7.12</rhino.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.0.0-beta5</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
@@ -332,6 +334,19 @@
                 <groupId>org.odpi.egeria</groupId>
                 <artifactId>inmemory-open-metadata-topic-connector</artifactId>
                 <version>${open-metadata.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Following dependencies are to ensure we use updated versions of libraries that others are dependent upon -->
+            <dependency>
+                <groupId>com.sleepycat</groupId>
+                <artifactId>je</artifactId>
+                <version>${sleepycat.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mozilla</groupId>
+                <artifactId>rhino</artifactId>
+                <version>${rhino.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
