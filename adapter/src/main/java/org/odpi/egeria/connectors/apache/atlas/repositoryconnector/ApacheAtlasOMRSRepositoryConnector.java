@@ -2,7 +2,6 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
@@ -14,21 +13,21 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
-import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSAuditCode;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
+import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.frameworks.connectors.properties.EndpointProperties;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollection;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
-import org.odpi.openmetadata.repositoryservices.ffdc.exception.OMRSRuntimeException;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
+
+import org.apache.atlas.AtlasClientV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.atlas.AtlasClientV2;
-import org.springframework.core.io.ClassPathResource;
-
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.InputStream;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
 
@@ -48,82 +47,71 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
     }
 
     /**
-     * Call made by the ConnectorProvider to initialize the Connector with the base services.
-     *
-     * @param connectorInstanceId   unique id for the connector instance   useful for messages etc
-     * @param connectionProperties   POJO for the configuration used to create the connector.
+     * {@inheritDoc}
      */
     @Override
-    public void initialize(String               connectorInstanceId,
-                           ConnectionProperties connectionProperties) {
-        super.initialize(connectorInstanceId, connectionProperties);
-
-        final String methodName = "initialize";
-        if (log.isDebugEnabled()) { log.debug("Initializing ApacheAtlasOMRSRepositoryConnector..."); }
-
-        EndpointProperties endpointProperties = connectionProperties.getEndpoint();
-        if (endpointProperties == null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage("null");
-            throw new OMRSRuntimeException(
-                    errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction()
-            );
+    public OMRSMetadataCollection getMetadataCollection() throws RepositoryErrorException {
+        final String methodName = "getMetadataCollection";
+        if (metadataCollection == null) {
+            // If the metadata collection has not yet been created, attempt to create it now
+            try {
+                connectToAtlas(methodName);
+            } catch (ConnectorCheckedException e) {
+                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, e, getServerName());
+            }
         }
-        this.url = endpointProperties.getProtocol() + "://" + endpointProperties.getAddress();
+        return super.getMetadataCollection();
+    }
 
-        String username = connectionProperties.getUserId();
-        String password = connectionProperties.getClearPassword();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void start() throws ConnectorCheckedException {
 
-        this.atlasClient = new AtlasClientV2(new String[]{ getBaseURL() }, new String[]{ username, password });
+        super.start();
+        final String methodName = "start";
 
-        // Test REST API connection by attempting to retrieve types list
-        AtlasTypesDef atlasTypes = null;
-        try {
-            atlasTypes = atlasClient.getAllTypeDefs(new SearchFilter());
-            successfulInit = (atlasTypes != null && atlasTypes.hasEntityDef("Referenceable"));
-        } catch (AtlasServiceException e) {
-            log.error("Unable to retrieve types from Apache Atlas.", e);
+        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTING;
+        auditLog.logRecord(methodName,
+                auditCode.getLogMessageId(),
+                auditCode.getSeverity(),
+                auditCode.getFormattedLogMessage(),
+                null,
+                auditCode.getSystemAction(),
+                auditCode.getUserAction());
+
+        if (metadataCollection == null) {
+            // If the metadata collection has not yet been created, attempt to create it now
+            connectToAtlas(methodName);
         }
 
-        if (!successfulInit) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(this.url);
-            throw new OMRSRuntimeException(
-                    errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction()
-            );
-        }
+        auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTED;
+        auditLog.logRecord(methodName,
+                auditCode.getLogMessageId(),
+                auditCode.getSeverity(),
+                auditCode.getFormattedLogMessage(getServerName()),
+                null,
+                auditCode.getSystemAction(),
+                auditCode.getUserAction());
 
     }
 
     /**
-     * Set up the unique Id for this metadata collection.
-     *
-     * @param metadataCollectionId - String unique Id
+     * {@inheritDoc}
      */
     @Override
-    public void setMetadataCollectionId(String metadataCollectionId) {
-        this.metadataCollectionId = metadataCollectionId;
-        /*
-         * Initialize the metadata collection only once the connector is properly set up.
-         * (Meaning we will NOT initialise the collection if the connector failed to setup properly.)
-         */
-        if (successfulInit) {
-            metadataCollection = new ApacheAtlasOMRSMetadataCollection(this,
-                    serverName,
-                    repositoryHelper,
-                    repositoryValidator,
-                    metadataCollectionId);
-        }
+    public void disconnect() {
+
+        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_SHUTDOWN;
+        auditLog.logRecord("disconnect",
+                auditCode.getLogMessageId(),
+                auditCode.getSeverity(),
+                auditCode.getFormattedLogMessage(getServerName()),
+                null,
+                auditCode.getSystemAction(),
+                auditCode.getUserAction());
+
     }
 
     /**
@@ -151,32 +139,30 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param name the name of the TypeDef to retrieve
      * @param typeDefCategory the type (in OMRS terms) of the TypeDef to retrieve
      * @return AtlasStructDef
+     * @throws AtlasServiceException if there is any problem retrieving the type definition
      */
-    public AtlasStructDef getTypeDefByName(String name, TypeDefCategory typeDefCategory) {
+    public AtlasStructDef getTypeDefByName(String name, TypeDefCategory typeDefCategory) throws AtlasServiceException {
 
         AtlasStructDef result = null;
-        try {
-            switch(typeDefCategory) {
-                case CLASSIFICATION_DEF:
-                    result = atlasClient.getClassificationDefByName(name);
-                    break;
-                case ENTITY_DEF:
-                    result = atlasClient.getEntityDefByName(name);
-                    break;
-                case RELATIONSHIP_DEF:
-                    // For whatever reason, relationshipdef retrieval is not in the Atlas client, so writing our own
-                    // API call for this one
-                    String atlasPath = "relationshipdef";
-                    AtlasBaseClient.API api = new AtlasBaseClient.API(String.format(AtlasClientV2.TYPES_API + "%s/name/%s", atlasPath, name), HttpMethod.GET, Response.Status.OK);
-                    result = atlasClient.callAPI(api, AtlasRelationshipDef.class, null);
-                    break;
-                default:
-                    break;
-            }
-        } catch (AtlasServiceException e) {
-            log.error("Unable to retrieve type by name: {}", name, e);
+        switch(typeDefCategory) {
+            case CLASSIFICATION_DEF:
+                result = atlasClient.getClassificationDefByName(name);
+                break;
+            case ENTITY_DEF:
+                result = atlasClient.getEntityDefByName(name);
+                break;
+            case RELATIONSHIP_DEF:
+                // For whatever reason, relationshipdef retrieval is not in the Atlas client, so writing our own
+                // API call for this one
+                String atlasPath = "relationshipdef";
+                AtlasBaseClient.API api = new AtlasBaseClient.API(String.format(AtlasClientV2.TYPES_API + "%s/name/%s", atlasPath, name), HttpMethod.GET, Response.Status.OK);
+                result = atlasClient.callAPI(api, AtlasRelationshipDef.class, null);
+                break;
+            default:
+                break;
         }
         return result;
+
     }
 
     /**
@@ -184,8 +170,9 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param guid the GUID of the entity instance to retrieve
      * @return AtlasEntityWithExtInfo
+     * @throws AtlasServiceException if there is any error retrieving the entity
      */
-    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid) {
+    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid) throws AtlasServiceException {
         return getEntityByGUID(guid, false, true);
     }
 
@@ -196,30 +183,12 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param minimalExtraInfo if true, minimize the amount of extra information retrieved about the GUID
      * @param ignoreRelationships if true, will return only the entity (none of its relationships)
      * @return AtlasEntityWithExtInfo
+     * @throws AtlasServiceException if there is any error retrieving the entity
      */
-    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid, boolean minimalExtraInfo, boolean ignoreRelationships) {
-        return getEntityByGUID(guid, minimalExtraInfo, ignoreRelationships, true);
-    }
-
-    /**
-     * Retrieve an Apache Atlas Entity instance by its GUID.
-     *
-     * @param guid the GUID of the entity instance to retrieve
-     * @param minimalExtraInfo if true, minimize the amount of extra information retrieved about the GUID
-     * @param ignoreRelationships if true, will return only the entity (none of its relationships)
-     * @param logIfNotFound if true, will log any exception where the entity is not found, otherwise will not
-     * @return AtlasEntityWithExtInfo
-     */
-    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid, boolean minimalExtraInfo, boolean ignoreRelationships, boolean logIfNotFound) {
-        AtlasEntity.AtlasEntityWithExtInfo entity = null;
-        try {
-            entity = atlasClient.getEntityByGuid(guid, minimalExtraInfo, ignoreRelationships);
-        } catch (AtlasServiceException e) {
-            if (logIfNotFound) {
-                log.error("Unable to retrieve entity by GUID: {}", guid, e);
-            }
-        }
-        return entity;
+    public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid,
+                                                              boolean minimalExtraInfo,
+                                                              boolean ignoreRelationships) throws AtlasServiceException {
+        return atlasClient.getEntityByGuid(guid, minimalExtraInfo, ignoreRelationships);
     }
 
     /**
@@ -227,8 +196,9 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param guid the GUID of the relationship instance to retrieve
      * @return AtlasRelationshipWithExtInfo
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid) {
+    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid) throws AtlasServiceException {
         return getRelationshipByGUID(guid, false);
     }
 
@@ -238,15 +208,11 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param guid the GUID of the relationship instance to retrieve
      * @param extendedInfo if true, will include extended info in the result
      * @return AtlasRelationshipWithExtInfo
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid, boolean extendedInfo) {
-        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
-        try {
-            relationship = atlasClient.getRelationshipByGuid(guid, extendedInfo);
-        } catch (AtlasServiceException e) {
-            log.error("Unable to retrieve relationship by GUID: {}", guid, e);
-        }
-        return relationship;
+    public AtlasRelationship.AtlasRelationshipWithExtInfo getRelationshipByGUID(String guid,
+                                                                                boolean extendedInfo) throws AtlasServiceException {
+        return atlasClient.getRelationshipByGuid(guid, extendedInfo);
     }
 
     /**
@@ -254,15 +220,10 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param typeDefs the TypeDefs to add to Apache Atlas
      * @return AtlasTypesDef
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public AtlasTypesDef createTypeDef(AtlasTypesDef typeDefs) {
-        AtlasTypesDef result = null;
-        try {
-            result = atlasClient.createAtlasTypeDefs(typeDefs);
-        } catch (AtlasServiceException e) {
-            log.error("Unable to create provided TypeDefs: {}", typeDefs, e);
-        }
-        return result;
+    public AtlasTypesDef createTypeDef(AtlasTypesDef typeDefs) throws AtlasServiceException {
+        return atlasClient.createAtlasTypeDefs(typeDefs);
     }
 
     /**
@@ -270,16 +231,11 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param searchParameters the criteria by which to search
      * @return AtlasSearchResult
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public AtlasSearchResult searchForEntities(SearchParameters searchParameters) {
-        AtlasSearchResult result = null;
-        try {
-            if (log.isInfoEnabled()) { log.info("Searching Atlas with: {}", searchParameters); }
-            result = atlasClient.facetedSearch(searchParameters);
-        } catch (AtlasServiceException e) {
-            log.error("Unable to search based on parameters: {}", searchParameters, e);
-        }
-        return result;
+    public AtlasSearchResult searchForEntities(SearchParameters searchParameters) throws AtlasServiceException {
+        log.debug("Searching Atlas with: {}", searchParameters);
+        return atlasClient.facetedSearch(searchParameters);
     }
 
     /**
@@ -287,16 +243,11 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param dslQuery the query to use for the search
      * @return AtlasSearchResult
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public AtlasSearchResult searchWithDSL(String dslQuery) {
-        AtlasSearchResult result = null;
-        try {
-            if (log.isInfoEnabled()) { log.info("Searching Atlas with: {}", dslQuery); }
-            result = atlasClient.dslSearch(dslQuery);
-        } catch (AtlasServiceException e) {
-            log.error("Unable to search based on DSL query: {}", dslQuery, e);
-        }
-        return result;
+    public AtlasSearchResult searchWithDSL(String dslQuery) throws AtlasServiceException {
+        log.debug("Searching Atlas with: {}", dslQuery);
+        return atlasClient.dslSearch(dslQuery);
     }
 
     /**
@@ -305,19 +256,118 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param atlasEntity the Apache Atlas entity to save
      * @param create indicates whether the entity should be created (true) or updated (false)
      * @return EntityMutationResponse listing the details of the entity that was saved
+     * @throws AtlasServiceException if there is any error retrieving the relationship
      */
-    public EntityMutationResponse saveEntity(AtlasEntity.AtlasEntityWithExtInfo atlasEntity, boolean create) {
-        EntityMutationResponse result = null;
-        try {
-            if (create) {
-                result = atlasClient.createEntity(atlasEntity);
-            } else {
-                result = atlasClient.updateEntity(atlasEntity);
-            }
-        } catch (AtlasServiceException e) {
-            log.error("Unable to save entity: {}", atlasEntity, e);
+    public EntityMutationResponse saveEntity(AtlasEntity.AtlasEntityWithExtInfo atlasEntity,
+                                             boolean create) throws AtlasServiceException {
+        EntityMutationResponse result;
+        if (create) {
+            result = atlasClient.createEntity(atlasEntity);
+        } else {
+            result = atlasClient.updateEntity(atlasEntity);
         }
         return result;
+    }
+
+    /**
+     * Attempt to connect to the Apache Atlas server specified by the received parameters.
+     *
+     * @param methodName the method attempting to connect
+     * @throws ConnectorCheckedException if there is any issue connecting
+     */
+    private void connectToAtlas(String methodName) throws ConnectorCheckedException {
+
+        EndpointProperties endpointProperties = connectionProperties.getEndpoint();
+        if (endpointProperties == null) {
+            raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, null, "null");
+        } else {
+
+            this.url = endpointProperties.getProtocol() + "://" + endpointProperties.getAddress();
+
+            ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.CONNECTING_TO_ATLAS;
+            auditLog.logRecord(methodName,
+                    auditCode.getLogMessageId(),
+                    auditCode.getSeverity(),
+                    auditCode.getFormattedLogMessage(getBaseURL()),
+                    null,
+                    auditCode.getSystemAction(),
+                    auditCode.getUserAction());
+
+            String username = connectionProperties.getUserId();
+            String password = connectionProperties.getClearPassword();
+
+            this.atlasClient = new AtlasClientV2(new String[]{getBaseURL()}, new String[]{username, password});
+
+            // Test REST API connection by attempting to retrieve types list
+            AtlasTypesDef atlasTypes = null;
+            try {
+                atlasTypes = atlasClient.getAllTypeDefs(new SearchFilter());
+                successfulInit = (atlasTypes != null && atlasTypes.hasEntityDef("Referenceable"));
+            } catch (AtlasServiceException e) {
+                raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, e, getBaseURL());
+            }
+
+            if (!successfulInit) {
+                raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, null, getBaseURL());
+            } else {
+
+                auditCode = ApacheAtlasOMRSAuditCode.CONNECTED_TO_ATLAS;
+                auditLog.logRecord(methodName,
+                        auditCode.getLogMessageId(),
+                        auditCode.getSeverity(),
+                        auditCode.getFormattedLogMessage(getBaseURL()),
+                        null,
+                        auditCode.getSystemAction(),
+                        auditCode.getUserAction());
+
+                metadataCollection = new ApacheAtlasOMRSMetadataCollection(this,
+                        serverName,
+                        repositoryHelper,
+                        repositoryValidator,
+                        metadataCollectionId);
+            }
+        }
+
+    }
+
+    /**
+     * Throws a ConnectorCheckedException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the name of the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, null otherwise)
+     * @param params any parameters for formatting the error message
+     * @throws ConnectorCheckedException always
+     */
+    private void raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws ConnectorCheckedException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new ConnectorCheckedException(
+                errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause
+        );
+    }
+
+    /**
+     * Throws a RepositoryErrorException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the name of the method throwing the exception
+     * @param cause the underlying cause of the exception (or null if none)
+     * @param params any parameters for formatting the error message
+     * @throws RepositoryErrorException always
+     */
+    private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
     }
 
 }
