@@ -2,9 +2,11 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
+import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSMetadataCollection;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
@@ -64,9 +66,9 @@ public class RelationshipMapping {
      */
     public Relationship getRelationship() throws RepositoryErrorException {
 
-        /*final String methodName = "getRelationship";
-        OMRSRepositoryHelper omrsRepositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
-        String repositoryName = atlasRepositoryConnector.getRepositoryName();*/
+        final String methodName = "getRelationship";
+        String repositoryName = atlasRepositoryConnector.getRepositoryName();
+
         String atlasRelationshipType = atlasRelationship.getTypeName();
         // TODO: currently all mappings from Atlas RelationshipDef to OMRS RelationshipDef are one-to-n, so never a prefix
         String omrsRelationshipType = typeDefStore.getMappedOMRSTypeDefName(atlasRelationshipType, null);
@@ -79,35 +81,48 @@ public class RelationshipMapping {
             AtlasObjectId atlasEp2 = atlasRelationship.getEnd2();
 
             // TODO: currently all mappings from Atlas RelationshipDef to OMRS RelationshipDef are one-to-n, so never a prefix
-            EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
-                    atlasRepositoryConnector,
-                    typeDefStore,
-                    atlasRepositoryConnector.getEntityByGUID(atlasEp1.getGuid(), true, true).getEntity(),
-                    null,
-                    userId
-            );
-            EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
-                    atlasRepositoryConnector,
-                    typeDefStore,
-                    atlasRepositoryConnector.getEntityByGUID(atlasEp2.getGuid(), true, true).getEntity(),
-                    null,
-                    userId
-            );
+            EntityProxy ep1 = null;
+            EntityProxy ep2 = null;
 
-            omrsRelationship = RelationshipMapping.getRelationship(
-                    atlasRepositoryConnector,
-                    typeDefStore,
-                    attributeDefStore,
-                    atlasRelationshipType,
-                    atlasRelationship.getGuid(),
-                    atlasRelationship.getStatus(),
-                    ep1,
-                    ep2,
-                    atlasRelationship.getCreatedBy(),
-                    atlasRelationship.getUpdatedBy(),
-                    atlasRelationship.getCreateTime(),
-                    atlasRelationship.getUpdateTime(),
-                    atlasRelationship.getAttributes());
+            try {
+                ep1 = RelationshipMapping.getEntityProxyForObject(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        atlasRepositoryConnector.getEntityByGUID(atlasEp1.getGuid(), true, true).getEntity(),
+                        null,
+                        userId
+                );
+            } catch (AtlasServiceException e) {
+                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, atlasEp1.getGuid(), methodName, repositoryName);
+            }
+            try {
+                ep2 = RelationshipMapping.getEntityProxyForObject(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        atlasRepositoryConnector.getEntityByGUID(atlasEp2.getGuid(), true, true).getEntity(),
+                        null,
+                        userId
+                );
+            } catch (AtlasServiceException e) {
+                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, atlasEp2.getGuid(), methodName, repositoryName);
+            }
+
+            if (ep1 != null && ep2 != null) {
+                omrsRelationship = RelationshipMapping.getRelationship(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        attributeDefStore,
+                        atlasRelationshipType,
+                        atlasRelationship.getGuid(),
+                        atlasRelationship.getStatus(),
+                        ep1,
+                        ep2,
+                        atlasRelationship.getCreatedBy(),
+                        atlasRelationship.getUpdatedBy(),
+                        atlasRelationship.getCreateTime(),
+                        atlasRelationship.getUpdateTime(),
+                        atlasRelationship.getAttributes());
+            }
 
         }
 
@@ -402,6 +417,25 @@ public class RelationshipMapping {
 
         return relationship;
 
+    }
+
+    /**
+     * Throw a RepositoryErrorException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws RepositoryErrorException always
+     */
+    private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
     }
 
 }
