@@ -2,9 +2,11 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
+import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.*;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
@@ -1001,18 +1003,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true, false);
+        AtlasEntity.AtlasEntityWithExtInfo entity = null;
+        try {
+            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
+        } catch (AtlasServiceException e) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+        }
         if (entity == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
-            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
-                    methodName,
-                    repositoryName);
-            throw new EntityNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
         }
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntitySummary();
@@ -1059,18 +1057,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true, false);
+        AtlasEntity.AtlasEntityWithExtInfo entity = null;
+        try {
+            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
+        } catch (AtlasServiceException e) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+        }
         if (entity == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
-            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
-                    methodName,
-                    repositoryName);
-            throw new EntityNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
         }
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntityDetail();
@@ -1161,20 +1155,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             }
 
             // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
-            AtlasEntity.AtlasEntityWithExtInfo asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false, false);
+            AtlasEntity.AtlasEntityWithExtInfo asset = null;
+            try {
+                asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false);
+            } catch (AtlasServiceException e) {
+                raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, entityGUID, methodName, repositoryName);
+            }
 
             // Ensure the entity actually exists (if not, throw error to that effect)
             if (asset == null) {
-                OMRSErrorCode errorCode = OMRSErrorCode.ENTITY_NOT_KNOWN;
-                String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(entityGUID,
-                        methodName,
-                        repositoryName);
-                throw new EntityNotKnownException(errorCode.getHTTPErrorCode(),
-                        this.getClass().getName(),
-                        methodName,
-                        errorMessage,
-                        errorCode.getSystemAction(),
-                        errorCode.getUserAction());
+                raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, entityGUID, methodName, repositoryName);
             } else {
 
                 EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
@@ -1828,18 +1818,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
          * Process operation
          */
 
-        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = this.atlasRepositoryConnector.getRelationshipByGUID(guid);
+        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
+        try {
+            relationship = this.atlasRepositoryConnector.getRelationshipByGUID(guid);
+        } catch (AtlasServiceException e) {
+            raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+        }
         if (relationship == null) {
-            OMRSErrorCode errorCode = OMRSErrorCode.RELATIONSHIP_NOT_KNOWN;
-            String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
-                    methodName,
-                    repositoryName);
-            throw new RelationshipNotKnownException(errorCode.getHTTPErrorCode(),
-                    this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+            raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
         }
         RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, relationship, userId);
         return mapping.getRelationship();
@@ -2146,6 +2132,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                 unrestricted return results size.
      * @return {@code List<AtlasEntityHeader>}
      * @throws FunctionNotSupportedException when trying to search using a status that is not supported in Atlas
+     * @throws RepositoryErrorException when there is some error running the search against Atlas
      */
     private List<AtlasEntityHeader> buildAndRunDSLSearch(String methodName,
                                                          String entityTypeGUID,
@@ -2156,8 +2143,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                          List<InstanceStatus> limitResultsByStatus,
                                                          String sequencingProperty,
                                                          SequencingOrder sequencingOrder,
-                                                         int pageSize)
-            throws FunctionNotSupportedException {
+                                                         int pageSize) throws
+            FunctionNotSupportedException,
+            RepositoryErrorException {
 
         // If we need to order the results, it will probably be more efficient to use Atlas's DSL query language
         // to do the search
@@ -2348,7 +2336,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 sb.append(fromEntityElement);
             }
 
-            AtlasSearchResult results = atlasRepositoryConnector.searchWithDSL(sb.toString());
+            AtlasSearchResult results = null;
+            try {
+                results = atlasRepositoryConnector.searchWithDSL(sb.toString());
+            } catch (AtlasServiceException e) {
+                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, sb.toString());
+            }
             if (results != null) {
                 totalResults.add(results);
             }
@@ -2380,6 +2373,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      *                 unrestricted return results size.
      * @return {@code List<EntityDetail>}
      * @throws FunctionNotSupportedException when attempting to search based on a status that is not supported in Atlas
+     * @throws RepositoryErrorException when unable to run the search against Apache Atlas
      */
     private List<AtlasEntityHeader> buildAndRunBasicSearch(String methodName,
                                                            String entityTypeGUID,
@@ -2389,8 +2383,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                            String fullTextQuery,
                                                            int fromEntityElement,
                                                            List<InstanceStatus> limitResultsByStatus,
-                                                           int pageSize)
-            throws FunctionNotSupportedException {
+                                                           int pageSize) throws
+            FunctionNotSupportedException,
+            RepositoryErrorException {
 
         String omrsTypeName = null;
         Map<String, String> atlasTypeNamesByPrefix = new HashMap<>();
@@ -2549,7 +2544,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 searchParameters.setClassification(limitResultsByClassification);
             }
 
-            AtlasSearchResult results = atlasRepositoryConnector.searchForEntities(searchParameters);
+            AtlasSearchResult results = null;
+            try {
+                results = atlasRepositoryConnector.searchForEntities(searchParameters);
+            } catch (AtlasServiceException e) {
+                raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_SEARCH, methodName, e, searchParameters.toString());
+            }
             if (results != null) {
                 totalResults.add(results);
             }
@@ -3061,5 +3061,62 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     }
      */
+
+    /**
+     * Throw an EntityNotKnownException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws EntityNotKnownException always
+     */
+    private void raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws EntityNotKnownException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new EntityNotKnownException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
+    }
+
+    /**
+     * Throw a RelationshipNotKnownException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws RelationshipNotKnownException always
+     */
+    private void raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RelationshipNotKnownException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new RelationshipNotKnownException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
+    }
+
+    /**
+     * Throw a RepositoryErrorException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws RepositoryErrorException always
+     */
+    private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+                this.getClass().getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
+    }
 
 }

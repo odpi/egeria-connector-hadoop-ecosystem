@@ -2,8 +2,10 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
+import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
@@ -73,21 +75,38 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
             List<AtlasEntityDef> entityList = new ArrayList<>();
             entityList.add(entityTypeDef);
             atlasTypesDef.setEntityDefs(entityList);
-            atlasRepositoryConnector.createTypeDef(atlasTypesDef);
-            typeDefStore.addTypeDef(omrsEntityDef);
+            try {
+                atlasRepositoryConnector.createTypeDef(atlasTypesDef);
+                typeDefStore.addTypeDef(omrsEntityDef);
+            } catch (AtlasServiceException e) {
+                typeDefStore.addUnimplementedTypeDef(omrsEntityDef);
+                raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getRepositoryName());
+            }
         } else {
             // Otherwise, we'll drop it as unimplemented
             typeDefStore.addUnimplementedTypeDef(omrsEntityDef);
-            throw new TypeDefNotSupportedException(
-                    404,
-                    ClassificationDefMapping.class.getName(),
-                    methodName,
-                    omrsTypeDefName + " is not supported.",
-                    "",
-                    "Request support through Egeria GitHub issue."
-            );
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getRepositoryName());
         }
 
+    }
+
+    /**
+     * Throws a TypeDefNotSupportedException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws TypeDefNotSupportedException always
+     */
+    private static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
+        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
+        throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
+                ClassificationDefMapping.class.getName(),
+                methodName,
+                errorMessage,
+                errorCode.getSystemAction(),
+                errorCode.getUserAction(),
+                cause);
     }
 
 }

@@ -22,6 +22,7 @@ data:
   LOGGING_LEVEL_ROOT: {{ .Values.logging.level }}
   ATLAS_ENDPOINT: http://{{ .Release.Name }}-apache-atlas-service:8080
   ATLAS_HOST: atlas
+  ATLAS_OPTS: "-Dkafka.advertised.hostname=atlas"
   ATLAS_PORT: "21000"
   ATLAS_KAFKA_ENDPOINT: atlas:9027
   ATLAS_USER: {{ .Values.apacheatlas.user }}
@@ -29,5 +30,5 @@ data:
   ATLAS_SERVER: {{ .Values.apacheatlas.proxyserver }}
 
   # Used for downloads
-  CONNECTOR_URL: https://odpi.jfrog.io/odpi/egeria-{{ .Values.release.repo }}-local/org/odpi/egeria/egeria-connector-apache-atlas-package/{{ .Values.release.version }}/egeria-connector-apache-atlas-package-{{ .Values.release.version }}.jar
+  CONNECTOR_URL: https://odpi.jfrog.io/odpi/egeria-{{ .Values.release.repo }}-local/org/odpi/egeria/egeria-connector-apache-atlas-package/{{ .Values.release.version }}/egeria-connector-apache-atlas-package-{{ .Values.release.version }}-jar-with-dependencies.jar
   CTS_REPORT_NAME: {{ .Release.Name }}

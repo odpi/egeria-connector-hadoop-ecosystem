@@ -91,7 +91,7 @@
         <apacheatlas.version>2.0.0</apacheatlas.version>
         <slf4j.version>1.7.30</slf4j.version>
         <jackson.version>2.10.2</jackson.version>
-        <spring.version>5.1.5.RELEASE</spring.version>
+        <spring.version>5.2.2.RELEASE</spring.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
@@ -479,6 +479,12 @@
                         <exclude>**/.project</exclude>
                         <exclude>**/.settings/**</exclude>
                         <exclude>config</exclude>
+                        <exclude>cts/results/**/*.results</exclude>
+                        <exclude>cts/results/**/*.config</exclude>
+                        <exclude>cts/results/**/*.local</exclude>
+                        <exclude>cts/results/**/*.remote</exclude>
+                        <exclude>cts/results/**/*.deployment</exclude>
+                        <exclude>cts/results/**/*.configmap</exclude>
                     </excludes>
                     <licenseFamilies>
                         <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
