@@ -109,7 +109,7 @@
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.12</rhino.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
-        <spotbugs.version>4.0.0-beta5</spotbugs.version>
+        <spotbugs.version>4.0.0-RC1</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
         <!-- Configuration of sonar code scanning-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
