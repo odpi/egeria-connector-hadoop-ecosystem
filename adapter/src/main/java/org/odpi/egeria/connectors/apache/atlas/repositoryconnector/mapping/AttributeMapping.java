@@ -97,9 +97,7 @@ public abstract class AttributeMapping {
                             bMatch = dateVal.equals(atlasValue);
                             break;
                         default:
-                            if (log.isWarnEnabled()) {
-                                log.warn("Unhandled type for mapping: {}", omrsValue);
-                            }
+                            log.warn("Unhandled type for mapping: {}", omrsValue);
                             break;
                     }
                     break;
@@ -251,7 +249,7 @@ public abstract class AttributeMapping {
 
         if (propertyValue != null) {
             String propertyName = property.getAttributeName();
-            if (log.isDebugEnabled()) { log.debug("Adding property {} for {}", propertyName, methodName); }
+            log.debug("Adding property {} for {}", propertyName, methodName);
 
             if (property.getAttributeType().getCategory() == AttributeTypeDefCategory.PRIMITIVE) {
                 try {
@@ -359,18 +357,18 @@ public abstract class AttributeMapping {
                             }
                             break;
                         default:
-                            if (log.isErrorEnabled()) { log.error("Unhandled primitive type {} for {}", primitiveDef.getPrimitiveDefCategory(), propertyName); }
+                            log.error("Unhandled primitive type {} for {}", primitiveDef.getPrimitiveDefCategory(), propertyName);
                     }
                 } catch (ClassCastException e) {
-                    if (log.isErrorEnabled()) { log.error("Unable to cast {} to {} for {}", propertyValue, property.getAttributeType(), propertyName); }
+                    log.error("Unable to cast {} to {} for {}", propertyValue, property.getAttributeType(), propertyName);
                 } catch (NumberFormatException e) {
-                    if (log.isWarnEnabled()) { log.warn("Unable to convert {} to {} for {}", propertyValue, property.getAttributeType(), propertyName); }
+                    log.warn("Unable to convert {} to {} for {}", propertyValue, property.getAttributeType(), propertyName);
                 }
             } else {
-                if (log.isErrorEnabled()) { log.error("Cannot translate non-primitive property {} this way.", propertyName); }
+                log.error("Cannot translate non-primitive property {} this way.", propertyName);
             }
         } else {
-            if (log.isDebugEnabled()) { log.debug("Null property"); }
+            log.debug("Null property");
         }
 
         return resultingProperties;
@@ -424,14 +422,14 @@ public abstract class AttributeMapping {
                     enumPropertyValue.setSymbolicName(omrsEnumValue.getValue());
                     properties.setProperty(propertyName, enumPropertyValue);
                 } else {
-                    if (log.isWarnEnabled()) { log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue); }
+                    log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue);
                 }
             } else {
-                if (log.isWarnEnabled()) { log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue); }
+                log.warn("Unable to find mapped enumeration value for property '{}': {}", propertyName, propertyValue);
             }
 
         } else {
-            if (log.isDebugEnabled()) { log.debug("Null property"); }
+            log.debug("Null property");
         }
 
         return properties;

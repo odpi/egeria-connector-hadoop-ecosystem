@@ -179,7 +179,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      */
     @Override
     public void processEvent(String event) {
-        if (log.isInfoEnabled()) { log.info("Processing event: {}", event); }
+        log.info("Processing event: {}", event);
 
         // Need to call this with just the 'message' portion of the payload, it seems?
         EntityNotification atlasEvent = deserializer.deserialize(event);

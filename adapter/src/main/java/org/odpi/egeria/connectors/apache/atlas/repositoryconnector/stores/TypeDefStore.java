@@ -409,7 +409,7 @@ public class TypeDefStore {
         if (unimplementedTypeDefs.containsKey(guid)) {
             return unimplementedTypeDefs.get(guid);
         } else {
-            if (log.isWarnEnabled()) { log.warn("Unable to find unimplemented OMRS TypeDef: {}", guid); }
+            log.warn("Unable to find unimplemented OMRS TypeDef: {}", guid);
             return null;
         }
     }
@@ -481,7 +481,7 @@ public class TypeDefStore {
         if (omrsGuidToAttributeMap.containsKey(guid)) {
             return omrsGuidToAttributeMap.get(guid);
         } else {
-            if (log.isWarnEnabled()) { log.warn("Unable to find attributes for OMRS TypeDef by GUID: {}", guid); }
+            log.warn("Unable to find attributes for OMRS TypeDef by GUID: {}", guid);
             return null;
         }
     }
@@ -520,7 +520,7 @@ public class TypeDefStore {
             String guid = omrsNameToGuid.get(name);
             return getAllTypeDefAttributesForGUID(guid);
         } else {
-            if (log.isWarnEnabled()) { log.warn("Unable to find attributes for OMRS TypeDef by Name: {}", name); }
+            log.warn("Unable to find attributes for OMRS TypeDef by Name: {}", name);
             return null;
         }
     }

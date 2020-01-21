@@ -72,7 +72,7 @@ public class EntityMappingAtlas2OMRS {
 
         String atlasTypeDefName = atlasEntity.getTypeName();
         String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
-        if (log.isInfoEnabled()) { log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName); }
+        log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
 
         EntitySummary summary = null;
         if (omrsTypeDefName != null) {
@@ -81,7 +81,7 @@ public class EntityMappingAtlas2OMRS {
                 addClassifications(summary);
             }
         } else {
-            if (log.isWarnEnabled()) { log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix); }
+            log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix);
         }
 
         return summary;
@@ -99,7 +99,7 @@ public class EntityMappingAtlas2OMRS {
         final String methodName = "getEntityDetail";
         String atlasTypeDefName = atlasEntity.getTypeName();
         String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
-        if (log.isInfoEnabled()) { log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName); }
+        log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
 
         EntityDetail detail = null;
         if (omrsTypeDefName != null) {
@@ -137,9 +137,7 @@ public class EntityMappingAtlas2OMRS {
                                 alreadyMapped.add(atlasProperty);
                             }
                         } else {
-                            if (log.isWarnEnabled()) {
-                                log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsTypeDefName);
-                            }
+                            log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsTypeDefName);
                         }
                     }
 
@@ -178,7 +176,7 @@ public class EntityMappingAtlas2OMRS {
 
             }
         } else {
-            if (log.isWarnEnabled()) { log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix); }
+            log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix);
         }
 
         return detail;
@@ -557,7 +555,7 @@ public class EntityMappingAtlas2OMRS {
                                         propertyValue,
                                         methodName);
                             } else {
-                                if (log.isWarnEnabled()) { log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", propertyName, atlasClassificationName); }
+                                log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", propertyName, atlasClassificationName);
                             }
                         }
 

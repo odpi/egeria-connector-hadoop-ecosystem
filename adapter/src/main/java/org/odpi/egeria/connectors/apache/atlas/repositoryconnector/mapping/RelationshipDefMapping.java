@@ -208,7 +208,7 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
                     break;
                 case UNKNOWN:
                     fullyCovered = false;
-                    if (log.isWarnEnabled()) { log.warn("Unable to determine cardinality of relationship end -- skipping the relationship: {}", omrsRelationshipDef); }
+                    log.warn("Unable to determine cardinality of relationship end -- skipping the relationship: {}", omrsRelationshipDef);
                     break;
             }
         } else {
