@@ -69,10 +69,23 @@ public class EntityMappingAtlas2OMRS {
      * @throws RepositoryErrorException when unable to retrieve the EntitySummary
      */
     public EntitySummary getEntitySummary() throws RepositoryErrorException {
-        EntitySummary summary = getSkeletonEntitySummary(prefix);
-        setModAndVersionDetails(summary);
-        addClassifications(summary);
+
+        String atlasTypeDefName = atlasEntity.getTypeName();
+        String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
+        if (log.isInfoEnabled()) { log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName); }
+
+        EntitySummary summary = null;
+        if (omrsTypeDefName != null) {
+            summary = getSkeletonEntitySummary(omrsTypeDefName, prefix);
+            if (summary != null) {
+                addClassifications(summary);
+            }
+        } else {
+            if (log.isWarnEnabled()) { log.warn("No mapping defined from Atlas type '{}' with prefix '{}'", atlasTypeDefName, prefix); }
+        }
+
         return summary;
+
     }
 
     /**
@@ -405,21 +418,39 @@ public class EntityMappingAtlas2OMRS {
     /**
      * Create the base skeleton of an EntitySummary, irrespective of the specific Apache Atlas object.
      *
+     * @param omrsTypeDefName the name of the OMRS TypeDef for which to create a skeleton EntitySummary
+     * @param prefix the prefix for a generated entity (if any)
      * @return EntitySummary
      */
-    private EntitySummary getSkeletonEntitySummary(String prefix) {
-        EntitySummary summary = new EntitySummary();
-        String guid = atlasEntity.getGuid();
-        prefix = prefix == null ? "" : ApacheAtlasOMRSMetadataCollection.generateTypePrefix(prefix);
-        summary.setGUID(prefix + guid);
-        summary.setInstanceURL(getInstanceURL(guid));
+    private EntitySummary getSkeletonEntitySummary(String omrsTypeDefName, String prefix) {
+
+        EntitySummary summary = null;
+        try {
+            summary = atlasRepositoryConnector.getRepositoryHelper().getSkeletonEntitySummary(
+                    atlasRepositoryConnector.getRepositoryName(),
+                    atlasRepositoryConnector.getMetadataCollectionId(),
+                    InstanceProvenanceType.LOCAL_COHORT,
+                    userId,
+                    omrsTypeDefName
+            );
+            String guid = atlasEntity.getGuid();
+            prefix = prefix == null ? "" : ApacheAtlasOMRSMetadataCollection.generateTypePrefix(prefix);
+            summary.setGUID(prefix + guid);
+            summary.setInstanceURL(getInstanceURL(guid));
+            setModAndVersionDetails(summary);
+        } catch (TypeErrorException e) {
+            log.error("Unable to get skeleton summary entity.", e);
+        }
+
         return summary;
+
     }
 
     /**
      * Create the base skeleton of an EntityDetail, irrespective of the specific Apache Atlas object.
      *
      * @param omrsTypeDefName the name of the OMRS TypeDef for which to create a skeleton EntityDetail
+     * @param prefix the prefix for a generated entity (if any)
      * @return EntityDetail
      */
     private EntityDetail getSkeletonEntityDetail(String omrsTypeDefName, String prefix) {

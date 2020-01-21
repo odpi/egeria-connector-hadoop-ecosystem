@@ -594,37 +594,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns the entity if the entity is stored in the metadata collection, otherwise null.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity
-     * @return the entity details if the entity is found in the metadata collection; otherwise return null
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public EntityDetail isEntityKnown(String     userId,
-                                      String     guid) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public EntityDetail isEntityKnown(String userId,
+                                      String guid) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String  methodName = "isEntityKnown";
-        final String  guidParameterName = "guid";
+        final String methodName = "isEntityKnown";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         EntityDetail detail = null;
         try {
             detail = getEntityDetail(userId, guid);
@@ -632,111 +612,54 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             if (log.isInfoEnabled()) { log.info("Entity {} not known to the repository, or only a proxy.", guid, e); }
         }
         return detail;
+
     }
 
     /**
-     * Return the header and classifications for a specific entity.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity.
-     * @return EntitySummary structure
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public EntitySummary getEntitySummary(String     userId,
-                                          String     guid) throws InvalidParameterException,
+    public EntitySummary getEntitySummary(String userId,
+                                          String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            EntityNotKnownException,
-            UserNotAuthorizedException {
+            EntityNotKnownException {
 
-        final String  methodName        = "getEntitySummary";
-        final String  guidParameterName = "guid";
+        final String methodName = "getEntitySummary";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         String prefix = null;
         if (isGeneratedGUID(guid)) {
             prefix = getPrefixFromGeneratedId(guid);
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = null;
-        try {
-            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
-        } catch (AtlasServiceException e) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-        }
-        if (entity == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        }
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntitySummary();
 
     }
 
     /**
-     * Return the header, classifications and properties of a specific entity.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity.
-     * @return EntityDetail structure.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                 the metadata collection is stored.
-     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
     public EntityDetail getEntityDetail(String userId,
-                                        String guid) throws InvalidParameterException,
+                                        String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            EntityNotKnownException,
-            UserNotAuthorizedException {
+            EntityNotKnownException {
 
-        final String  methodName        = "getEntityDetail";
-        final String  guidParameterName = "guid";
+        final String methodName = "getEntityDetail";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         String prefix = null;
         if (isGeneratedGUID(guid)) {
             prefix = getPrefixFromGeneratedId(guid);
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = null;
-        try {
-            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
-        } catch (AtlasServiceException e) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-        }
-        if (entity == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        }
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntityDetail();
 
@@ -2694,6 +2617,26 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     }
      */
+
+    /**
+     * Try to retrieve an Atlas entity using the provided GUID, and if not found throw an EntityNotKnownException.
+     * @param guid the GUID for the entity to retrieve
+     * @param methodName the name of the method retrieving the entity
+     * @return AtlasEntityWithExtInfo
+     * @throws EntityNotKnownException if the entity cannot be found in Atlas
+     */
+    private AtlasEntity.AtlasEntityWithExtInfo getAtlasEntitySafe(String guid, String methodName) throws EntityNotKnownException {
+        AtlasEntity.AtlasEntityWithExtInfo entity = null;
+        try {
+            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
+        } catch (AtlasServiceException e) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+        }
+        if (entity == null) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+        }
+        return entity;
+    }
 
     /**
      * Throw an EntityNotKnownException using the provided parameters.
