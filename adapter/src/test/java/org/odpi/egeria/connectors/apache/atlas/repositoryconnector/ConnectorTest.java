@@ -501,6 +501,141 @@ public class ConnectorTest {
 
     }
 
+    @Test
+    public void testSearchByProperty() {
+
+        final String methodName = "testSearchByProperty";
+
+        String typeGUID = "248975ec-8019-4b8a-9caf-084c8b724233";
+        String typeName = "TabularSchemaType";
+
+        InstanceProperties ip = new InstanceProperties();
+
+        testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10
+        );
+
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "encodingStandard", repositoryHelper.getExactMatchRegex("FAST_DIFF"), methodName);
+
+        testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                1
+        );
+
+        testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.NONE,
+                MockConstants.EGERIA_PAGESIZE,
+                9
+        );
+
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "displayName", repositoryHelper.getExactMatchRegex("t"), methodName);
+
+        testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ANY,
+                MockConstants.EGERIA_PAGESIZE,
+                2
+        );
+
+    }
+
+    @Test
+    public void testSearchByPropertyValue() {
+
+        String typeGUID = "248975ec-8019-4b8a-9caf-084c8b724233";
+        Set<String> possibleTypes = new HashSet<>();
+        possibleTypes.add("TabularSchemaType");
+
+        // Search by detailed type GUID first
+        testFindEntitiesByPropertyValue(
+                typeGUID,
+                possibleTypes,
+                null,
+                repositoryHelper.getExactMatchRegex("atlas"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);
+
+        // TODO: Same search again, by supertype
+        /*testFindEntitiesByPropertyValue(
+                "786a6199-0ce8-47bf-b006-9ace1c5510e4",
+                possibleTypes,
+                null,
+                repositoryHelper.getExactMatchRegex("atlas"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);*/
+
+        // Test different basic regex matching
+        testFindEntitiesByPropertyValue(
+                typeGUID,
+                possibleTypes,
+                null,
+                repositoryHelper.getStartsWithRegex("atl"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);
+
+        testFindEntitiesByPropertyValue(
+                typeGUID,
+                possibleTypes,
+                null,
+                repositoryHelper.getContainsRegex("tla"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);
+
+        testFindEntitiesByPropertyValue(
+                typeGUID,
+                possibleTypes,
+                null,
+                repositoryHelper.getEndsWithRegex("las"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);
+
+        // TODO: Test limiting by classification
+        /*Set<String> classifications = new HashSet<>();
+        classifications.add("???");
+        testFindEntitiesByPropertyValue(
+                typeGUID,
+                possibleTypes,
+                classifications,
+                repositoryHelper.getEndsWithRegex("las"),
+                MockConstants.EGERIA_PAGESIZE,
+                10);*/
+
+    }
+
+    @Test
+    public void testSearchByClassification() {
+        // TODO: search by classification
+    }
+
+    @Test
+    public void testGetEntity() {
+        // TODO: test direct entity retrieval
+    }
+
+    @Test
+    public void testGetRelationshipsForEntity() {
+        // TODO: test relationship retrieval for entity
+    }
+
+    @Test
+    public void testGetRelationship() {
+        // TODO: test direct relationship retrieval
+    }
+
     @AfterSuite
     public void stopConnector() {
         try {
@@ -516,62 +651,10 @@ public class ConnectorTest {
      * value.
      *
      * @param typeGUID the entity type GUID to search
-     * @param typeName the name of the type to search
-     * @param queryString the string criteria by which to search
-     * @param totalNumberExpected the total number of expected results
-     * @return {@code List<EntityDetail>} the results of the query
-     */
-    private List<EntityDetail> testFindEntitiesByPropertyValue(String typeGUID,
-                                                               String typeName,
-                                                               String queryString,
-                                                               int totalNumberExpected) {
-        Set<String> types = new HashSet<>();
-        if (typeName != null) {
-            types.add(typeName);
-        }
-        return testFindEntitiesByPropertyValue(typeGUID, types, null, queryString, totalNumberExpected);
-    }
-
-    /**
-     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
-     * value.
-     *
-     * @param possibleTypes the names of the types that could be returned by the search
-     * @param queryString the string criteria by which to search
-     * @param totalNumberExpected the total number of expected results
-     * @return {@code List<EntityDetail>} the results of the query
-     */
-    private List<EntityDetail> testFindEntitiesByPropertyValue(Set<String> possibleTypes,
-                                                               String queryString,
-                                                               int totalNumberExpected) {
-        return testFindEntitiesByPropertyValue(null, possibleTypes, null, queryString, totalNumberExpected);
-    }
-
-    /**
-     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
-     * value.
-     *
      * @param possibleTypes the names of the types that could be returned by the search
      * @param classificationLimiters the names of classifications by which to limit the results (or null if not to limit)
      * @param queryString the string criteria by which to search
-     * @param totalNumberExpected the total number of expected results
-     * @return {@code List<EntityDetail>} the results of the query
-     */
-    private List<EntityDetail> testFindEntitiesByPropertyValue(Set<String> possibleTypes,
-                                                               Set<String> classificationLimiters,
-                                                               String queryString,
-                                                               int totalNumberExpected) {
-        return testFindEntitiesByPropertyValue(null, possibleTypes, classificationLimiters, queryString, totalNumberExpected);
-    }
-
-    /**
-     * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property
-     * value.
-     *
-     * @param typeGUID the entity type GUID to search
-     * @param possibleTypes the names of the types that could be returned by the search
-     * @param classificationLimiters the names of classifications by which to limit the results (or null if not to limit)
-     * @param queryString the string criteria by which to search
+     * @param pageSize to limit the results
      * @param totalNumberExpected the total number of expected results
      * @return {@code List<EntityDetail>} the results of the query
      */
@@ -579,6 +662,7 @@ public class ConnectorTest {
                                                                Set<String> possibleTypes,
                                                                Set<String> classificationLimiters,
                                                                String queryString,
+                                                               int pageSize,
                                                                int totalNumberExpected) {
 
         List<EntityDetail> results = null;
@@ -598,7 +682,7 @@ public class ConnectorTest {
                     null,
                     null,
                     null,
-                    MockConstants.EGERIA_PAGESIZE
+                    pageSize
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
             log.error("Unable to search for entities of type '{}' by property value.", typeGUID, e);
@@ -616,7 +700,7 @@ public class ConnectorTest {
             assertEquals(results.size(), totalNumberExpected);
             for (EntityDetail result : results) {
                 assertTrue(possibleTypes.contains(result.getType().getTypeDefName()));
-                assertTrue(result.getVersion() > 1);
+                assertTrue(result.getVersion() >= 0);
             }
         }
 
@@ -631,6 +715,7 @@ public class ConnectorTest {
      * @param typeName the name of the type to search
      * @param matchProperties the properties to match against
      * @param matchCriteria the criteria by which to match
+     * @param pageSize to limit the results
      * @param totalNumberExpected the total number of expected results
      * @return {@code List<EntityDetail>} the results of the query
      */
@@ -638,6 +723,7 @@ public class ConnectorTest {
                                                           String typeName,
                                                           InstanceProperties matchProperties,
                                                           MatchCriteria matchCriteria,
+                                                          int pageSize,
                                                           int totalNumberExpected) {
 
         List<EntityDetail> results = null;
@@ -654,7 +740,7 @@ public class ConnectorTest {
                     null,
                     null,
                     null,
-                    MockConstants.EGERIA_PAGESIZE
+                    pageSize
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
             log.error("Unable to search for {} entities by property: {}", typeName, matchProperties, e);
@@ -672,7 +758,7 @@ public class ConnectorTest {
             assertEquals(results.size(), totalNumberExpected);
             for (EntityDetail result : results) {
                 assertEquals(result.getType().getTypeDefName(), typeName);
-                assertTrue(result.getVersion() > 1);
+                assertTrue(result.getVersion() >= 0);
 
                 // TODO: need to understand how the refresh request methods are actually meant to work...
                 /*
@@ -706,6 +792,7 @@ public class ConnectorTest {
      * @param classificationName the name of the classification by which to limit the results
      * @param matchClassificationProperties the properties of the classification to match against
      * @param matchCriteria the criteria by which to match
+     * @param pageSize to limit the results
      * @param totalNumberExpected the total number of expected results
      * @return {@code List<EntityDetail>} the results of the query
      */
@@ -714,6 +801,7 @@ public class ConnectorTest {
                                                                 String classificationName,
                                                                 InstanceProperties matchClassificationProperties,
                                                                 MatchCriteria matchCriteria,
+                                                                int pageSize,
                                                                 int totalNumberExpected) {
 
         List<EntityDetail> results = null;
@@ -730,7 +818,7 @@ public class ConnectorTest {
                     null,
                     null,
                     null,
-                    MockConstants.EGERIA_PAGESIZE
+                    pageSize
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
             log.error("Unable to search for {} entities by classification {} with properties: {}", typeName, classificationName, matchClassificationProperties, e);
@@ -748,110 +836,8 @@ public class ConnectorTest {
             assertEquals(results.size(), totalNumberExpected);
             for (EntityDetail result : results) {
                 assertEquals(result.getType().getTypeDefName(), typeName);
-                assertTrue(result.getVersion() > 1);
+                assertTrue(result.getVersion() >= 0);
             }
-        }
-
-        return results;
-
-    }
-
-    /**
-     * Executes a common set of tests against a list of Relationship objects after first searching for them by property.
-     *
-     * @param typeGUID the relationship type GUID to search
-     * @param typeName the name of the type to search
-     * @param matchProperties the properties to match against
-     * @param matchCriteria the criteria by which to match
-     * @param totalNumberExpected the total number of expected results
-     * @return {@code List<Relationship>} the results of the query
-     */
-    private List<Relationship> testFindRelationshipsByProperty(String typeGUID,
-                                                               String typeName,
-                                                               InstanceProperties matchProperties,
-                                                               MatchCriteria matchCriteria,
-                                                               int totalNumberExpected) {
-
-        List<Relationship> results = null;
-
-        try {
-            results = atlasMetadataCollection.findRelationshipsByProperty(
-                    MockConstants.EGERIA_USER,
-                    typeGUID,
-                    matchProperties,
-                    matchCriteria,
-                    0,
-                    null,
-                    null,
-                    null,
-                    null,
-                    MockConstants.EGERIA_PAGESIZE
-            );
-        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
-            log.error("Unable to search for {} relationships by property: {}", typeName, matchProperties, e);
-            assertNull(e);
-        } catch (Exception e) {
-            log.error("Unexpected exception trying to search for {} relationships by property: {}", typeName, matchProperties, e);
-            assertNull(e);
-        }
-
-        if (totalNumberExpected <= 0) {
-            assertTrue(results == null || results.isEmpty());
-        } else {
-            assertNotNull(results);
-            assertFalse(results.isEmpty());
-            assertEquals(results.size(), totalNumberExpected);
-            testRelationshipsAreRetrievable(results, typeName);
-        }
-
-        return results;
-
-    }
-
-    /**
-     * Executes a common set of tests against a list of Relationship objects after first searching for them by property
-     * value.
-     *
-     * @param typeGUID the relationship type GUID to search
-     * @param typeName the name of the type to search
-     * @param searchCriteria the string to use for the search
-     * @param totalNumberExpected the total number of expected results
-     * @return {@code List<Relationship>} the results of the query
-     */
-    private List<Relationship> testFindRelationshipsByPropertyValue(String typeGUID,
-                                                                    String typeName,
-                                                                    String searchCriteria,
-                                                                    int totalNumberExpected) {
-
-        List<Relationship> results = null;
-
-        try {
-            results = atlasMetadataCollection.findRelationshipsByPropertyValue(
-                    MockConstants.EGERIA_USER,
-                    typeGUID,
-                    searchCriteria,
-                    0,
-                    null,
-                    null,
-                    null,
-                    null,
-                    MockConstants.EGERIA_PAGESIZE
-            );
-        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
-            log.error("Unable to search for {} relationships by criteria: {}", typeName, searchCriteria, e);
-            assertNull(e);
-        } catch (Exception e) {
-            log.error("Unexpected exception trying to search for {} relationships by criteria: {}", typeName, searchCriteria, e);
-            assertNull(e);
-        }
-
-        if (totalNumberExpected <= 0) {
-            assertTrue(results == null || results.isEmpty());
-        } else {
-            assertNotNull(results);
-            assertFalse(results.isEmpty());
-            assertEquals(results.size(), totalNumberExpected);
-            testRelationshipsAreRetrievable(results, typeName);
         }
 
         return results;
@@ -882,7 +868,7 @@ public class ConnectorTest {
 
         assertNotNull(detail);
         assertEquals(detail.getType().getTypeDefName(), omrsType);
-        assertTrue(detail.getVersion() > 1);
+        assertTrue(detail.getVersion() >= 0);
         assertNotNull(detail.getMetadataCollectionId());
 
         testExpectedValuesForEquality(detail.getProperties(), expectedValues);
@@ -914,7 +900,7 @@ public class ConnectorTest {
 
         assertNotNull(summary);
         assertEquals(summary.getType().getTypeDefName(), omrsType);
-        assertTrue(summary.getVersion() > 1);
+        assertTrue(summary.getVersion() >= 0);
         assertNotNull(summary.getMetadataCollectionId());
 
         return summary;
@@ -987,10 +973,10 @@ public class ConnectorTest {
                     EntityProxy one = candidate.getEntityOneProxy();
                     EntityProxy two = candidate.getEntityTwoProxy();
                     assertTrue(relationshipExpectation.getProxyOneTypes().contains(one.getType().getTypeDefName()));
-                    assertTrue(one.getVersion() > 1);
+                    assertTrue(one.getVersion() >= 0);
                     testQualifiedNameEquality(relationshipExpectation.getExpectedProxyOneQN(), one.getUniqueProperties().getPropertyValue("qualifiedName"));
                     assertTrue(relationshipExpectation.getProxyTwoTypes().contains(two.getType().getTypeDefName()));
-                    assertTrue(two.getVersion() > 1);
+                    assertTrue(two.getVersion() >= 0);
                     testQualifiedNameEquality(relationshipExpectation.getExpectedProxyTwoQN(), two.getUniqueProperties().getPropertyValue("qualifiedName"));
 
                     // TODO: need to understand how the refresh request methods are actually meant to work...
@@ -1028,7 +1014,7 @@ public class ConnectorTest {
 
         for (Relationship result : relationships) {
             assertEquals(result.getType().getTypeDefName(), typeName);
-            assertTrue(result.getVersion() > 1);
+            assertTrue(result.getVersion() >= 0);
 
             try {
                 Relationship foundAgain = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, result.getGUID());
