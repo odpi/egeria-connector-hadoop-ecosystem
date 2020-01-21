@@ -178,9 +178,7 @@ public class RelationshipMapping {
                 omrsRelationshipStatus = InstanceStatus.DELETED;
                 break;
             default:
-                if (log.isWarnEnabled()) {
-                    log.warn("Unhandled relationship status, defaulting to ACTIVE: {}", relationshipStatus);
-                }
+                log.warn("Unhandled relationship status, defaulting to ACTIVE: {}", relationshipStatus);
                 omrsRelationshipStatus = InstanceStatus.ACTIVE;
                 break;
         }
@@ -207,9 +205,7 @@ public class RelationshipMapping {
                                 atlasRelationshipProperties.get(atlasProperty),
                                 methodName);
                     } else {
-                        if (log.isWarnEnabled()) {
-                            log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsRelationshipType);
-                        }
+                        log.warn("No OMRS attribute {} defined for asset type {} -- skipping mapping.", omrsProperty, omrsRelationshipType);
                     }
                 }
 
@@ -375,7 +371,7 @@ public class RelationshipMapping {
             }
 
         } else {
-            if (log.isErrorEnabled()) { log.error("No Apache Atlas object provided (was null)."); }
+            log.error("No Apache Atlas object provided (was null).");
         }
 
         return entityProxy;
@@ -403,7 +399,7 @@ public class RelationshipMapping {
             );
             relationship.setType(instanceType);
         } catch (TypeErrorException e) {
-            if (log.isErrorEnabled()) { log.error("Unable to construct and set InstanceType -- skipping relationship: {}", omrsRelationshipDef.getName()); }
+            log.error("Unable to construct and set InstanceType -- skipping relationship: {}", omrsRelationshipDef.getName());
             OMRSErrorCode errorCode = OMRSErrorCode.INVALID_INSTANCE;
             String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
                     omrsRelationshipDef.getName());

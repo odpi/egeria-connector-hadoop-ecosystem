@@ -58,9 +58,9 @@ class BaseTypeDefMapping {
         // Map typedef-specific properties
         List<TypeDefAttribute> omrsProperties = omrsTypeDef.getPropertiesDefinition();
         if (omrsProperties != null) {
-            if (log.isDebugEnabled()) { log.debug("List of properties is not null..."); }
+            log.debug("List of properties is not null...");
             for (TypeDefAttribute typeDefAttribute : omrsProperties) {
-                if (log.isDebugEnabled()) { log.debug(" ... checking property: {}", typeDefAttribute); }
+                log.debug(" ... checking property: {}", typeDefAttribute);
                 AtlasStructDef.AtlasAttributeDef atlasAttribute = new AtlasStructDef.AtlasAttributeDef();
                 AttributeCardinality omrsCardinality = typeDefAttribute.getAttributeCardinality();
                 switch (omrsCardinality) {
@@ -175,7 +175,7 @@ class BaseTypeDefMapping {
             case "float":
             case "double":
                 atlasName = "long";
-                if (log.isWarnEnabled()) { log.warn("Actual type for OMRS is '{}', casting down to 'long' as no Atlas support decimal-based numbers?", lowercaseName); }
+                log.warn("Actual type for OMRS is '{}', casting down to 'long' as no Atlas support decimal-based numbers?", lowercaseName);
                 break;
         }
 

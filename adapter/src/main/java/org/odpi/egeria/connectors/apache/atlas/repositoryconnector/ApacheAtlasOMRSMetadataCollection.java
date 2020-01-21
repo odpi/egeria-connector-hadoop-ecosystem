@@ -77,11 +77,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         TypeDefGallery typeDefGallery = new TypeDefGallery();
         List<TypeDef> typeDefs = typeDefStore.getAllTypeDefs();
-        if (log.isDebugEnabled()) { log.debug("Retrieved {} implemented TypeDefs for this repository.", typeDefs.size()); }
+        log.debug("Retrieved {} implemented TypeDefs for this repository.", typeDefs.size());
         typeDefGallery.setTypeDefs(typeDefs);
 
         List<AttributeTypeDef> attributeTypeDefs = attributeTypeDefStore.getAllAttributeTypeDefs();
-        if (log.isDebugEnabled()) { log.debug("Retrieved {} implemented AttributeTypeDefs for this repository.", attributeTypeDefs.size()); }
+        log.debug("Retrieved {} implemented AttributeTypeDefs for this repository.", attributeTypeDefs.size());
         typeDefGallery.setAttributeTypeDefs(attributeTypeDefs);
 
         return typeDefGallery;
@@ -303,7 +303,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         TypeDefCategory typeDefCategory = newTypeDef.getCategory();
         String omrsTypeDefName = newTypeDef.getName();
-        if (log.isDebugEnabled()) { log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, typeDefCategory.getName()); }
+        log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, typeDefCategory.getName());
 
         if (typeDefStore.isTypeDefMapped(omrsTypeDefName)) {
 
@@ -425,7 +425,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         // in the verifyAttributeTypeDef method
         AttributeTypeDefCategory attributeTypeDefCategory = newAttributeTypeDef.getCategory();
         String omrsTypeDefName = newAttributeTypeDef.getName();
-        if (log.isDebugEnabled()) { log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, attributeTypeDefCategory.getName()); }
+        log.debug("Looking for mapping for {} of type {}", omrsTypeDefName, attributeTypeDefCategory.getName());
 
         if (attributeTypeDefStore.isTypeDefMapped(omrsTypeDefName)) {
 
@@ -515,7 +515,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             // If we were unable to verify everything, throw exception indicating it is not a supported TypeDef
             if (!bVerified) {
-                if (log.isWarnEnabled()) { log.warn("TypeDef '{}' cannot be supported due to conflicts: {}", typeDef.getName(), String.join(", ", issues)); }
+                log.warn("TypeDef '{}' cannot be supported due to conflicts: {}", typeDef.getName(), String.join(", ", issues));
                 OMRSErrorCode errorCode = OMRSErrorCode.VERIFY_CONFLICT_DETECTED;
                 String        errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(guid,
                         methodName,
@@ -594,149 +594,72 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns the entity if the entity is stored in the metadata collection, otherwise null.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity
-     * @return the entity details if the entity is found in the metadata collection; otherwise return null
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public EntityDetail isEntityKnown(String     userId,
-                                      String     guid) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public EntityDetail isEntityKnown(String userId,
+                                      String guid) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String  methodName = "isEntityKnown";
-        final String  guidParameterName = "guid";
+        final String methodName = "isEntityKnown";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         EntityDetail detail = null;
         try {
             detail = getEntityDetail(userId, guid);
         } catch (EntityNotKnownException e) {
-            if (log.isInfoEnabled()) { log.info("Entity {} not known to the repository, or only a proxy.", guid, e); }
+            log.info("Entity {} not known to the repository, or only a proxy.", guid, e);
         }
         return detail;
+
     }
 
     /**
-     * Return the header and classifications for a specific entity.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity.
-     * @return EntitySummary structure
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public EntitySummary getEntitySummary(String     userId,
-                                          String     guid) throws InvalidParameterException,
+    public EntitySummary getEntitySummary(String userId,
+                                          String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            EntityNotKnownException,
-            UserNotAuthorizedException {
+            EntityNotKnownException {
 
-        final String  methodName        = "getEntitySummary";
-        final String  guidParameterName = "guid";
+        final String methodName = "getEntitySummary";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         String prefix = null;
         if (isGeneratedGUID(guid)) {
             prefix = getPrefixFromGeneratedId(guid);
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = null;
-        try {
-            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
-        } catch (AtlasServiceException e) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-        }
-        if (entity == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        }
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntitySummary();
 
     }
 
     /**
-     * Return the header, classifications and properties of a specific entity.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the entity.
-     * @return EntityDetail structure.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                 the metadata collection is stored.
-     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
     public EntityDetail getEntityDetail(String userId,
-                                        String guid) throws InvalidParameterException,
+                                        String guid) throws
+            InvalidParameterException,
             RepositoryErrorException,
-            EntityNotKnownException,
-            UserNotAuthorizedException {
+            EntityNotKnownException {
 
-        final String  methodName        = "getEntityDetail";
-        final String  guidParameterName = "guid";
+        final String methodName = "getEntityDetail";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.validateRepositoryConnector(methodName);
-        parentConnector.validateRepositoryIsActive(methodName);
-
-        repositoryValidator.validateUserId(repositoryName, userId, methodName);
-        repositoryValidator.validateGUID(repositoryName, guidParameterName, guid, methodName);
-
-        /*
-         * Perform operation
-         */
         String prefix = null;
         if (isGeneratedGUID(guid)) {
             prefix = getPrefixFromGeneratedId(guid);
             guid = getGuidFromGeneratedId(guid);
         }
 
-        AtlasEntity.AtlasEntityWithExtInfo entity = null;
-        try {
-            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
-        } catch (AtlasServiceException e) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-        }
-        if (entity == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        }
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
         EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
         return mapping.getEntityDetail();
 
@@ -1147,7 +1070,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 }
                             } else if (bMatchesAll) {
                                 atlasEntities.add(candidateEntity);
-                            } else if (log.isDebugEnabled()) {
+                            } else {
                                 log.debug("Unable to match properties '{}' for entity, dropping from results: {}", matchClassificationProperties, candidateEntity);
                             }
                         }
@@ -1336,10 +1259,10 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     methodName
                             );
                         } else {
-                            if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
+                            log.debug("Skipping inclusion of non-string attribute: {}", attributeName);
                         }
                     } else {
-                        if (log.isDebugEnabled()) { log.debug("Skipping inclusion of non-string attribute: {}", attributeName); }
+                        log.debug("Skipping inclusion of non-string attribute: {}", attributeName);
                     }
                 }
             }
@@ -1423,7 +1346,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         try {
             relationship = getRelationship(userId, guid);
         } catch (RelationshipNotKnownException e) {
-            if (log.isInfoEnabled()) { log.info("Relationship {} not known to the repository.", guid, e); }
+            log.info("Relationship {} not known to the repository.", guid, e);
         }
         return relationship;
 
@@ -1805,7 +1728,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 omrsTypeName = typeDef.getName();
                 atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
             } else {
-                if (log.isWarnEnabled()) { log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID); }
+                log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID);
             }
         } else {
             atlasTypeNamesByPrefix.put(null, omrsTypeName);
@@ -1930,15 +1853,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     sb.append(atlasPropertyName);
                                     sb.append(" asc");
                                 } else {
-                                    if (log.isWarnEnabled()) {
-                                        log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
-                                    }
+                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
                                     sb.append(" orderby __guid asc");
                                 }
                             } else {
-                                if (log.isWarnEnabled()) {
-                                    log.warn("No property for sorting provided, defaulting to GUID.");
-                                }
+                                log.warn("No property for sorting provided, defaulting to GUID.");
                                 sb.append(" orderby __guid asc");
                             }
                             break;
@@ -1950,15 +1869,11 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     sb.append(atlasPropertyName);
                                     sb.append(" desc");
                                 } else {
-                                    if (log.isWarnEnabled()) {
-                                        log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
-                                    }
+                                    log.warn("Unable to find mapped Atlas property for sorting for: {}", sequencingProperty);
                                     sb.append(" orderby __guid asc");
                                 }
                             } else {
-                                if (log.isWarnEnabled()) {
-                                    log.warn("No property for sorting provided, defaulting to GUID.");
-                                }
+                                log.warn("No property for sorting provided, defaulting to GUID.");
                                 sb.append(" orderby __guid desc");
                             }
                             break;
@@ -2039,9 +1954,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 omrsTypeName = typeDef.getName();
                 atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
             } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID);
-                }
+                log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID);
             }
         } else {
             atlasTypeNamesByPrefix.put(null, null);
@@ -2311,10 +2224,10 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             log.error("Unable to find any TypeDef for entityTypeGUID: {}", entityTypeGUID);
                         }
                     } else {
-                        if (log.isErrorEnabled()) { log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid()); }
+                        log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
                     }
                 } catch (EntityNotKnownException e) {
-                    if (log.isErrorEnabled()) { log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid()); }
+                    log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
                 }
             }
         }
@@ -2500,10 +2413,10 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     criteria.add((T) atlasCriterion);
                                 }
                             } else {
-                                if (log.isWarnEnabled()) { log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue); }
+                                log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
                             }
                         } else {
-                            if (log.isWarnEnabled()) { log.warn("Unable to find enum with name: {}", omrsPropertyName); }
+                            log.warn("Unable to find enum with name: {}", omrsPropertyName);
                         }
                         break;
                     /*case STRUCT:
@@ -2548,15 +2461,15 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         break;
                     default:
                         // Do nothing
-                        if (log.isWarnEnabled()) { log.warn("Unable to handle search criteria for value type: {}", category); }
+                        log.warn("Unable to handle search criteria for value type: {}", category);
                         break;
                 }
 
             } else {
-                if (log.isWarnEnabled()) { log.warn("Unable to add search condition, no mapped Atlas property for '{}': {}", omrsPropertyName, value); }
+                log.warn("Unable to add search condition, no mapped Atlas property for '{}': {}", omrsPropertyName, value);
             }
         } else {
-            if (log.isWarnEnabled()) { log.warn("Unable to add search condition, no OMRS property: {}", value); }
+            log.warn("Unable to add search condition, no OMRS property: {}", value);
         }
 
     }
@@ -2694,6 +2607,26 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     }
      */
+
+    /**
+     * Try to retrieve an Atlas entity using the provided GUID, and if not found throw an EntityNotKnownException.
+     * @param guid the GUID for the entity to retrieve
+     * @param methodName the name of the method retrieving the entity
+     * @return AtlasEntityWithExtInfo
+     * @throws EntityNotKnownException if the entity cannot be found in Atlas
+     */
+    private AtlasEntity.AtlasEntityWithExtInfo getAtlasEntitySafe(String guid, String methodName) throws EntityNotKnownException {
+        AtlasEntity.AtlasEntityWithExtInfo entity = null;
+        try {
+            entity = this.atlasRepositoryConnector.getEntityByGUID(guid, false, true);
+        } catch (AtlasServiceException e) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+        }
+        if (entity == null) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+        }
+        return entity;
+    }
 
     /**
      * Throw an EntityNotKnownException using the provided parameters.

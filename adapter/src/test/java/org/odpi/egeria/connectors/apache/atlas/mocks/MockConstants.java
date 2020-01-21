@@ -32,6 +32,7 @@ public class MockConstants {
     private static final String EP_TYPES = EP_BASE + "types/";
     private static final String EP_ENTITY = EP_BASE + "entity/";
     private static final String EP_RELATIONSHIP = EP_BASE + "relationship/";
+    private static final String EP_SEARCH = EP_BASE + "search/";
 
     /**
      * Create a mock Atlas response using the provided body.
@@ -75,7 +76,19 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest entityRequest(String guid) {
-        return request().withMethod("GET").withPath(EP_ENTITY + "/guid/" + guid);
+        return request().withMethod("GET").withPath(EP_ENTITY + "guid/" + guid);
+    }
+
+    /**
+     * Create a mock Atlas entity-by-guid, without relationships, request.
+     * @param guid the guid of the entity to retrieve
+     * @return HttpRequest
+     */
+    public static HttpRequest entityRequestWithoutRelationships(String guid) {
+        return entityRequest(guid).withQueryStringParameters(
+                param("ignoreRelationships", "true"),
+                param("minExtInfo", "false")
+        );
     }
 
     /**
@@ -83,7 +96,7 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest entityRequest() {
-        return request().withMethod("GET").withPath(EP_ENTITY + "/guid/.*");
+        return request().withMethod("GET").withPath(EP_ENTITY + "guid/.*");
     }
 
     /**
@@ -92,7 +105,7 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest relationshipRequest(String guid) {
-        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "/guid/" + guid);
+        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "guid/" + guid);
     }
 
     /**
@@ -100,7 +113,25 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest relationshipRequest() {
-        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "/guid/.*");
+        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "guid/.*");
+    }
+
+    /**
+     * Create a mock Atlas basic search request using the provided parameters.
+     * @param body the exact-match body of the request
+     * @return HttpRequest
+     */
+    public static HttpRequest basicSearchRequest(String body) {
+        return request().withMethod("POST").withPath(EP_SEARCH + "basic").withBody(body);
+    }
+
+    /**
+     * Create a mock Atlas basic search request using the provided parameters.
+     * @param body the JSON body of the request
+     * @return HttpRequest
+     */
+    public static HttpRequest basicSearchRequest(JsonBody body) {
+        return request().withMethod("POST").withPath(EP_SEARCH + "basic").withBody(body);
     }
 
 }

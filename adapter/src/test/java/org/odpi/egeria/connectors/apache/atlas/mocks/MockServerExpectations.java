@@ -5,8 +5,6 @@ package org.odpi.egeria.connectors.apache.atlas.mocks;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.client.initialize.ExpectationInitializer;
 import org.mockserver.matchers.MatchType;
-import org.mockserver.matchers.Times;
-import org.mockserver.model.JsonBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -16,13 +14,9 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
-import static org.mockserver.model.Parameter.param;
 
 import static org.odpi.egeria.connectors.apache.atlas.mocks.MockConstants.*;
 
@@ -41,7 +35,9 @@ public class MockServerExpectations implements ExpectationInitializer {
     public void initializeExpectations(MockServerClient mockServerClient) {
 
         initializeTypeDetails(mockServerClient);
-        // TODO: initializeKnownEntities(mockServerClient);
+        initializeKnownEntities(mockServerClient);
+        setSearchByProperty(mockServerClient);
+        setSearchByPropertyValue(mockServerClient);
 
         // Finally, set any others to default to not finding any results (should always be last)
         setNotFoundDefaults(mockServerClient);
@@ -58,6 +54,37 @@ public class MockServerExpectations implements ExpectationInitializer {
             }
         }
 
+    }
+
+    private void initializeKnownEntities(MockServerClient mockServerClient) {
+
+        Resource[] instanceExamples = getFilesMatchingPattern("entity_by_guid/*.json");
+        if (instanceExamples != null) {
+            for (Resource instanceExample : instanceExamples) {
+                setDetailsByGuid(mockServerClient, instanceExample);
+            }
+        }
+
+    }
+
+    private void setDetailsByGuid(MockServerClient mockServerClient, Resource resource) {
+        URL url = null;
+        try {
+            url = resource.getURL();
+        } catch (IOException e) {
+            log.error("Unable to retrieve detailed file from: {}", resource, e);
+        }
+        if (url != null) {
+            String filename = url.getFile();
+            String guid = getGuidFromFilename(filename);
+            mockServerClient
+                    .when(entityRequestWithoutRelationships(guid))
+                    .respond(withResponse(getResourceFileContents("entity_by_guid" + File.separator + guid + ".json")));
+        }
+    }
+
+    private String getGuidFromFilename(String filename) {
+        return filename.substring(filename.lastIndexOf("/") + 1, filename.indexOf(".json"));
     }
 
     private void setNotFoundDefaults(MockServerClient mockServerClient) {
@@ -77,6 +104,63 @@ public class MockServerExpectations implements ExpectationInitializer {
         mockServerClient
                 .when(typedefRequest(typeName))
                 .respond(withResponse(getResourceFileContents("types" + File.separator + typeName + ".json")));
+    }
+
+    private void setSearchByProperty(MockServerClient mockServerClient) {
+        String caseName = "SearchByProperty";
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"=\",\"attributeValue\":\"FAST_DIFF\"}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_FAST_DIFF.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"!=\",\"attributeValue\":\"FAST_DIFF\"}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_NONE.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\", \"criterion\":[{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"=\",\"attributeValue\":\"FAST_DIFF\"},{\"attributeName\":\"name\",\"operator\":\"=\",\"attributeValue\":\"t\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_ANY.json")));
+        mockServerClient
+                .when(basicSearchRequest(
+                        json(
+                                "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true}",
+                                MatchType.ONLY_MATCHING_FIELDS
+                        )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_all.json")));
+    }
+
+    private void setSearchByPropertyValue(MockServerClient mockServerClient) {
+        String caseName = "SearchByPropertyValue";
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\",\"criterion\":[{\"attributeName\":\"owner\",\"operator\":\"=\",\"attributeValue\":\"atlas\"},{\"attributeName\":\"name\",\"operator\":\"=\",\"attributeValue\":\"atlas\"},{\"attributeName\":\"qualifiedName\",\"operator\":\"=\",\"attributeValue\":\"atlas\"},{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"=\",\"attributeValue\":\"atlas\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_exact.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\",\"criterion\":[{\"attributeName\":\"owner\",\"operator\":\"startsWith\",\"attributeValue\":\"atl\"},{\"attributeName\":\"name\",\"operator\":\"startsWith\",\"attributeValue\":\"atl\"},{\"attributeName\":\"qualifiedName\",\"operator\":\"startsWith\",\"attributeValue\":\"atl\"},{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"startsWith\",\"attributeValue\":\"atl\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_startsWith.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\",\"criterion\":[{\"attributeName\":\"owner\",\"operator\":\"contains\",\"attributeValue\":\"tla\"},{\"attributeName\":\"name\",\"operator\":\"contains\",\"attributeValue\":\"tla\"},{\"attributeName\":\"qualifiedName\",\"operator\":\"contains\",\"attributeValue\":\"tla\"},{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"contains\",\"attributeValue\":\"tla\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_contains.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hbase_column_family\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\",\"criterion\":[{\"attributeName\":\"owner\",\"operator\":\"endsWith\",\"attributeValue\":\"las\"},{\"attributeName\":\"name\",\"operator\":\"endsWith\",\"attributeValue\":\"las\"},{\"attributeName\":\"qualifiedName\",\"operator\":\"endsWith\",\"attributeValue\":\"las\"},{\"attributeName\":\"dataBlockEncoding\",\"operator\":\"endsWith\",\"attributeValue\":\"las\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_endsWith.json")));
     }
 
     private void setDefaultNoTypeFound(MockServerClient mockServerClient) {
