@@ -5,6 +5,7 @@ package org.odpi.egeria.connectors.apache.atlas.mocks;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.client.initialize.ExpectationInitializer;
 import org.mockserver.matchers.MatchType;
+import org.mockserver.matchers.Times;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -143,13 +144,28 @@ public class MockServerExpectations implements ExpectationInitializer {
     }
 
     private void setTypesQuery(MockServerClient mockServerClient) {
+        // This first set will be missing two type definitions, to test adding (see 'setTypeDetails' below)
+        mockServerClient
+                .when(typedefsRequest(), Times.exactly(1))
+                .respond(withResponse(getResourceFileContents("types_vanilla.json")));
         mockServerClient
                 .when(typedefsRequest())
-                .respond(withResponse(getResourceFileContents("types.json")));
+                .respond(withResponse(getResourceFileContents("types_updated.json")));
     }
 
     private void setTypeDetails(MockServerClient mockServerClient, String typeFilename) {
         String typeName = typeFilename.substring(0, typeFilename.indexOf(".json"));
+        // Let these two types be empty the first time around, to ensure we test adding the types
+        if (typeName.equals("Confidentiality") || typeName.equals("GovernanceClassificationStatus")) {
+            String caseName = "UpsertType";
+            mockServerClient
+                    .when(typedefRequest(typeName), Times.exactly(1))
+                    .respond(withResponse("{\"errorCode\":\"ATLAS-404-00-001\",\"errorMessage\":\"Given typename " + typeName + " was invalid\"}").withStatusCode(404));
+            String typeContents = getResourceFileContents("by_case" + File.separator + caseName + File.separator + typeName + ".json");
+            mockServerClient
+                    .when(typeDefUpsertRequest(json(typeContents, MatchType.ONLY_MATCHING_FIELDS)))
+                    .respond(withResponse(typeContents).withStatusCode(200));
+        }
         mockServerClient
                 .when(typedefRequest(typeName))
                 .respond(withResponse(getResourceFileContents("types" + File.separator + typeName + ".json")));

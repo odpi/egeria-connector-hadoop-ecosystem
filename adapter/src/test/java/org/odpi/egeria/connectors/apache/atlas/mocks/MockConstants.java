@@ -77,6 +77,15 @@ public class MockConstants {
     }
 
     /**
+     * Create a mock Atlas typedef upsert request.
+     * @param body the body describing the typedef to be upserted
+     * @return HttpRequest
+     */
+    public static HttpRequest typeDefUpsertRequest(JsonBody body) {
+        return request().withMethod("POST").withPath(EP_TYPES + "typedefs/").withBody(body);
+    }
+
+    /**
      * Create a mock Atlas entity-by-guid request.
      * @param guid the guid of the entity to retrieve
      * @return HttpRequest
