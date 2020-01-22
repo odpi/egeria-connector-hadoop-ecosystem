@@ -23,6 +23,7 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.p
 import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.properties.OpenMetadataArchiveTypeStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollection;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.MatchCriteria;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.SequencingOrder;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
@@ -554,6 +555,149 @@ public class ConnectorTest {
     }
 
     @Test
+    public void testSearchByPropertySorting() {
+
+        String typeGUID = "248975ec-8019-4b8a-9caf-084c8b724233";
+        String typeName = "TabularSchemaType";
+
+        InstanceProperties ip = new InstanceProperties();
+
+        List<EntityDetail> results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.GUID,
+                null
+        );
+        EntityDetail lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getGUID().compareTo(result.getGUID()) <= 0);
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.LAST_UPDATE_OLDEST,
+                null
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getUpdateTime().getTime() <= result.getUpdateTime().getTime());
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.LAST_UPDATE_RECENT,
+                null
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getUpdateTime().getTime() >= result.getUpdateTime().getTime());
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.CREATION_DATE_OLDEST,
+                null
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getCreateTime().getTime() <= result.getCreateTime().getTime());
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.CREATION_DATE_RECENT,
+                null
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getCreateTime().getTime() >= result.getCreateTime().getTime());
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.PROPERTY_ASCENDING,
+                "displayName"
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getProperties().getPropertyValue("displayName").valueAsString().compareTo(result.getProperties().getPropertyValue("displayName").valueAsString()) <= 0);
+            }
+        }
+
+        results = testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                10,
+                SequencingOrder.PROPERTY_DESCENDING,
+                "displayName"
+        );
+        lastResult = null;
+        for (EntityDetail result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getProperties().getPropertyValue("displayName").valueAsString().compareTo(result.getProperties().getPropertyValue("displayName").valueAsString()) >= 0);
+            }
+        }
+
+    }
+
+    @Test
     public void testSearchByPropertyValue() {
 
         String typeGUID = "248975ec-8019-4b8a-9caf-084c8b724233";
@@ -699,26 +843,121 @@ public class ConnectorTest {
     @Test
     public void testGetRelationshipsForEntity() {
 
-        List<RelationshipExpectation> relationshipExpectations = new ArrayList<>();
-        relationshipExpectations.add(
-                new RelationshipExpectation(0, 1,
-                        "AttributeForSchema", "RelationalTableType", "RelationalColumn",
-                        "default.test_hive_table1@Sandbox", "default.test_hive_table1.location@Sandbox")
-        );
-        relationshipExpectations.add(
-                new RelationshipExpectation(1, 2,
-                        "SchemaAttributeType", "RelationalColumn", "RelationalColumnType",
-                        "default.test_hive_table1.location@Sandbox", "default.test_hive_table1.location@Sandbox")
-        );
+        List<RelationshipExpectation> relationshipExpectations1 = new ArrayList<>();
+        List<RelationshipExpectation> relationshipExpectations2 = new ArrayList<>();
+        RelationshipExpectation one = new RelationshipExpectation(0, 1,
+                "AttributeForSchema", "RelationalTableType", "RelationalColumn",
+                "default.test_hive_table1@Sandbox", "default.test_hive_table1.location@Sandbox");
+        RelationshipExpectation two = new RelationshipExpectation(1, 2,
+                "SchemaAttributeType", "RelationalColumn", "RelationalColumnType",
+                "default.test_hive_table1.location@Sandbox", "default.test_hive_table1.location@Sandbox");
+        relationshipExpectations1.add(one);
+        relationshipExpectations1.add(two);
+
+        RelationshipExpectation three = new RelationshipExpectation(0, 1,
+                "SchemaAttributeType", "RelationalColumn", "RelationalColumnType",
+                "default.test_hive_table1.location@Sandbox", "default.test_hive_table1.location@Sandbox");
+        RelationshipExpectation four = new RelationshipExpectation(1, 2,
+                "AttributeForSchema", "RelationalTableType", "RelationalColumn",
+                "default.test_hive_table1@Sandbox", "default.test_hive_table1.location@Sandbox");
+        relationshipExpectations2.add(three);
+        relationshipExpectations2.add(four);
 
         List<Relationship> results = testRelationshipsForEntity(
                 MockConstants.EXAMPLE_TYPE_NAME,
                 MockConstants.EXAMPLE_GUID,
                 2,
-                relationshipExpectations);
+                relationshipExpectations1);
 
         testRelationshipsAreRetrievable(results.subList(0, 1), "AttributeForSchema");
         testRelationshipsAreRetrievable(results.subList(1, 2), "SchemaAttributeType");
+
+        results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations2,
+                SequencingOrder.GUID,
+                null
+        );
+        Relationship lastResult = null;
+        for (Relationship result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getGUID().compareTo(result.getGUID()) <= 0);
+            }
+        }
+
+        results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations1,
+                SequencingOrder.LAST_UPDATE_OLDEST,
+                null
+        );
+        lastResult = null;
+        for (Relationship result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getUpdateTime().getTime() <= result.getUpdateTime().getTime());
+            }
+        }
+
+        results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations2,
+                SequencingOrder.LAST_UPDATE_RECENT,
+                null
+        );
+        lastResult = null;
+        for (Relationship result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getUpdateTime().getTime() >= result.getUpdateTime().getTime());
+            }
+        }
+
+        results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations2,
+                SequencingOrder.CREATION_DATE_OLDEST,
+                null
+        );
+        lastResult = null;
+        for (Relationship result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getCreateTime().getTime() <= result.getCreateTime().getTime());
+            }
+        }
+
+        results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations1,
+                SequencingOrder.CREATION_DATE_RECENT,
+                null
+        );
+        lastResult = null;
+        for (Relationship result : results) {
+            if (lastResult == null) {
+                lastResult = result;
+            } else {
+                assertTrue(lastResult.getCreateTime().getTime() >= result.getCreateTime().getTime());
+            }
+        }
+
+        // TODO: property-based checks, for which we need multiple relationships that we can compare properties on
 
     }
 
@@ -813,6 +1052,23 @@ public class ConnectorTest {
 
     }
 
+    private List<EntityDetail> testFindEntitiesByProperty(String typeGUID,
+                                                          String typeName,
+                                                          InstanceProperties matchProperties,
+                                                          MatchCriteria matchCriteria,
+                                                          int pageSize,
+                                                          int totalNumberExpected) {
+        return testFindEntitiesByProperty(
+                typeGUID,
+                typeName,
+                matchProperties,
+                matchCriteria,
+                pageSize,
+                totalNumberExpected,
+                null,
+                null);
+    }
+
     /**
      * Executes a common set of tests against a list of EntityDetail objects after first searching for them by property.
      *
@@ -829,7 +1085,9 @@ public class ConnectorTest {
                                                           InstanceProperties matchProperties,
                                                           MatchCriteria matchCriteria,
                                                           int pageSize,
-                                                          int totalNumberExpected) {
+                                                          int totalNumberExpected,
+                                                          SequencingOrder sequencingOrder,
+                                                          String sequencingProperty) {
 
         List<EntityDetail> results = null;
 
@@ -843,8 +1101,8 @@ public class ConnectorTest {
                     null,
                     null,
                     null,
-                    null,
-                    null,
+                    sequencingProperty,
+                    sequencingOrder,
                     pageSize
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
@@ -1028,6 +1286,19 @@ public class ConnectorTest {
         }
     }
 
+    private List<Relationship> testRelationshipsForEntity(String omrsType,
+                                                          String guid,
+                                                          int totalNumberExpected,
+                                                          List<RelationshipExpectation> relationshipExpectations) {
+        return testRelationshipsForEntity(
+                omrsType,
+                guid,
+                totalNumberExpected,
+                relationshipExpectations,
+                null,
+                null);
+    }
+
     /**
      * Executes a common set of tests against a list of Relationship objects after first directly retrieving them.
      *
@@ -1040,7 +1311,9 @@ public class ConnectorTest {
     private List<Relationship> testRelationshipsForEntity(String omrsType,
                                                           String guid,
                                                           int totalNumberExpected,
-                                                          List<RelationshipExpectation> relationshipExpectations) {
+                                                          List<RelationshipExpectation> relationshipExpectations,
+                                                          SequencingOrder sequencingOrder,
+                                                          String sequencingProperty) {
 
         List<Relationship> relationships = null;
 
@@ -1052,8 +1325,8 @@ public class ConnectorTest {
                     0,
                     null,
                     null,
-                    null,
-                    null,
+                    sequencingProperty,
+                    sequencingOrder,
                     MockConstants.EGERIA_PAGESIZE
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | EntityNotKnownException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {

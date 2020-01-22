@@ -16,8 +16,8 @@ public class SequencingUtils {
         // Do nothing...
     }
 
-    public static final Comparator<Relationship> getRelationshipComparator(SequencingOrder sequencingOrder,
-                                                                           String sequencingProperty) {
+    public static Comparator<Relationship> getRelationshipComparator(SequencingOrder sequencingOrder,
+                                                                     String sequencingProperty) {
 
         Comparator<Relationship> comparator = null;
         if (sequencingOrder != null) {
@@ -80,8 +80,8 @@ public class SequencingUtils {
 
     }
 
-    public static final Comparator<EntityDetail> getEntityDetailComparator(SequencingOrder sequencingOrder,
-                                                                           String sequencingProperty) {
+    public static Comparator<EntityDetail> getEntityDetailComparator(SequencingOrder sequencingOrder,
+                                                                     String sequencingProperty) {
 
         Comparator<EntityDetail> comparator = null;
         if (sequencingOrder != null) {

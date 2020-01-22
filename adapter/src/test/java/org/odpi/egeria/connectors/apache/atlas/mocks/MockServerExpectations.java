@@ -37,6 +37,7 @@ public class MockServerExpectations implements ExpectationInitializer {
         initializeTypeDetails(mockServerClient);
         initializeKnownEntities(mockServerClient);
         setSearchByProperty(mockServerClient);
+        setSearchByPropertySorting(mockServerClient);
         setSearchByPropertyValue(mockServerClient);
         setSearchByClassification(mockServerClient);
 
@@ -181,6 +182,31 @@ public class MockServerExpectations implements ExpectationInitializer {
                                 MatchType.ONLY_MATCHING_FIELDS
                         )))
                 .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_all.json")));
+    }
+
+    private void setSearchByPropertySorting(MockServerClient mockServerClient) {
+        String caseName = "SearchByPropertySorting";
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby __guid asc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_GUID.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby __modificationTimestamp asc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_modASC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby __modificationTimestamp desc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_modDESC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby __timestamp asc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_createASC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby __timestamp desc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_createDESC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby name asc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_nameASC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hbase_column_family orderby name desc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_nameDESC.json")));
     }
 
     private void setSearchByPropertyValue(MockServerClient mockServerClient) {

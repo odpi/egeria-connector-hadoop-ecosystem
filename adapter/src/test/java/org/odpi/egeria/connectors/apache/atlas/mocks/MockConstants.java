@@ -166,4 +166,15 @@ public class MockConstants {
         return request().withMethod("POST").withPath(EP_SEARCH + "basic").withBody(body);
     }
 
+    /**
+     * Create a mock Atlas DSL search request using the provided parameters.
+     * @param query the query string for the DSL search
+     * @return HttpRequest
+     */
+    public static HttpRequest dslSearchRequest(String query) {
+        return request().withMethod("GET").withPath(EP_SEARCH + "dsl").withQueryStringParameters(
+                param("query", query)
+        );
+    }
+
 }
