@@ -28,6 +28,12 @@ public class MockConstants {
     public static final String EGERIA_USER = "admin";
     public static final int EGERIA_PAGESIZE = 100;
 
+    public static final String EXAMPLE_GUID = "4fabaac3-9543-47a5-8c00-c44c81db3cac";
+    public static final String EXAMPLE_TYPE_GUID = "aa8d5470-6dbc-4648-9e2f-045e5df9d2f9";
+    public static final String EXAMPLE_TYPE_NAME = "RelationalColumn";
+
+    public static final String EXAMPLE_RELATIONSHIP_GUID = "dd44ce51-224d-4c03-a49e-7008292188a6";
+
     private static final String EP_BASE = "/api/atlas/v2/";
     private static final String EP_TYPES = EP_BASE + "types/";
     private static final String EP_ENTITY = EP_BASE + "entity/";
@@ -80,6 +86,18 @@ public class MockConstants {
     }
 
     /**
+     * Create a mock Atlas entity-by-guid, without relationships or any extra info, request.
+     * @param guid the guid of the entity to retrieve
+     * @return HttpRequest
+     */
+    public static HttpRequest entityRequestProxy(String guid) {
+        return entityRequest(guid).withQueryStringParameters(
+                param("ignoreRelationships", "true"),
+                param("minExtInfo", "true")
+        );
+    }
+
+    /**
      * Create a mock Atlas entity-by-guid, without relationships, request.
      * @param guid the guid of the entity to retrieve
      * @return HttpRequest
@@ -88,6 +106,18 @@ public class MockConstants {
         return entityRequest(guid).withQueryStringParameters(
                 param("ignoreRelationships", "true"),
                 param("minExtInfo", "false")
+        );
+    }
+
+    /**
+     * Create a mock Atlas entity-by-guid, with relationships, request.
+     * @param guid the guid of the entity to retrieve
+     * @return HttpRequest
+     */
+    public static HttpRequest entityRequestWithRelationships(String guid) {
+        return entityRequest(guid).withQueryStringParameters(
+                param("ignoreRelationships", "false"),
+                param("minExtInfo","false")
         );
     }
 
@@ -105,7 +135,9 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest relationshipRequest(String guid) {
-        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "guid/" + guid);
+        return request().withMethod("GET").withPath(EP_RELATIONSHIP + "guid/" + guid).withQueryStringParameters(
+                param("extendedInfo", "false")
+        );
     }
 
     /**

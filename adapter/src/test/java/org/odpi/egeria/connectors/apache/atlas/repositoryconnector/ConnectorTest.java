@@ -603,37 +603,142 @@ public class ConnectorTest {
                 MockConstants.EGERIA_PAGESIZE,
                 10);
 
-        // TODO: Test limiting by classification
-        /*Set<String> classifications = new HashSet<>();
-        classifications.add("???");
-        testFindEntitiesByPropertyValue(
-                typeGUID,
+        // Test limiting by classification
+        possibleTypes = new HashSet<>();
+        possibleTypes.add("RelationalColumn");
+        Set<String> classifications = new HashSet<>();
+        classifications.add("Confidentiality");
+        List<EntityDetail> results = testFindEntitiesByPropertyValue(
+                "aa8d5470-6dbc-4648-9e2f-045e5df9d2f9",
                 possibleTypes,
                 classifications,
-                repositoryHelper.getEndsWithRegex("las"),
+                repositoryHelper.getEndsWithRegex("ation"),
                 MockConstants.EGERIA_PAGESIZE,
-                10);*/
+                1);
+
+        confirmSingleConfidentiality(results.get(0).getClassifications());
 
     }
 
     @Test
     public void testSearchByClassification() {
-        // TODO: search by classification
+
+        final String methodName = "testSearchByClassification";
+
+        String typeGUID = MockConstants.EXAMPLE_TYPE_GUID;
+        String typeName = MockConstants.EXAMPLE_TYPE_NAME;
+        String classificationName = "Confidentiality";
+
+        InstanceProperties ip = new InstanceProperties();
+        ip = repositoryHelper.addIntPropertyToInstance(sourceName, ip, "level", 3, methodName);
+
+        testFindEntitiesByClassification(
+                typeGUID,
+                typeName,
+                classificationName,
+                ip,
+                MatchCriteria.ANY,
+                MockConstants.EGERIA_PAGESIZE,
+                1
+        );
+
+        ip = repositoryHelper.addIntPropertyToInstance(sourceName, ip, "confidence", 100, methodName);
+        testFindEntitiesByClassification(
+                typeGUID,
+                typeName,
+                classificationName,
+                ip,
+                MatchCriteria.ALL,
+                MockConstants.EGERIA_PAGESIZE,
+                1
+        );
+
+        testFindEntitiesByClassification(
+                typeGUID,
+                typeName,
+                classificationName,
+                ip,
+                MatchCriteria.NONE,
+                MockConstants.EGERIA_PAGESIZE,
+                0
+        );
+
+    }
+
+    private void confirmSingleConfidentiality(List<Classification> classifications) {
+        assertNotNull(classifications);
+        assertEquals(classifications.size(), 1);
+        Classification confidentiality = classifications.get(0);
+        assertEquals(confidentiality.getType().getTypeDefName(), "Confidentiality");
+        assertEquals(confidentiality.getProperties().getPropertyValue("level").valueAsString(), "3");
     }
 
     @Test
     public void testGetEntity() {
-        // TODO: test direct entity retrieval
+
+        Map<String, String> expectedValues = new HashMap<>();
+        expectedValues.put("displayName", "location");
+        expectedValues.put("qualifiedName", "default.test_hive_table1.location@Sandbox");
+
+        EntityDetail detail = testEntityDetail(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                expectedValues);
+
+        confirmSingleConfidentiality(detail.getClassifications());
+
+        EntitySummary summary = testEntitySummary(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID
+        );
+
+        confirmSingleConfidentiality(summary.getClassifications());
+
     }
 
     @Test
     public void testGetRelationshipsForEntity() {
-        // TODO: test relationship retrieval for entity
+
+        List<RelationshipExpectation> relationshipExpectations = new ArrayList<>();
+        relationshipExpectations.add(
+                new RelationshipExpectation(0, 1,
+                        "AttributeForSchema", "RelationalTableType", "RelationalColumn",
+                        "default.test_hive_table1@Sandbox", "default.test_hive_table1.location@Sandbox")
+        );
+        relationshipExpectations.add(
+                new RelationshipExpectation(1, 2,
+                        "SchemaAttributeType", "RelationalColumn", "RelationalColumnType",
+                        "default.test_hive_table1.location@Sandbox", "default.test_hive_table1.location@Sandbox")
+        );
+
+        List<Relationship> results = testRelationshipsForEntity(
+                MockConstants.EXAMPLE_TYPE_NAME,
+                MockConstants.EXAMPLE_GUID,
+                2,
+                relationshipExpectations);
+
+        testRelationshipsAreRetrievable(results.subList(0, 1), "AttributeForSchema");
+        testRelationshipsAreRetrievable(results.subList(1, 2), "SchemaAttributeType");
+
     }
 
     @Test
     public void testGetRelationship() {
-        // TODO: test direct relationship retrieval
+
+        try {
+            Relationship found = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, MockConstants.EXAMPLE_RELATIONSHIP_GUID);
+            assertNotNull(found);
+            assertEquals(found.getType().getTypeDefName(), "AttributeForSchema");
+            assertEquals(found.getEntityOneProxy().getType().getTypeDefName(), "RelationalTableType");
+            assertEquals(found.getEntityTwoProxy().getType().getTypeDefName(), "RelationalColumn");
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            log.error("Unable to find relationship directly by GUID: {}", MockConstants.EXAMPLE_RELATIONSHIP_GUID);
+            assertNull(e);
+        } catch (Exception e) {
+            log.error("Unexpected exception trying to find relationship directly by GUID: {}", MockConstants.EXAMPLE_RELATIONSHIP_GUID, e);
+            assertNull(e);
+        }
+
     }
 
     @AfterSuite
@@ -951,7 +1056,7 @@ public class ConnectorTest {
                     null,
                     MockConstants.EGERIA_PAGESIZE
             );
-        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | EntityNotKnownException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
+        } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | EntityNotKnownException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
             log.error("Unable to retrieve relationships for {}.", omrsType, e);
             assertNull(e);
         } catch (Exception e) {

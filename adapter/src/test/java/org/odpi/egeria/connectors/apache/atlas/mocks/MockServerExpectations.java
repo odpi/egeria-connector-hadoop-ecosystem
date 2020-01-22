@@ -38,6 +38,7 @@ public class MockServerExpectations implements ExpectationInitializer {
         initializeKnownEntities(mockServerClient);
         setSearchByProperty(mockServerClient);
         setSearchByPropertyValue(mockServerClient);
+        setSearchByClassification(mockServerClient);
 
         // Finally, set any others to default to not finding any results (should always be last)
         setNotFoundDefaults(mockServerClient);
@@ -64,6 +65,18 @@ public class MockServerExpectations implements ExpectationInitializer {
                 setDetailsByGuid(mockServerClient, instanceExample);
             }
         }
+        instanceExamples = getFilesMatchingPattern("relationships_for_guid/*.json");
+        if (instanceExamples != null) {
+            for (Resource instanceExample : instanceExamples) {
+                setRelationshipsByGuid(mockServerClient, instanceExample);
+            }
+        }
+        instanceExamples = getFilesMatchingPattern("relationship_by_guid/*.json");
+        if (instanceExamples != null) {
+            for (Resource instanceExample : instanceExamples) {
+                setRelationshipByGuid(mockServerClient, instanceExample);
+            }
+        }
 
     }
 
@@ -80,6 +93,41 @@ public class MockServerExpectations implements ExpectationInitializer {
             mockServerClient
                     .when(entityRequestWithoutRelationships(guid))
                     .respond(withResponse(getResourceFileContents("entity_by_guid" + File.separator + guid + ".json")));
+            mockServerClient
+                    .when(entityRequestProxy(guid))
+                    .respond(withResponse(getResourceFileContents("entity_by_guid" + File.separator + guid + ".json")));
+        }
+    }
+
+    private void setRelationshipsByGuid(MockServerClient mockServerClient, Resource resource) {
+        URL url = null;
+        try {
+            url = resource.getURL();
+        } catch (IOException e) {
+            log.error("Unable to retrieve detailed relationships file from: {}", resource, e);
+        }
+        if (url != null) {
+            String filename = url.getFile();
+            String guid = getGuidFromFilename(filename);
+            mockServerClient
+                    .when(entityRequestWithRelationships(guid))
+                    .respond(withResponse(getResourceFileContents("relationships_for_guid" + File.separator + guid + ".json")));
+        }
+    }
+
+    private void setRelationshipByGuid(MockServerClient mockServerClient, Resource resource) {
+        URL url = null;
+        try {
+            url = resource.getURL();
+        } catch (IOException e) {
+            log.error("Unable to retrieve detailed relationship file from: {}", resource, e);
+        }
+        if (url != null) {
+            String filename = url.getFile();
+            String guid = getGuidFromFilename(filename);
+            mockServerClient
+                    .when(relationshipRequest(guid))
+                    .respond(withResponse(getResourceFileContents("relationship_by_guid" + File.separator + guid + ".json")));
         }
     }
 
@@ -161,6 +209,22 @@ public class MockServerExpectations implements ExpectationInitializer {
                         MatchType.ONLY_MATCHING_FIELDS
                 )))
                 .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_endsWith.json")));
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hive_column\",\"classification\":\"Confidentiality\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"condition\":\"OR\",\"criterion\":[{\"attributeName\":\"name\",\"operator\":\"endsWith\",\"attributeValue\":\"ation\"},{\"attributeName\":\"qualifiedName\",\"operator\":\"endsWith\",\"attributeValue\":\"ation\"},{\"attributeName\":\"description\",\"operator\":\"endsWith\",\"attributeValue\":\"ation\"}]}}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_classification.json")));
+    }
+
+    private void setSearchByClassification(MockServerClient mockServerClient) {
+        String caseName = "SearchByClassification";
+        mockServerClient.when(basicSearchRequest(
+                json(
+                        "{\"typeName\":\"hive_column\",\"classification\":\"Confidentiality\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true}",
+                        MatchType.ONLY_MATCHING_FIELDS
+                )))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_any.json")));
     }
 
     private void setDefaultNoTypeFound(MockServerClient mockServerClient) {
