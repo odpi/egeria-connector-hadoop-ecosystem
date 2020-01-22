@@ -35,7 +35,7 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
      * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
      * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
      * @throws TypeDefNotSupportedException when entity cannot be fully represented in Atlas
-     */
+
     public static void addEntityTypeToAtlas(EntityDef omrsEntityDef,
                                             TypeDefStore typeDefStore,
                                             AttributeTypeDefStore attributeDefStore,
@@ -97,7 +97,7 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
      * @param cause the underlying cause of the exception (if any, otherwise null)
      * @param params any parameters for formatting the error message
      * @throws TypeDefNotSupportedException always
-     */
+
     private static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
         String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
         throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
@@ -108,5 +108,6 @@ public abstract class EntityDefMapping extends BaseTypeDefMapping {
                 errorCode.getUserAction(),
                 cause);
     }
+    */
 
 }
