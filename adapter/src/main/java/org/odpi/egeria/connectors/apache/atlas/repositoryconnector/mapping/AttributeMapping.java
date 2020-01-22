@@ -93,8 +93,12 @@ public abstract class AttributeMapping {
                             }
                             break;
                         case OM_PRIMITIVE_TYPE_DATE:
-                            Date dateVal = (Date) primitivePropertyValue.getPrimitiveValue();
-                            bMatch = dateVal.equals(atlasValue);
+                            Long dateVal = (Long) primitivePropertyValue.getPrimitiveValue();
+                            if (atlasValue instanceof Date) {
+                                bMatch = dateVal.equals(((Date) atlasValue).getTime());
+                            } else {
+                                bMatch = dateVal.equals(atlasValue);
+                            }
                             break;
                         default:
                             log.warn("Unhandled type for mapping: {}", omrsValue);
@@ -167,7 +171,7 @@ public abstract class AttributeMapping {
      *
      * @param omrsValue the OMRS value to translate
      * @return Object
-     */
+
     static Object getValueFromInstance(InstancePropertyValue omrsValue,
                                        String omrsTypeDefName,
                                        AttributeTypeDefStore attributeDefStore) {
@@ -225,6 +229,7 @@ public abstract class AttributeMapping {
         return value;
 
     }
+     */
 
     /**
      * Add the supplied property to an instance properties object.  If the instance property object
