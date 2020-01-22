@@ -229,40 +229,6 @@ public class TypeDefStore {
     }
 
     /**
-     * Retrieve the relationship endpoint mapped to the Apache Atlas details provided.
-     *
-     * @param atlasTypeName the name of the Apache Atlas type definition
-     * @param atlasRelnAttrName the name of the Apache Atlas relationship attribute
-     * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
-     * @return Endpoint
-     */
-    public Endpoint getMappedEndpointFromAtlasName(String atlasTypeName, String atlasRelnAttrName, String entityPrefix) {
-        if (atlasNameToEndpointMapByPrefix.containsKey(atlasTypeName)) {
-            EndpointMapping mapping = atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(entityPrefix, null);
-            if (mapping != null) {
-                return mapping.getMatchingOmrsEndpoint(atlasRelnAttrName, entityPrefix);
-            }
-        }
-        // If we fall through, look for a TypeDef that we created as part of OMRS registration (in which cases no
-        // prefixes or generation should be involved, so we can skip those checks)
-        TypeDef typeDef = getTypeDefByName(atlasTypeName);
-        if (typeDef instanceof RelationshipDef) {
-            RelationshipDef relationshipDef = (RelationshipDef) typeDef;
-            RelationshipEndDef end1 = relationshipDef.getEndDef1();
-            RelationshipEndDef end2 = relationshipDef.getEndDef2();
-            if (end1.getAttributeName().equals(atlasRelnAttrName)) {
-                return Endpoint.ONE;
-            } else if (end2.getAttributeName().equals(atlasRelnAttrName)) {
-                return Endpoint.TWO;
-            } else {
-                return Endpoint.UNDEFINED;
-            }
-        } else {
-            return Endpoint.UNDEFINED;
-        }
-    }
-
-    /**
      * Retrieve the relationship endpoint mapping from the Apache Atlas details provided.
      *
      * @param atlasTypeName the name of the Apache Atlas type definition
@@ -617,72 +583,10 @@ public class TypeDefStore {
             this.prefix2 = prefix2;
         }
 
-        /**
-         * Retrieve the corresponding OMRS endpoint given an Apache Atlas endpoint attribute name.
-         *
-         * @param atlasEndpointName the Apache Atlas endpoint attribute name
-         * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
-         * @return Endpoint
-         */
-        public Endpoint getMatchingOmrsEndpoint(String atlasEndpointName, String entityPrefix) {
-            if (atlasEndpointName != null) {
-                // If there is a named Atlas endpoint, check that the prefixes are the same before choosing an endpoint
-                if (atlasEndpointName.equals(atlas1) && samePrefixes(prefix1, entityPrefix)) {
-                    return Endpoint.ONE;
-                } else if (atlasEndpointName.equals(atlas2) && samePrefixes(prefix2, entityPrefix)) {
-                    return Endpoint.TWO;
-                }
-            } else {
-                // If there is no named Atlas endpoint, check that recorded endpoint is also null and prefixes also match
-                if (atlas1 == null && samePrefixes(prefix1, entityPrefix)) {
-                    return Endpoint.ONE;
-                } else if (atlas2 == null && samePrefixes(prefix2, entityPrefix)) {
-                    return Endpoint.TWO;
-                }
-            }
-            return Endpoint.UNDEFINED;
-        }
-
-        /**
-         * Retrieve the corresponding Apache Atlas endpoint given an OMRS endpoint attribute name.
-         *
-         * @param omrsEndpointName the OMRS endpoint attribute name
-         * @param entityPrefix the prefix for the entity (if any)
-         * @return Endpoint
-         */
-        public Endpoint getMatchingAtlasEndpoint(String omrsEndpointName, String entityPrefix) {
-            if (omrsEndpointName != null) {
-                if (omrsEndpointName.equals(omrs1) && samePrefixes(prefix1, entityPrefix)) {
-                    return Endpoint.ONE;
-                } else if (omrsEndpointName.equals(omrs2) && samePrefixes(prefix2, entityPrefix)) {
-                    return Endpoint.TWO;
-                }
-            } else {
-                if (omrs1 == null && samePrefixes(prefix1, entityPrefix)) {
-                    return Endpoint.ONE;
-                } else if (omrs2 == null && samePrefixes(prefix2, entityPrefix)) {
-                    return Endpoint.TWO;
-                }
-            }
-            return Endpoint.UNDEFINED;
-        }
-
         public String getPrefixOne() { return prefix1; }
         public String getPrefixTwo() { return prefix2; }
         public String getAtlasRelationshipTypeName() { return atlasRelationshipTypeName; }
         public String getOmrsRelationshipTypeName() { return omrsRelationshipTypeName; }
-
-        /**
-         * Indicates whether the two prefixes are the same (true) or not (false).
-         *
-         * @param cand1 first prefix to compare
-         * @param cand2 second prefix to compare
-         * @return boolean
-         */
-        private boolean samePrefixes(String cand1, String cand2) {
-            return (cand1 == null && cand2 == null)
-                    || (cand1 != null && cand2 != null && cand1.equals(cand2));
-        }
 
     }
 
