@@ -9,6 +9,7 @@ import org.apache.atlas.model.instance.*;
 import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapper;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.*;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.AtlasGuid;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollectionBase;
@@ -628,15 +629,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         final String methodName = "getEntitySummary";
         super.getInstanceParameterValidation(userId, guid, methodName);
 
-        String prefix = null;
-        if (isGeneratedGUID(guid)) {
-            prefix = getPrefixFromGeneratedId(guid);
-            guid = getGuidFromGeneratedId(guid);
+        AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
+        if (atlasGuid == null) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+        } else {
+            String prefix = atlasGuid.getGeneratedPrefix();
+            AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
+            EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
+            return mapping.getEntitySummary();
         }
-
-        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
-        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
-        return mapping.getEntitySummary();
+        return null;
 
     }
 
@@ -653,60 +655,36 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         final String methodName = "getEntityDetail";
         super.getInstanceParameterValidation(userId, guid, methodName);
 
-        String prefix = null;
-        if (isGeneratedGUID(guid)) {
-            prefix = getPrefixFromGeneratedId(guid);
-            guid = getGuidFromGeneratedId(guid);
+        AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
+        if (atlasGuid == null) {
+            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+        } else {
+            String prefix = atlasGuid.getGeneratedPrefix();
+            AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
+            EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
+            return mapping.getEntityDetail();
         }
-
-        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(guid, methodName);
-        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
-        return mapping.getEntityDetail();
+        return null;
 
     }
 
     /**
-     * Return the relationships for a specific entity.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param entityGUID String unique identifier for the entity.
-     * @param relationshipTypeGUID String GUID of the the type of relationship required (null for all).
-     * @param fromRelationshipElement the starting element number of the relationships to return.
-     *                                This is used when retrieving elements
-     *                                beyond the first page of results. Zero means start from the first element.
-     * @param limitResultsByStatus Not implemented for Apache Atlas -- will only retrieve ACTIVE entities.
-     * @param asOfTime Must be null (history not implemented for Apache Atlas).
-     * @param sequencingProperty String name of the property that is to be used to sequence the results.
-     *                           Null means do not sequence on a property name (see SequencingOrder).
-     * @param sequencingOrder Enum defining how the results should be ordered.
-     * @param pageSize -- the maximum number of result classifications that can be returned on this request.  Zero means
-     *                 unrestricted return results size.
-     * @return Relationships list.  Null means no relationships associated with the entity.
-     * @throws InvalidParameterException a parameter is invalid or null.
-     * @throws TypeErrorException the type guid passed on the request is not known by the
-     *                              metadata collection.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws EntityNotKnownException the requested entity instance is not known in the metadata collection.
-     * @throws PropertyErrorException the sequencing property is not valid for the attached classifications.
-     * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
-     * @throws FunctionNotSupportedException the repository does not support the asOfTime parameter.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public List<Relationship> getRelationshipsForEntity(String                     userId,
-                                                        String                     entityGUID,
-                                                        String                     relationshipTypeGUID,
-                                                        int                        fromRelationshipElement,
-                                                        List<InstanceStatus>       limitResultsByStatus,
-                                                        Date                       asOfTime,
-                                                        String                     sequencingProperty,
-                                                        SequencingOrder            sequencingOrder,
-                                                        int                        pageSize) throws InvalidParameterException,
+    public List<Relationship> getRelationshipsForEntity(String userId,
+                                                        String entityGUID,
+                                                        String relationshipTypeGUID,
+                                                        int fromRelationshipElement,
+                                                        List<InstanceStatus> limitResultsByStatus,
+                                                        Date asOfTime,
+                                                        String sequencingProperty,
+                                                        SequencingOrder sequencingOrder,
+                                                        int pageSize) throws
+            InvalidParameterException,
             TypeErrorException,
             RepositoryErrorException,
             EntityNotKnownException,
-            PropertyErrorException,
             PagingErrorException,
             FunctionNotSupportedException,
             UserNotAuthorizedException {
@@ -735,43 +713,45 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             // Otherwise, only bother searching if we are after ACTIVE (or "all") entities -- non-ACTIVE means we
             // will just return an empty list
 
-            String prefix = null;
-            if (isGeneratedGUID(entityGUID)) {
-                prefix = getPrefixFromGeneratedId(entityGUID);
-                entityGUID = getGuidFromGeneratedId(entityGUID);
-            }
-
-            // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
-            AtlasEntity.AtlasEntityWithExtInfo asset = null;
-            try {
-                asset = atlasRepositoryConnector.getEntityByGUID(entityGUID, false, false);
-            } catch (AtlasServiceException e) {
-                raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, entityGUID, methodName, repositoryName);
-            }
-
-            // Ensure the entity actually exists (if not, throw error to that effect)
-            if (asset == null) {
+            AtlasGuid atlasGuid = AtlasGuid.fromGuid(entityGUID);
+            if (atlasGuid == null) {
                 raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, entityGUID, methodName, repositoryName);
             } else {
 
-                EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
-                        atlasRepositoryConnector,
-                        typeDefStore,
-                        attributeTypeDefStore,
-                        asset,
-                        prefix,
-                        userId
-                );
+                String prefix = atlasGuid.getGeneratedPrefix();
 
-                // 2. Apply the mapping to the object, and retrieve the resulting relationships
-                alRelationships = entityMap.getRelationships(
-                        relationshipTypeGUID,
-                        fromRelationshipElement,
-                        sequencingProperty,
-                        sequencingOrder,
-                        pageSize
-                );
+                // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
+                AtlasEntity.AtlasEntityWithExtInfo asset = null;
+                try {
+                    asset = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), false, false);
+                } catch (AtlasServiceException e) {
+                    raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, entityGUID, methodName, repositoryName);
+                }
 
+                // Ensure the entity actually exists (if not, throw error to that effect)
+                if (asset == null) {
+                    raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, entityGUID, methodName, repositoryName);
+                } else {
+
+                    EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
+                            atlasRepositoryConnector,
+                            typeDefStore,
+                            attributeTypeDefStore,
+                            asset,
+                            prefix,
+                            userId
+                    );
+
+                    // 2. Apply the mapping to the object, and retrieve the resulting relationships
+                    alRelationships = entityMap.getRelationships(
+                            relationshipTypeGUID,
+                            fromRelationshipElement,
+                            sequencingProperty,
+                            sequencingOrder,
+                            pageSize
+                    );
+
+                }
             }
 
         }
@@ -1354,47 +1334,55 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
 
     /**
-     * Return a requested relationship.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the relationship.
-     * @return a relationship structure.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                    the metadata collection is stored.
-     * @throws RelationshipNotKnownException the metadata collection does not have a relationship with
-     *                                         the requested GUID stored.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public Relationship getRelationship(String    userId,
-                                        String    guid) throws InvalidParameterException,
+    public Relationship getRelationship(String userId,
+                                        String guid) throws InvalidParameterException,
             RepositoryErrorException,
-            RelationshipNotKnownException,
-            UserNotAuthorizedException {
+            RelationshipNotKnownException {
 
-        final String  methodName = "getRelationship";
+        final String methodName = "getRelationship";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.getInstanceParameterValidation(userId, guid, methodName);
-
-        /*
-         * Process operation
-         */
-
-        AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
-        try {
-            relationship = this.atlasRepositoryConnector.getRelationshipByGUID(guid);
-        } catch (AtlasServiceException e) {
-            raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-        }
-        if (relationship == null) {
+        AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
+        if (atlasGuid == null) {
             raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+        } else {
+
+            if (atlasGuid.isGeneratedInstanceGuid()) {
+                // If this is a self-referencing relationship, we need to construct it by retrieving the entity (not
+                // a relationship) from Atlas
+                try {
+                    AtlasEntity.AtlasEntityWithExtInfo entity = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), true, true);
+                    if (entity != null) {
+                        return RelationshipMapping.getSelfReferencingRelationship(
+                                atlasRepositoryConnector,
+                                typeDefStore,
+                                atlasGuid,
+                                entity.getEntity());
+                    } else {
+                        raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+                    }
+                } catch (AtlasServiceException e) {
+                    raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+                }
+            } else {
+                // Otherwise we should be able to directly retrieve a relationship from Atlas
+                AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
+                try {
+                    relationship = this.atlasRepositoryConnector.getRelationshipByGUID(atlasGuid.getAtlasGuid());
+                } catch (AtlasServiceException e) {
+                    raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+                }
+                if (relationship == null) {
+                    raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+                }
+                RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, atlasGuid, relationship, userId);
+                return mapping.getRelationship();
+            }
         }
-        RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, relationship, userId);
-        return mapping.getRelationship();
+        return null;
 
     }
 
@@ -2472,67 +2460,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             log.warn("Unable to add search condition, no OMRS property: {}", value);
         }
 
-    }
-
-    /**
-     * Retrieves the Atlas GUID from a generated GUID (or the GUID if it is not generated).
-     *
-     * @param guid the guid to translate
-     * @return String
-     */
-    public static final String getGuidFromGeneratedId(String guid) {
-        if (isGeneratedGUID(guid)) {
-            return guid
-                    .substring(guid.indexOf(GENERATED_TYPE_POSTFIX) + GENERATED_TYPE_POSTFIX.length());
-        } else {
-            return guid;
-        }
-    }
-
-    /**
-     * Retrieves the generated prefix from a generated GUID (or null if the GUID is not generated).
-     *
-     * @param guid the guid from which to retrieve the prefix
-     * @return String
-     */
-    public static final String getPrefixFromGeneratedId(String guid) {
-        if (isGeneratedGUID(guid)) {
-            return guid
-                    .substring(GENERATED_TYPE_PREFIX.length(), guid.indexOf(GENERATED_TYPE_POSTFIX));
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Indicates whether the provided GUID was generated (true) or not (false).
-     *
-     * @param guid the guid to test
-     * @return boolean
-     */
-    public static final boolean isGeneratedGUID(String guid) {
-        return guid.startsWith(GENERATED_TYPE_PREFIX);
-    }
-
-    /**
-     * Generates a unique type prefix for GUIDs based on the provided moniker.
-     *
-     * @param moniker a repeatable way by which to refer to the type
-     * @return String
-     */
-    public static final String generateTypePrefix(String moniker) {
-        return GENERATED_TYPE_PREFIX + moniker + GENERATED_TYPE_POSTFIX;
-    }
-
-    /**
-     * Generates a unique GUID using the provided prefix and GUID components.
-     *
-     * @param moniker the prefix moniker to apply
-     * @param guid the GUID to which to prepend the prefix
-     * @return String
-     */
-    public static final String generateGuidWithPrefix(String moniker, String guid) {
-        return (moniker == null ? "" : generateTypePrefix(moniker)) + guid;
     }
 
     /**

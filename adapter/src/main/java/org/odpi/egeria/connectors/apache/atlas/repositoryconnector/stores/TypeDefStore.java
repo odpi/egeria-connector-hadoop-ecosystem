@@ -28,6 +28,7 @@ public class TypeDefStore {
     private Map<String, TypeDef> unimplementedTypeDefs;
 
     // Mapping details
+    private Map<String, String> prefixToOmrsTypeName;
     private Map<String, Map<String, String>> omrsNameToAtlasNamesByPrefix;
     private Map<String, Map<String, String>> atlasNameToOmrsNamesByPrefix;
     private Map<String, Map<String, Map<String, String>>> omrsNameToAttributeMapByPrefix;
@@ -47,6 +48,7 @@ public class TypeDefStore {
         omrsGuidToTypeDef = new HashMap<>();
         omrsNameToGuid = new HashMap<>();
         omrsGuidToAttributeMap = new HashMap<>();
+        prefixToOmrsTypeName = new HashMap<>();
         omrsNameToAtlasNamesByPrefix = new HashMap<>();
         atlasNameToOmrsNamesByPrefix = new HashMap<>();
         unimplementedTypeDefs = new HashMap<>();
@@ -87,6 +89,10 @@ public class TypeDefStore {
                     atlasNameToOmrsNamesByPrefix.put(atlasName, new HashMap<>());
                 }
                 atlasNameToOmrsNamesByPrefix.get(atlasName).put(prefix, omrsName);
+
+                if (prefix != null) {
+                    prefixToOmrsTypeName.put(prefix, omrsName);
+                }
 
                 // Process any property-to-property mappings within the types
                 List<MappingFromFile> properties = mapping.getPropertyMappings();
@@ -260,12 +266,12 @@ public class TypeDefStore {
      * Retrieve the relationship endpoint mapping from the Apache Atlas details provided.
      *
      * @param atlasTypeName the name of the Apache Atlas type definition
-     * @param entityPrefix the prefix used for the entity, if it is a generated entity (null if not generated)
+     * @param relationshipPrefix the prefix used for the relationship, if it is a generated relationship (null if not generated)
      * @return EndpointMapping
      */
-    public EndpointMapping getEndpointMappingFromAtlasName(String atlasTypeName, String entityPrefix) {
+    public EndpointMapping getEndpointMappingFromAtlasName(String atlasTypeName, String relationshipPrefix) {
         if (atlasNameToEndpointMapByPrefix.containsKey(atlasTypeName)) {
-            return atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(entityPrefix, null);
+            return atlasNameToEndpointMapByPrefix.get(atlasTypeName).getOrDefault(relationshipPrefix, null);
         } else {
             return null;
         }
@@ -278,7 +284,7 @@ public class TypeDefStore {
      * @return {@code Map<String, EndpointMapping>}
      */
     public Map<String, EndpointMapping> getAllEndpointMappingsFromAtlasName(String atlasTypeName) {
-        return atlasNameToEndpointMapByPrefix.getOrDefault(atlasTypeName, null);
+        return atlasNameToEndpointMapByPrefix.getOrDefault(atlasTypeName, Collections.emptyMap());
     }
 
     /**
@@ -320,6 +326,31 @@ public class TypeDefStore {
     }
 
     /**
+     * Retrieves the OMRS TypeDef that is mapped to the provided prefix, or null if there is no mapping.
+     *
+     * @param prefix the prefix for the OMRS type to retrieve
+     * @return TypeDef
+     */
+    public TypeDef getTypeDefByPrefix(String prefix) {
+        String omrsTypeName = getMappedOMRSTypeDefNameForPrefix(prefix);
+        TypeDef typeDef = null;
+        if (omrsTypeName != null) {
+            typeDef = getTypeDefByName(omrsTypeName);
+        }
+        return typeDef;
+    }
+
+    /**
+     * Retrieves the OMRS TypeDef name that is mapped to the provided prefix, or null if there is no mapping.
+     *
+     * @param prefix the prefix for the OMRS type to retrieve
+     * @return String
+     */
+    private String getMappedOMRSTypeDefNameForPrefix(String prefix) {
+        return prefixToOmrsTypeName.getOrDefault(prefix, null);
+    }
+
+    /**
      * Retrieves all of the OMRS TypeDef names that are mapped to the provided OMRS TypeDef name, or null if there is
      * no mapping. The map returned will be keyed by prefix, and values will be the mapped OMRS TypeDef name for that
      * prefix.
@@ -346,6 +377,26 @@ public class TypeDefStore {
             return atlasName;
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Retrieves the OMRS TypeDef name that is mapped to the provided Apache Atlas TypeDef name, the same name if
+     * there is a one-to-one mapping between Atlas and OMRS TypeDefs, or null if there is no mapping. The result is
+     * a mapping of prefix to OMRS type.
+     *
+     * @param atlasName the name of the Apache Atlas TypeDef
+     * @return {@code Map<String, String>}
+     */
+    public Map<String, String> getMappedOMRSTypeDefNameWithPrefixes(String atlasName) {
+        if (atlasNameToOmrsNamesByPrefix.containsKey(atlasName)) {
+            return atlasNameToOmrsNamesByPrefix.getOrDefault(atlasName, Collections.emptyMap());
+        } else if (omrsNameToGuid.containsKey(atlasName)) {
+            Map<String, String> map = new HashMap<>();
+            map.put(null, atlasName);
+            return map;
+        } else {
+            return Collections.emptyMap();
         }
     }
 

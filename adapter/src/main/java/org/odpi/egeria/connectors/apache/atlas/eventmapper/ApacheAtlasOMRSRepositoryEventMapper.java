@@ -17,6 +17,7 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnector;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.EntityMappingAtlas2OMRS;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.RelationshipMapping;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.model.AtlasGuid;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicListener;
@@ -315,35 +316,14 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         for (Map.Entry<String, TypeDefStore.EndpointMapping> entry : mappings.entrySet()) {
             String relationshipPrefix = entry.getKey();
             if (relationshipPrefix != null) {
-                String relationshipGUID = ApacheAtlasOMRSMetadataCollection.generateGuidWithPrefix(relationshipPrefix, atlasEntityHeader.getGuid());
-                TypeDefStore.EndpointMapping mapping = entry.getValue();
-                EntityProxy ep1 = RelationshipMapping.getEntityProxyForObject(
-                        atlasRepositoryConnector,
-                        typeDefStore,
-                        new AtlasEntity(atlasEntityHeader),
-                        mapping.getPrefixOne(),
-                        null
-                );
-                EntityProxy ep2 = RelationshipMapping.getEntityProxyForObject(
-                        atlasRepositoryConnector,
-                        typeDefStore,
-                        new AtlasEntity(atlasEntityHeader),
-                        mapping.getPrefixTwo(),
-                        null
-                );
+                AtlasGuid atlasGuid = new AtlasGuid(atlasEntityHeader.getGuid(), relationshipPrefix);
                 try {
-                    Relationship generatedRelationship = RelationshipMapping.getRelationship(atlasRepositoryConnector,
+                    Relationship generatedRelationship = RelationshipMapping.getSelfReferencingRelationship(
+                            atlasRepositoryConnector,
                             typeDefStore,
-                            mapping.getOmrsRelationshipTypeName(),
-                            relationshipGUID,
-                            InstanceStatus.ACTIVE,
-                            ep1,
-                            ep2,
-                            entityDetail.getCreatedBy(),
-                            entityDetail.getUpdatedBy(),
-                            entityDetail.getCreateTime(),
-                            entityDetail.getUpdateTime(),
-                            null);
+                            atlasGuid,
+                            new AtlasEntity(atlasEntityHeader)
+                    );
                     if (generatedRelationship != null) {
                         generatedRelationships.add(generatedRelationship);
                     } else {
@@ -414,6 +394,8 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
      * @return Relationship
      */
     private Relationship getMappedRelationship(AtlasRelationshipHeader atlasRelationshipHeader) {
+        // TODO: this needs to handle both self-referencing (generated) relationships and "normal" relationships,
+        //  currently only handling the latter?
         Relationship result = null;
         AtlasRelationship.AtlasRelationshipWithExtInfo atlasRelationship = null;
         try {
@@ -425,6 +407,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
                 atlasRepositoryConnector,
                 atlasMetadataCollection.getTypeDefStore(),
                 atlasMetadataCollection.getAttributeTypeDefStore(),
+                new AtlasGuid(atlasRelationshipHeader.getGuid(), null),
                 atlasRelationship,
                 null
         );
