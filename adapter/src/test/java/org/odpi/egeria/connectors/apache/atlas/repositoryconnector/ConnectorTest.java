@@ -776,7 +776,7 @@ public class ConnectorTest {
         InstanceProperties ip = new InstanceProperties();
         ip = repositoryHelper.addIntPropertyToInstance(sourceName, ip, "level", 3, methodName);
 
-        testFindEntitiesByClassification(
+        List<EntityDetail> results = testFindEntitiesByClassification(
                 typeGUID,
                 typeName,
                 classificationName,
@@ -785,9 +785,10 @@ public class ConnectorTest {
                 MockConstants.EGERIA_PAGESIZE,
                 1
         );
+        confirmSingleConfidentiality(results.get(0).getClassifications());
 
         ip = repositoryHelper.addIntPropertyToInstance(sourceName, ip, "confidence", 100, methodName);
-        testFindEntitiesByClassification(
+        results = testFindEntitiesByClassification(
                 typeGUID,
                 typeName,
                 classificationName,
@@ -796,6 +797,7 @@ public class ConnectorTest {
                 MockConstants.EGERIA_PAGESIZE,
                 1
         );
+        confirmSingleConfidentiality(results.get(0).getClassifications());
 
         testFindEntitiesByClassification(
                 typeGUID,
@@ -806,6 +808,21 @@ public class ConnectorTest {
                 MockConstants.EGERIA_PAGESIZE,
                 0
         );
+
+        ip = repositoryHelper.addEnumPropertyToInstance(sourceName, ip, "status", 1, "Proposed", "The classification assignment was proposed by a subject matter expert.", methodName);
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "notes", repositoryHelper.getContainsRegex("some notes"), methodName);
+        results = testFindEntitiesByClassification(
+                typeGUID,
+                typeName,
+                classificationName,
+                ip,
+                MatchCriteria.ANY,
+                MockConstants.EGERIA_PAGESIZE,
+                1,
+                SequencingOrder.PROPERTY_ASCENDING,
+                "confidence"
+        );
+        confirmSingleConfidentiality(results.get(0).getClassifications());
 
     }
 
@@ -1146,6 +1163,25 @@ public class ConnectorTest {
 
     }
 
+    private List<EntityDetail> testFindEntitiesByClassification(String typeGUID,
+                                                                String typeName,
+                                                                String classificationName,
+                                                                InstanceProperties matchClassificationProperties,
+                                                                MatchCriteria matchCriteria,
+                                                                int pageSize,
+                                                                int totalNumberExpected) {
+        return testFindEntitiesByClassification(
+                typeGUID,
+                typeName,
+                classificationName,
+                matchClassificationProperties,
+                matchCriteria,
+                pageSize,
+                totalNumberExpected,
+                null,
+                null);
+    }
+
     /**
      * Executes a common set of tests against a list of EntityDetail objects after first searching for them by
      * classification property.
@@ -1165,7 +1201,9 @@ public class ConnectorTest {
                                                                 InstanceProperties matchClassificationProperties,
                                                                 MatchCriteria matchCriteria,
                                                                 int pageSize,
-                                                                int totalNumberExpected) {
+                                                                int totalNumberExpected,
+                                                                SequencingOrder sequencingOrder,
+                                                                String sequencingProperty) {
 
         List<EntityDetail> results = null;
 
@@ -1179,8 +1217,8 @@ public class ConnectorTest {
                     0,
                     null,
                     null,
-                    null,
-                    null,
+                    sequencingProperty,
+                    sequencingOrder,
                     pageSize
             );
         } catch (InvalidParameterException | TypeErrorException | RepositoryErrorException | PropertyErrorException | PagingErrorException | FunctionNotSupportedException | UserNotAuthorizedException e) {
