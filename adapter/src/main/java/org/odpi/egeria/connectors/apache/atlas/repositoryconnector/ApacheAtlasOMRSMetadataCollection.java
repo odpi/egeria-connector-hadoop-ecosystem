@@ -2228,7 +2228,13 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 Long epoch = (Long) actualValue.getPrimitiveValue();
                                 String formattedDate = atlasDateFormat.format(new Date(epoch));
                                 atlasCriterion.setAttributeName(atlasPropertyName);
-                                sbCriterion.append(atlasPropertyName);
+                                if (atlasPropertyName.equals("createTime")) {
+                                    sbCriterion.append("__timestamp");
+                                } else if (atlasPropertyName.equals("updateTime")) {
+                                    sbCriterion.append("__modificationTimestamp");
+                                } else {
+                                    sbCriterion.append(atlasPropertyName);
+                                }
                                 if (negateCondition) {
                                     atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
                                     sbCriterion.append(" != \"");
@@ -2237,7 +2243,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     sbCriterion.append(" = \"");
                                 }
                                 atlasCriterion.setAttributeValue(formattedDate);
-                                sbCriterion.append(formattedDate);
+                                sbCriterion.append(epoch);
                                 sbCriterion.append("\"");
                                 if (dslQuery) {
                                     criteria.add((T) sbCriterion.toString());
@@ -2300,28 +2306,44 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         String omrsEnumValue = ((EnumPropertyValue) value).getSymbolicName();
                         TypeDefAttribute typeDefAttribute = omrsTypeDefAttrMap.get(omrsPropertyName);
                         if (typeDefAttribute != null) {
-                            Map<String, String> elementMap = attributeTypeDefStore.getElementMappingsForOMRSTypeDef(typeDefAttribute.getAttributeName());
-                            String atlasEnumValue = elementMap.get(omrsEnumValue);
-                            if (atlasEnumValue != null) {
-                                atlasCriterion.setAttributeName(atlasPropertyName);
-                                sbCriterion.append(atlasPropertyName);
-                                if (negateCondition) {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                    sbCriterion.append(" != \"");
+                            Map<String, Set<String>> elementMap = attributeTypeDefStore.getElementMappingsForOMRSTypeDef(typeDefAttribute.getAttributeType().getName());
+                            if (elementMap != null) {
+                                Set<String> atlasEnumValues = elementMap.get(omrsEnumValue);
+                                if (atlasEnumValues != null && !atlasEnumValues.isEmpty()) {
+                                    // build a list of the OR-able sub-conditions
+                                    List<SearchParameters.FilterCriteria> subAtlasCriteria = new ArrayList<>();
+                                    List<String> subCriteria = new ArrayList<>();
+                                    sbCriterion.append("(");
+                                    for (String atlasEnumValue : atlasEnumValues) {
+                                        StringBuilder subCriterion = new StringBuilder();
+                                        SearchParameters.FilterCriteria subAtlasCriterion = new SearchParameters.FilterCriteria();
+                                        subAtlasCriterion.setAttributeName(atlasPropertyName);
+                                        subCriterion.append(atlasPropertyName);
+                                        if (negateCondition) {
+                                            subAtlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                            subCriterion.append(" != \"");
+                                        } else {
+                                            subAtlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                            subCriterion.append(" = \"");
+                                        }
+                                        subAtlasCriterion.setAttributeValue(atlasEnumValue);
+                                        subCriterion.append(atlasEnumValue);
+                                        subCriterion.append("\"");
+                                        subAtlasCriteria.add(subAtlasCriterion);
+                                        subCriteria.add(subCriterion.toString());
+                                    }
+                                    sbCriterion.append(String.join(" OR ", subCriteria));
+                                    sbCriterion.append(")");
+                                    atlasCriterion.setCriterion(subAtlasCriteria);
+                                    atlasCriterion.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                                    if (dslQuery) {
+                                        criteria.add((T) sbCriterion.toString());
+                                    } else {
+                                        criteria.add((T) atlasCriterion);
+                                    }
                                 } else {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                    sbCriterion.append(" = \"");
+                                    log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
                                 }
-                                atlasCriterion.setAttributeValue(atlasEnumValue);
-                                sbCriterion.append(atlasEnumValue);
-                                sbCriterion.append("\"");
-                                if (dslQuery) {
-                                    criteria.add((T) sbCriterion.toString());
-                                } else {
-                                    criteria.add((T) atlasCriterion);
-                                }
-                            } else {
-                                log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
                             }
                         } else {
                             log.warn("Unable to find enum with name: {}", omrsPropertyName);

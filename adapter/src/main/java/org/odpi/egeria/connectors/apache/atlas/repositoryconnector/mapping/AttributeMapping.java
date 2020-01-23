@@ -392,7 +392,7 @@ public abstract class AttributeMapping {
      */
     private static InstanceProperties addEnumPropertyToInstance(InstanceProperties properties,
                                                                 TypeDefAttribute property,
-                                                                Map<String, String> atlasElementValueToOmrsElementValue,
+                                                                Map<String, Set<String>> atlasElementValueToOmrsElementValue,
                                                                 Object propertyValue) {
 
         String propertyName = property.getAttributeName();
@@ -401,10 +401,12 @@ public abstract class AttributeMapping {
 
             String omrsValue = null;
             if (atlasElementValueToOmrsElementValue != null) {
-                for (Map.Entry<String, String> entry : atlasElementValueToOmrsElementValue.entrySet()) {
+                for (Map.Entry<String, Set<String>> entry : atlasElementValueToOmrsElementValue.entrySet()) {
                     String cAtlas = entry.getKey();
                     if (cAtlas.equals(propertyValue)) {
-                        omrsValue = entry.getKey();
+                        Set<String> possibleValues = entry.getValue();
+                        // We will just take the first value we find in the set, since we can only map to one
+                        omrsValue = possibleValues.iterator().next();
                         break;
                     }
                 }
