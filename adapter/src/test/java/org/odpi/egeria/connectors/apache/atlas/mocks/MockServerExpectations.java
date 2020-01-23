@@ -267,6 +267,9 @@ public class MockServerExpectations implements ExpectationInitializer {
                         MatchType.ONLY_MATCHING_FIELDS
                 )))
                 .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_any.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hive_column where hive_column isa Confidentiality orderby __guid asc limit 200"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_complex.json")));
     }
 
     private void setDefaultNoTypeFound(MockServerClient mockServerClient) {

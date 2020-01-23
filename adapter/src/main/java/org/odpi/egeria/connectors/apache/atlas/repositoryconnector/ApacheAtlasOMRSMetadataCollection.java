@@ -31,10 +31,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSMetadataCollection.class);
 
-    private static final String GENERATED_TYPE_PREFIX = "__|";
-    private static final String GENERATED_TYPE_POSTFIX = "|__";
-
-    private final SimpleDateFormat ATLAS_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private final SimpleDateFormat atlasDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeTypeDefStore;
@@ -1083,54 +1080,20 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Return a list of entities whose string based property values match the search criteria.  The
-     * search criteria may include regex style wild cards.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param entityTypeGUID GUID of the type of entity to search for. Null means all types will
-     *                       be searched (could be slow so not recommended).
-     * @param searchCriteria String Java regular expression used to match against any of the String property values
-     *                       within the entities of the supplied type, even if it should be an exact match.
-     *                       (Retrieve all entities of the supplied type if this is either null or an empty string.)
-     * @param fromEntityElement the starting element number of the entities to return.
-     *                                This is used when retrieving elements
-     *                                beyond the first page of results. Zero means start from the first element.
-     * @param limitResultsByStatus By default, entities in all statuses are returned.  However, it is possible
-     *                             to specify a list of statuses (eg ACTIVE) to restrict the results to.  Null means all
-     *                             status values.
-     * @param limitResultsByClassification List of classifications that must be present on all returned entities.
-     * @param asOfTime Must be null (history not implemented for Apache Atlas).
-     * @param sequencingProperty String name of the property that is to be used to sequence the results.
-     *                           Null means do not sequence on a property name (see SequencingOrder).
-     * @param sequencingOrder Enum defining how the results should be ordered.
-     * @param pageSize the maximum number of result entities that can be returned on this request.  Zero means
-     *                 unrestricted return results size.
-     * @return a list of entities matching the supplied criteria; null means no matching entities in the metadata
-     * collection.
-     * @throws InvalidParameterException a parameter is invalid or null.
-     * @throws TypeErrorException the type guid passed on the request is not known by the
-     *                              metadata collection.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                    the metadata collection is stored.
-     * @throws PropertyErrorException the sequencing property specified is not valid for any of the requested types of
-     *                                  entity.
-     * @throws PagingErrorException the paging/sequencing parameters are set up incorrectly.
-     * @throws FunctionNotSupportedException the repository does not support one of the provided parameters.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
-     * @see OMRSRepositoryHelper#getExactMatchRegex(String)
-     * @see OMRSRepositoryHelper#getContainsRegex(String)
+     * {@inheritDoc}
      */
     @Override
-    public  List<EntityDetail> findEntitiesByPropertyValue(String                userId,
-                                                           String                entityTypeGUID,
-                                                           String                searchCriteria,
-                                                           int                   fromEntityElement,
-                                                           List<InstanceStatus>  limitResultsByStatus,
-                                                           List<String>          limitResultsByClassification,
-                                                           Date                  asOfTime,
-                                                           String                sequencingProperty,
-                                                           SequencingOrder       sequencingOrder,
-                                                           int                   pageSize) throws InvalidParameterException,
+    public List<EntityDetail> findEntitiesByPropertyValue(String userId,
+                                                          String entityTypeGUID,
+                                                          String searchCriteria,
+                                                          int fromEntityElement,
+                                                          List<InstanceStatus> limitResultsByStatus,
+                                                          List<String> limitResultsByClassification,
+                                                          Date asOfTime,
+                                                          String sequencingProperty,
+                                                          SequencingOrder sequencingOrder,
+                                                          int pageSize) throws
+            InvalidParameterException,
             TypeErrorException,
             RepositoryErrorException,
             PropertyErrorException,
@@ -1139,7 +1102,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             UserNotAuthorizedException {
 
         final String  methodName = "findEntitiesByPropertyValue";
-
         findEntitiesByPropertyValueParameterValidation(
                 userId,
                 entityTypeGUID,
@@ -1162,35 +1124,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         InstanceProperties matchProperties = null;
 
-        if (searchCriteria == null || searchCriteria.equals("")) {
-            // If the search criteria is empty, we want all entities of the specified type
-            if (sequencingOrder != null || (limitResultsByClassification != null && limitResultsByClassification.size() > 1)) {
-                results = buildAndRunDSLSearch(
-                        methodName,
-                        entityTypeGUID,
-                        limitResultsByClassification,
-                        null,
-                        null,
-                        fromEntityElement,
-                        limitResultsByStatus,
-                        sequencingProperty,
-                        sequencingOrder,
-                        pageSize
-                );
-            } else {
-                results = buildAndRunBasicSearch(
-                        methodName,
-                        entityTypeGUID,
-                        (limitResultsByClassification == null ? null : limitResultsByClassification.get(0)),
-                        null,
-                        null,
-                        null,
-                        fromEntityElement,
-                        limitResultsByStatus,
-                        pageSize
-                );
-            }
-        } else if (repositoryHelper.isContainsRegex(searchCriteria) && sequencingOrder == null && (limitResultsByClassification == null || limitResultsByClassification.size() == 1)) {
+        // Search criteria is not allowed to be empty for this method, so cannot be null or empty string.
+        if (repositoryHelper.isContainsRegex(searchCriteria) && sequencingOrder == null && (limitResultsByClassification == null || limitResultsByClassification.size() == 1)) {
             // If the search criteria is a contains regex, no sorting is required, and limiting by classification is at most
             // one, we can do a full text-based query in Atlas
             results = buildAndRunBasicSearch(
@@ -1296,32 +1231,17 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Returns the Relationship if stored in the metadata collection, otherwise null.
-     *
-     * @param userId unique identifier for requesting user.
-     * @param guid String unique identifier for the relationship.
-     * @return relationship details if the relationship is found in the metadata collection; otherwise return null.
-     * @throws InvalidParameterException the guid is null.
-     * @throws RepositoryErrorException there is a problem communicating with the metadata repository where
-     *                                  the metadata collection is stored.
-     * @throws UserNotAuthorizedException the userId is not permitted to perform this operation.
+     * {@inheritDoc}
      */
     @Override
-    public Relationship  isRelationshipKnown(String     userId,
-                                             String     guid) throws InvalidParameterException,
-            RepositoryErrorException,
-            UserNotAuthorizedException {
+    public Relationship isRelationshipKnown(String userId,
+                                            String guid) throws
+            InvalidParameterException,
+            RepositoryErrorException {
 
-        final String  methodName = "isRelationshipKnown";
+        final String methodName = "isRelationshipKnown";
+        super.getInstanceParameterValidation(userId, guid, methodName);
 
-        /*
-         * Validate parameters
-         */
-        this.getInstanceParameterValidation(userId, guid, methodName);
-
-        /*
-         * Process operation
-         */
         Relationship relationship = null;
         try {
             relationship = getRelationship(userId, guid);
@@ -2306,7 +2226,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                 break;
                             case OM_PRIMITIVE_TYPE_DATE:
                                 Long epoch = (Long) actualValue.getPrimitiveValue();
-                                String formattedDate = ATLAS_DATE_FORMAT.format(new Date(epoch));
+                                String formattedDate = atlasDateFormat.format(new Date(epoch));
                                 atlasCriterion.setAttributeName(atlasPropertyName);
                                 sbCriterion.append(atlasPropertyName);
                                 if (negateCondition) {
