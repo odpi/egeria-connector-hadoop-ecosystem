@@ -15,13 +15,13 @@ import org.slf4j.LoggerFactory;
  */
 public class EntityMappingOMRS2Atlas {
 
-    private static final Logger log = LoggerFactory.getLogger(EntityMappingOMRS2Atlas.class);
+    /*private static final Logger log = LoggerFactory.getLogger(EntityMappingOMRS2Atlas.class);
 
     private ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector;
     private TypeDefStore typeDefStore;
     private AttributeTypeDefStore attributeDefStore;
     private EntityDetail omrsEntity;
-    private String userId;
+    private String userId;*/
 
     /**
      * Mapping itself must be initialized with various objects.

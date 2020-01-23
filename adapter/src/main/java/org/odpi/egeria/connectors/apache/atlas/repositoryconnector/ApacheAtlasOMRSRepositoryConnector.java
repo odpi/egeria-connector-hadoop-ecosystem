@@ -2,32 +2,24 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector;
 
-import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelationship;
-import org.apache.atlas.model.instance.EntityMutationResponse;
-import org.apache.atlas.model.typedef.AtlasRelationshipDef;
-import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSAuditCode;
 import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.frameworks.connectors.properties.EndpointProperties;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollection;
-import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefCategory;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 
 import org.apache.atlas.AtlasClientV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.Response;
 
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
 
@@ -140,7 +132,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param typeDefCategory the type (in OMRS terms) of the TypeDef to retrieve
      * @return AtlasStructDef
      * @throws AtlasServiceException if there is any problem retrieving the type definition
-     */
+
     public AtlasStructDef getTypeDefByName(String name, TypeDefCategory typeDefCategory) throws AtlasServiceException {
 
         AtlasStructDef result = null;
@@ -163,7 +155,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         }
         return result;
 
-    }
+    }*/
 
     /**
      * Retrieves an Apache Atlas Entity instance by its GUID, including all of its relationships.
@@ -171,10 +163,10 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param guid the GUID of the entity instance to retrieve
      * @return AtlasEntityWithExtInfo
      * @throws AtlasServiceException if there is any error retrieving the entity
-     */
+
     public AtlasEntity.AtlasEntityWithExtInfo getEntityByGUID(String guid) throws AtlasServiceException {
         return getEntityByGUID(guid, false, true);
-    }
+    }*/
 
     /**
      * Retrieve an Apache Atlas Entity instance by its GUID.
@@ -257,7 +249,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @param create indicates whether the entity should be created (true) or updated (false)
      * @return EntityMutationResponse listing the details of the entity that was saved
      * @throws AtlasServiceException if there is any error retrieving the relationship
-     */
+
     public EntityMutationResponse saveEntity(AtlasEntity.AtlasEntityWithExtInfo atlasEntity,
                                              boolean create) throws AtlasServiceException {
         EntityMutationResponse result;
@@ -267,7 +259,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             result = atlasClient.updateEntity(atlasEntity);
         }
         return result;
-    }
+    }*/
 
     /**
      * Attempt to connect to the Apache Atlas server specified by the received parameters.
