@@ -92,16 +92,6 @@ public enum ApacheAtlasOMRSErrorCode {
 
 
     /**
-     * Returns the error message with placeholders for specific details.
-     *
-     * @return errorMessage (unformatted)
-     */
-    public String getUnformattedErrorMessage() {
-        return errorMessage;
-    }
-
-
-    /**
      * Returns the error message with the placeholders filled out with the supplied parameters.
      *
      * @param params - strings that plug into the placeholders in the errorMessage

@@ -19,16 +19,6 @@ public class AtlasGuid {
     private String generatedPrefix;
 
     /**
-     * Create a new Apache Atlas GUID that has no generated prefix (for an OMRS instance type that exists in Apache Atlas
-     * and is not generated)
-     *
-     * @param atlasGuid the GUID of the Apache Atlas asset
-     */
-    public AtlasGuid(String atlasGuid) {
-        this(atlasGuid, null);
-    }
-
-    /**
      * Create a new Apache Atlas GUID that has a prefix (for an OMRS instance type that does not actually exist in Apache
      * Atlas, but is generated from another instance type in Atlas)
      *
