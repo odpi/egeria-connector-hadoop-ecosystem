@@ -223,6 +223,9 @@ public class MockServerExpectations implements ExpectationInitializer {
         mockServerClient
                 .when(dslSearchRequest("from hbase_column_family orderby name desc limit 100"))
                 .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_nameDESC.json")));
+        mockServerClient
+                .when(dslSearchRequest("from hive_db where (ownerType = \"GROUP\" OR ownerType = \"ROLE\") or name = \"default\" or __timestamp = \"100000\" orderby __guid asc limit 100"))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_complex.json")));
     }
 
     private void setSearchByPropertyValue(MockServerClient mockServerClient) {

@@ -15,10 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Store of implemented AttributeTypeDefs for the repository.
@@ -33,8 +30,8 @@ public class AttributeTypeDefStore {
     private Map<String, String> omrsNameToGuid;
 
     private Map<String, AttributeTypeDef> unimplementedTypeDefs;
-    private Map<String, Map<String, String>> atlasNameToElementMap;
-    private Map<String, Map<String, String>> omrsNameToElementMap;
+    private Map<String, Map<String, Set<String>>> atlasNameToElementMap;
+    private Map<String, Map<String, Set<String>>> omrsNameToElementMap;
 
     private ObjectMapper mapper;
 
@@ -65,13 +62,19 @@ public class AttributeTypeDefStore {
                 atlasNameToOmrsName.put(atlasName, omrsName);
                 List<MappingFromFile> elements = mapping.getPropertyMappings();
                 if (elements != null) {
-                    Map<String, String> elementMapOmrsToAtlas = new HashMap<>();
-                    Map<String, String> elementMapAtlasToOmrs = new HashMap<>();
+                    Map<String, Set<String>> elementMapOmrsToAtlas = new HashMap<>();
+                    Map<String, Set<String>> elementMapAtlasToOmrs = new HashMap<>();
                     for (MappingFromFile element : elements) {
                         String atlasElement = element.getAtlasName();
                         String omrsElement = element.getOMRSName();
-                        elementMapOmrsToAtlas.put(omrsElement, atlasElement);
-                        elementMapAtlasToOmrs.put(atlasElement, omrsElement);
+                        if (!elementMapOmrsToAtlas.containsKey(omrsElement)) {
+                            elementMapOmrsToAtlas.put(omrsElement, new TreeSet<>());
+                        }
+                        elementMapOmrsToAtlas.get(omrsElement).add(atlasElement);
+                        if (!elementMapAtlasToOmrs.containsKey(atlasElement)) {
+                            elementMapAtlasToOmrs.put(atlasElement, new TreeSet<>());
+                        }
+                        elementMapAtlasToOmrs.get(atlasElement).add(omrsElement);
                     }
                     atlasNameToElementMap.put(atlasName, elementMapAtlasToOmrs);
                     omrsNameToElementMap.put(omrsName, elementMapOmrsToAtlas);
@@ -154,9 +157,9 @@ public class AttributeTypeDefStore {
      * or null if there are no mappings (or no enum elements).
      *
      * @param atlasName the name of the Apache Atlas TypeDef
-     * @return {@code Map<String, String>}
+     * @return {@code Map<String, Set<String>>}
 
-    public Map<String, String> getElementMappingsForAtlasTypeDef(String atlasName) {
+    public Map<String, Set<String>> getElementMappingsForAtlasTypeDef(String atlasName) {
         return atlasNameToElementMap.getOrDefault(atlasName, null);
     }*/
 
@@ -165,9 +168,9 @@ public class AttributeTypeDefStore {
      * if there are no mappings (or no enum elements).
      *
      * @param omrsName the name of the OMRS TypeDef
-     * @return {@code Map<String, String>}
+     * @return {@code Map<String, Set<String>>} keyed by OMRS name to all of the mapped Atlas values
      */
-    public Map<String, String> getElementMappingsForOMRSTypeDef(String omrsName) {
+    public Map<String, Set<String>> getElementMappingsForOMRSTypeDef(String omrsName) {
         return omrsNameToElementMap.getOrDefault(omrsName, null);
     }
 
@@ -214,9 +217,11 @@ public class AttributeTypeDefStore {
         // If it is an enumeration that is not otherwise mapped, save the one-to-one mapping
         if (typeDef.getCategory().equals(AttributeTypeDefCategory.ENUM_DEF) && !omrsNameToElementMap.containsKey(name)) {
             EnumDef enumDef = (EnumDef) typeDef;
-            Map<String, String> elementMap = new HashMap<>();
+            Map<String, Set<String>> elementMap = new HashMap<>();
             for (EnumElementDef elementDef : enumDef.getElementDefs()) {
-                elementMap.put(elementDef.getValue(), elementDef.getValue());
+                Set<String> set = new TreeSet<>();
+                set.add(elementDef.getValue());
+                elementMap.put(elementDef.getValue(), set);
             }
             omrsNameToElementMap.put(name, elementMap);
             atlasNameToElementMap.put(name, elementMap);

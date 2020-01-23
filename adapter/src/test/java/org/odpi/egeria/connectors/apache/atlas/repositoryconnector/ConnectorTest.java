@@ -557,6 +557,8 @@ public class ConnectorTest {
     @Test
     public void testSearchByPropertySorting() {
 
+        final String methodName = "testSearchByPropertySorting";
+
         String typeGUID = "248975ec-8019-4b8a-9caf-084c8b724233";
         String typeName = "TabularSchemaType";
 
@@ -694,6 +696,20 @@ public class ConnectorTest {
                 assertTrue(lastResult.getProperties().getPropertyValue("displayName").valueAsString().compareTo(result.getProperties().getPropertyValue("displayName").valueAsString()) >= 0);
             }
         }
+
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "name", repositoryHelper.getExactMatchRegex("default"), methodName);
+        ip = repositoryHelper.addEnumPropertyToInstance(sourceName, ip, "ownerType", 99, "Other", "Another type of owner identifier, probably not supported by open metadata.", methodName);
+        ip = repositoryHelper.addDatePropertyToInstance(sourceName, ip, "createTime", new Date(100000), methodName);
+        testFindEntitiesByProperty(
+                "0921c83f-b2db-4086-a52c-0d10e52ca078",
+                "Database",
+                ip,
+                MatchCriteria.ANY,
+                MockConstants.EGERIA_PAGESIZE,
+                1,
+                SequencingOrder.GUID,
+                null
+        );
 
     }
 
