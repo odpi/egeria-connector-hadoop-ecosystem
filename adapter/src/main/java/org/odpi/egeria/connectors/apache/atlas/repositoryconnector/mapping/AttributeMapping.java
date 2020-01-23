@@ -449,7 +449,7 @@ public abstract class AttributeMapping {
      * @param v2 second value to compare
      * @return int
      */
-    static int compareInstanceProperty(InstancePropertyValue v1, InstancePropertyValue v2) {
+    public static int compareInstanceProperty(InstancePropertyValue v1, InstancePropertyValue v2) {
 
         int result = 0;
         if (v1 == v2) {
@@ -479,8 +479,6 @@ public abstract class AttributeMapping {
                         result = ((String) pv1.getPrimitiveValue()).compareTo((String) pv2.getPrimitiveValue());
                         break;
                     case OM_PRIMITIVE_TYPE_DATE:
-                        result = ((Date) pv1.getPrimitiveValue()).compareTo((Date) pv2.getPrimitiveValue());
-                        break;
                     case OM_PRIMITIVE_TYPE_LONG:
                         result = ((Long) pv1.getPrimitiveValue()).compareTo((Long) pv2.getPrimitiveValue());
                         break;

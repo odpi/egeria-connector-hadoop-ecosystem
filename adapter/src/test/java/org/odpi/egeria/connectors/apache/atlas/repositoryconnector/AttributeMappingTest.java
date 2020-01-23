@@ -11,8 +11,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class AttributeMappingTest {
 
@@ -20,6 +19,8 @@ public class AttributeMappingTest {
     public void testEquivalentValues() {
 
         testEquivalence(false, true, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_BOOLEAN);
+        testEquivalence((byte)1, (byte)2, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_BYTE);
+        testEquivalence('a', 'b', PrimitiveDefCategory.OM_PRIMITIVE_TYPE_CHAR);
         testEquivalence((short)1, (short)2, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_SHORT);
         testEquivalence(3, 4, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_INT);
         testEquivalence(5L, 6L, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_LONG);
@@ -29,7 +30,7 @@ public class AttributeMappingTest {
         testEquivalence(BigDecimal.valueOf(11.0), BigDecimal.valueOf(11.1), PrimitiveDefCategory.OM_PRIMITIVE_TYPE_BIGDECIMAL);
         long now = new Date().getTime();
         testEquivalence(now, now + 1, PrimitiveDefCategory.OM_PRIMITIVE_TYPE_DATE);
-        testEquivalence("TestString", "OtherString", PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING);
+        testEquivalence("String1", "String2", PrimitiveDefCategory.OM_PRIMITIVE_TYPE_STRING);
 
     }
 
@@ -38,8 +39,20 @@ public class AttributeMappingTest {
         testIPV.setPrimitiveDefCategory(category);
         testIPV.setPrimitiveValue(test);
         assertTrue(AttributeMapping.valuesMatch(testIPV, test));
-        test = otherValue;
-        assertFalse(AttributeMapping.valuesMatch(testIPV, test));
+        assertFalse(AttributeMapping.valuesMatch(testIPV, otherValue));
+        testComparator(test, otherValue, category);
+    }
+
+    private void testComparator(Object first, Object second, PrimitiveDefCategory category) {
+        PrimitivePropertyValue one = new PrimitivePropertyValue();
+        one.setPrimitiveDefCategory(category);
+        one.setPrimitiveValue(first);
+        PrimitivePropertyValue two = new PrimitivePropertyValue();
+        two.setPrimitiveDefCategory(category);
+        two.setPrimitiveValue(second);
+        assertTrue(AttributeMapping.compareInstanceProperty(one, two) < 0);
+        assertTrue(AttributeMapping.compareInstanceProperty(two, one) > 0);
+        assertEquals(AttributeMapping.compareInstanceProperty(one, one), 0);
     }
 
 }
