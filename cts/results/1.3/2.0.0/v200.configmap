@@ -1,0 +1,31 @@
+apiVersion: v1
+data:
+  ATLAS_ENDPOINT: http://v200-apache-atlas-service:8080
+  ATLAS_HOST: atlas
+  ATLAS_KAFKA_ENDPOINT: atlas:9027
+  ATLAS_OPTS: -Dkafka.advertised.hostname=atlas
+  ATLAS_PASS: admin
+  ATLAS_PORT: "21000"
+  ATLAS_SERVER: atlas
+  ATLAS_USER: admin
+  CONNECTOR_URL: https://odpi.jfrog.io/odpi/egeria-staging-local/org/odpi/egeria/egeria-connector-apache-atlas-package/1.3/egeria-connector-apache-atlas-package-1.3-jar-with-dependencies.jar
+  CTS_REPORT_NAME: v200
+  EGERIA_COHORT: coco
+  EGERIA_SERVER: myserver
+  EGERIA_USER: myuser
+  KAFKA_ENDPOINT: v200-kafka:9092
+  LOGGING_LEVEL_ROOT: INFO
+  STRICT_SSL: "false"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2020-01-28T12:24:54Z"
+  labels:
+    app.kubernetes.io/instance: v200
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ec-cts-apacheatlas
+    helm.sh/chart: ec-cts-apacheatlas-0.1
+  name: v200-configmap
+  namespace: default
+  resourceVersion: "7573549"
+  selfLink: /api/v1/namespaces/default/configmaps/v200-configmap
+  uid: 7c33c012-f980-4208-afbd-9d587c18d95b
