@@ -3,7 +3,7 @@
 package org.odpi.egeria.connectors.apache.atlas.mocks;
 
 import org.mockserver.client.MockServerClient;
-import org.mockserver.client.initialize.ExpectationInitializer;
+import org.mockserver.client.initialize.PluginExpectationInitializer;
 import org.mockserver.matchers.MatchType;
 import org.mockserver.matchers.Times;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ import static org.odpi.egeria.connectors.apache.atlas.mocks.MockConstants.*;
 /**
  * Setup a mock server to act as an Apache Atlas REST API endpoint against which we can do some thorough testing.
  */
-public class MockServerExpectations implements ExpectationInitializer {
+public class MockServerExpectations implements PluginExpectationInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(MockServerExpectations.class);
 

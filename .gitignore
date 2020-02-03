@@ -68,11 +68,6 @@ maven-eclipse.xml
 # Mac OS
 __MACOSX
 
-# specific OMAG config files
-omag.server.*.config
-*.registrystore
-*.testlab.results
-
 # other files
 .DS_Store
 *.swp
