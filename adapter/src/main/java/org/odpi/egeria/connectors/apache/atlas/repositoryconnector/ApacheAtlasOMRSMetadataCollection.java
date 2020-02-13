@@ -2140,6 +2140,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param negateCondition if true, negate (invert) the condition / operator
      * @throws FunctionNotSupportedException when a regular expression is used for the search that is not supported
      */
+    @SuppressWarnings("unchecked")
     private <T> void addSearchConditionFromValue(List<T> criteria,
                                                  String omrsPropertyName,
                                                  InstancePropertyValue value,

@@ -108,6 +108,11 @@
         <mock-server.version>5.9.0</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.12</rhino.version>
+        <nimbus.version>8.6</nimbus.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <httpclient.version>4.5.11</httpclient.version>
+        <kafka.version>2.4.0</kafka.version>
+        <zookeeper.version>3.5.6</zookeeper.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.0.0-RC3</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
@@ -212,6 +217,19 @@
                     <exclusion>
                         <groupId>com.fasterxml.jackson.core</groupId>
                         <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                    <!-- Remove unused transitive dependencies due to known vulnerabilities -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.jersey</groupId>
+                        <artifactId>jersey-json</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.avro</groupId>
+                        <artifactId>avro</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -348,6 +366,36 @@
                 <artifactId>rhino</artifactId>
                 <version>${rhino.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_2.11</artifactId>
+                <version>${kafka.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+                <scope>compile</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
