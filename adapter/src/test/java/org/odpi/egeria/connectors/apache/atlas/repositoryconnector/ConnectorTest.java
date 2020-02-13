@@ -6,6 +6,7 @@ import org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSReposi
 import org.odpi.egeria.connectors.apache.atlas.mocks.MockConnection;
 import org.odpi.egeria.connectors.apache.atlas.mocks.MockConstants;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping.AttributeMapping;
+import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.adapters.eventbus.topic.inmemory.InMemoryOpenMetadataTopicConnector;
 import org.odpi.openmetadata.adapters.repositoryservices.ConnectorConfigurationFactory;
 import org.odpi.openmetadata.adminservices.configuration.properties.OpenMetadataExchangeRule;
@@ -256,6 +257,37 @@ public class ConnectorTest {
             }
             contentManager.addTypeDef(atlasRepositoryConnector.getRepositoryName(), typeDef);
         }
+    }
+
+    @Test
+    public void testTypeDefStore() {
+
+        String nonExistentType = "NonExistentName";
+        String classification = "Confidentiality";
+
+        TypeDefStore typeDefStore = atlasMetadataCollection.getTypeDefStore();
+
+        TypeDefStore.EndpointMapping endpointMapping = typeDefStore.getEndpointMappingFromAtlasName(nonExistentType, null);
+        assertNull(endpointMapping);
+
+        Map<String, String> map = typeDefStore.getAllMappedAtlasTypeDefNames(nonExistentType);
+        assertNull(map);
+        map = typeDefStore.getAllMappedAtlasTypeDefNames(classification);
+        assertNotNull(map);
+        assertFalse(map.isEmpty());
+
+        String name = typeDefStore.getMappedOMRSTypeDefName(nonExistentType, null);
+        assertNull(name);
+        name = typeDefStore.getMappedOMRSTypeDefName(classification, null);
+        assertEquals(name, classification);
+
+        map = typeDefStore.getMappedOMRSTypeDefNameWithPrefixes(nonExistentType);
+        assertTrue(map.isEmpty());
+        map = typeDefStore.getMappedOMRSTypeDefNameWithPrefixes(classification);
+        assertFalse(map.isEmpty());
+
+        assertNull(typeDefStore.getAllTypeDefAttributesForName(nonExistentType));
+
     }
 
     @Test
@@ -977,6 +1009,13 @@ public class ConnectorTest {
 
         try {
             Relationship relationship = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, unknownGUID);
+            assertNull(relationship);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            assertNull(e);
+        }
+
+        try {
+            Relationship relationship = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, "HDBCTA!" + unknownGUID);
             assertNull(relationship);
         } catch (InvalidParameterException | RepositoryErrorException e) {
             assertNull(e);
