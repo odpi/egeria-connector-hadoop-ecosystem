@@ -194,6 +194,7 @@ public class EntityMappingAtlas2OMRS {
      * @return {@code List<Relationship>}
      * @throws RepositoryErrorException when unable to retrieve the mapped Relationships
      */
+    @SuppressWarnings("unchecked")
     public List<Relationship> getRelationships(String relationshipTypeGUID,
                                                int fromRelationshipElement,
                                                String sequencingProperty,
@@ -209,8 +210,6 @@ public class EntityMappingAtlas2OMRS {
         // through them all
         Map<String, Object> atlasRelationships = atlasEntity.getRelationshipAttributes();
         for (Map.Entry<String, Object> atlasRelationship : atlasRelationships.entrySet()) {
-
-            String atlasPropertyName = atlasRelationship.getKey();
 
             // TODO: we could avoid iterating through all of the assignments
             //  if we store the mapping between relationship property name and type in the TypeDefStore
