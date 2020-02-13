@@ -626,16 +626,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         final String methodName = "getEntitySummary";
         super.getInstanceParameterValidation(userId, guid, methodName);
 
+        // Guid cannot be null here, as validation above ensures it is non-null
         AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
-        if (atlasGuid == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        } else {
-            String prefix = atlasGuid.getGeneratedPrefix();
-            AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
-            EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
-            return mapping.getEntitySummary();
-        }
-        return null;
+        String prefix = atlasGuid.getGeneratedPrefix();
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
+        return mapping.getEntitySummary();
 
     }
 
@@ -652,16 +648,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         final String methodName = "getEntityDetail";
         super.getInstanceParameterValidation(userId, guid, methodName);
 
+        // Guid cannot be null here, as validation above ensures it is non-null
         AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
-        if (atlasGuid == null) {
-            raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        } else {
-            String prefix = atlasGuid.getGeneratedPrefix();
-            AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
-            EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
-            return mapping.getEntityDetail();
-        }
-        return null;
+        String prefix = atlasGuid.getGeneratedPrefix();
+        AtlasEntity.AtlasEntityWithExtInfo entity = getAtlasEntitySafe(atlasGuid.getAtlasGuid(), methodName);
+        EntityMappingAtlas2OMRS mapping = new EntityMappingAtlas2OMRS(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, entity, prefix, userId);
+        return mapping.getEntityDetail();
 
     }
 
@@ -710,45 +702,41 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             // Otherwise, only bother searching if we are after ACTIVE (or "all") entities -- non-ACTIVE means we
             // will just return an empty list
 
+            // Guid cannot be null here, as validation above ensures it is non-null
             AtlasGuid atlasGuid = AtlasGuid.fromGuid(entityGUID);
-            if (atlasGuid == null) {
+            String prefix = atlasGuid.getGeneratedPrefix();
+
+            // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
+            AtlasEntity.AtlasEntityWithExtInfo asset = null;
+            try {
+                asset = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), false, false);
+            } catch (AtlasServiceException e) {
+                raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, entityGUID, methodName, repositoryName);
+            }
+
+            // Ensure the entity actually exists (if not, throw error to that effect)
+            if (asset == null) {
                 raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, entityGUID, methodName, repositoryName);
             } else {
 
-                String prefix = atlasGuid.getGeneratedPrefix();
+                EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
+                        atlasRepositoryConnector,
+                        typeDefStore,
+                        attributeTypeDefStore,
+                        asset,
+                        prefix,
+                        userId
+                );
 
-                // 1. retrieve entity from Apache Atlas by GUID (including its relationships)
-                AtlasEntity.AtlasEntityWithExtInfo asset = null;
-                try {
-                    asset = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), false, false);
-                } catch (AtlasServiceException e) {
-                    raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, e, entityGUID, methodName, repositoryName);
-                }
+                // 2. Apply the mapping to the object, and retrieve the resulting relationships
+                alRelationships = entityMap.getRelationships(
+                        relationshipTypeGUID,
+                        fromRelationshipElement,
+                        sequencingProperty,
+                        sequencingOrder,
+                        pageSize
+                );
 
-                // Ensure the entity actually exists (if not, throw error to that effect)
-                if (asset == null) {
-                    raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode.ENTITY_NOT_KNOWN, methodName, null, entityGUID, methodName, repositoryName);
-                } else {
-
-                    EntityMappingAtlas2OMRS entityMap = new EntityMappingAtlas2OMRS(
-                            atlasRepositoryConnector,
-                            typeDefStore,
-                            attributeTypeDefStore,
-                            asset,
-                            prefix,
-                            userId
-                    );
-
-                    // 2. Apply the mapping to the object, and retrieve the resulting relationships
-                    alRelationships = entityMap.getRelationships(
-                            relationshipTypeGUID,
-                            fromRelationshipElement,
-                            sequencingProperty,
-                            sequencingOrder,
-                            pageSize
-                    );
-
-                }
             }
 
         }
@@ -1265,44 +1253,41 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         final String methodName = "getRelationship";
         super.getInstanceParameterValidation(userId, guid, methodName);
 
+        // Guid cannot be null here, as validation above ensures it is non-null
         AtlasGuid atlasGuid = AtlasGuid.fromGuid(guid);
-        if (atlasGuid == null) {
-            raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-        } else {
-
-            if (atlasGuid.isGeneratedInstanceGuid()) {
-                // If this is a self-referencing relationship, we need to construct it by retrieving the entity (not
-                // a relationship) from Atlas
-                try {
-                    AtlasEntity.AtlasEntityWithExtInfo entity = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), true, true);
-                    if (entity != null) {
-                        return RelationshipMapping.getSelfReferencingRelationship(
-                                atlasRepositoryConnector,
-                                typeDefStore,
-                                atlasGuid,
-                                entity.getEntity());
-                    } else {
-                        raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
-                    }
-                } catch (AtlasServiceException e) {
-                    raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-                }
-            } else {
-                // Otherwise we should be able to directly retrieve a relationship from Atlas
-                AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
-                try {
-                    relationship = this.atlasRepositoryConnector.getRelationshipByGUID(atlasGuid.getAtlasGuid());
-                } catch (AtlasServiceException e) {
-                    raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
-                }
-                if (relationship == null) {
+        if (atlasGuid.isGeneratedInstanceGuid()) {
+            // If this is a self-referencing relationship, we need to construct it by retrieving the entity (not
+            // a relationship) from Atlas
+            Relationship relationship = null;
+            try {
+                AtlasEntity.AtlasEntityWithExtInfo entity = atlasRepositoryConnector.getEntityByGUID(atlasGuid.getAtlasGuid(), true, true);
+                if (entity != null) {
+                    relationship = RelationshipMapping.getSelfReferencingRelationship(
+                            atlasRepositoryConnector,
+                            typeDefStore,
+                            atlasGuid,
+                            entity.getEntity());
+                } else {
                     raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
                 }
-                RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, atlasGuid, relationship, userId);
-                return mapping.getRelationship();
+            } catch (AtlasServiceException e) {
+                raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
             }
+            return relationship;
+        } else {
+            // Otherwise we should be able to directly retrieve a relationship from Atlas
+            AtlasRelationship.AtlasRelationshipWithExtInfo relationship = null;
+            try {
+                relationship = this.atlasRepositoryConnector.getRelationshipByGUID(atlasGuid.getAtlasGuid());
+            } catch (AtlasServiceException e) {
+                raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, e, guid, methodName, repositoryName);
+            }
+            if (relationship == null) {
+                raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode.RELATIONSHIP_NOT_KNOWN, methodName, null, guid, methodName, repositoryName);
+            }
+            RelationshipMapping mapping = new RelationshipMapping(atlasRepositoryConnector, typeDefStore, attributeTypeDefStore, atlasGuid, relationship, userId);
+            return mapping.getRelationship();
         }
-        return null;
 
     }
 

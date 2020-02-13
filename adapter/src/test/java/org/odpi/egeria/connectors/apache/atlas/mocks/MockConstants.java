@@ -56,7 +56,7 @@ public class MockConstants {
      * @return HttpRequest
      */
     public static HttpRequest typedefsRequest() {
-        return request().withMethod("GET").withPath(EP_TYPES + "typedefs/");
+        return request().withMethod("GET").withPath(EP_TYPES + "typedefs/").withHeader("Authorization", "Basic YWRtaW46YWRtaW4=");
     }
 
     /**
