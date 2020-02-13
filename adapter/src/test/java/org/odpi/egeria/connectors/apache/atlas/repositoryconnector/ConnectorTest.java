@@ -93,6 +93,27 @@ public class ConnectorTest {
                 new OMRSRepositoryContentValidator(contentManager),
                 new OMRSAuditLog(destination, OMRSAuditingComponent.REPOSITORY_EVENT_MANAGER));
 
+        atlasRepositoryConnector = setupConnector(
+                mockConnection,
+                auditLog,
+                contentManager,
+                eventManager,
+                metadataCollectionId
+        );
+        atlasMetadataCollection = startConnector(atlasRepositoryConnector);
+        atlasRepositoryEventMapper = setupAndStartEventMapper(auditLog, eventManager, atlasRepositoryConnector);
+
+        repositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
+        sourceName = atlasRepositoryConnector.getRepositoryName();
+
+    }
+
+    private ApacheAtlasOMRSRepositoryConnector setupConnector(Connection connection,
+                                                              OMRSAuditLog auditLog,
+                                                              OMRSRepositoryContentManager contentMgr,
+                                                              OMRSRepositoryEventManager eventMgr,
+                                                              String mdCollectionId) {
+
         // TODO: setup eventManager with the InMemoryTopicConnector, so that it writes to memory rather than Kafka
         List<Connector> inMemoryConnector = new ArrayList<>();
         inMemoryConnector.add(inMemoryEventConnector);
@@ -101,35 +122,57 @@ public class ConnectorTest {
         OMRSRepositoryEventPublisher publisher = new OMRSRepositoryEventPublisher("Mock EventPublisher",
                 omrsTopicConnector,
                 auditLog.createNewAuditLog(OMRSAuditingComponent.EVENT_PUBLISHER));
-        eventManager.registerRepositoryEventProcessor(publisher);
+        eventMgr.registerRepositoryEventProcessor(publisher);
 
         ConnectorBroker connectorBroker = new ConnectorBroker();
 
+        ApacheAtlasOMRSRepositoryConnector atlasConnector = null;
         try {
-            Object connector = connectorBroker.getConnector(mockConnection);
+            Object connector = connectorBroker.getConnector(connection);
             assertTrue(connector instanceof ApacheAtlasOMRSRepositoryConnector);
-            atlasRepositoryConnector = (ApacheAtlasOMRSRepositoryConnector) connector;
-            atlasRepositoryConnector.setAuditLog(auditLog);
-            atlasRepositoryConnector.setRepositoryHelper(new OMRSRepositoryContentHelper(contentManager));
-            atlasRepositoryConnector.setRepositoryValidator(new OMRSRepositoryContentValidator(contentManager));
-            atlasRepositoryConnector.setMetadataCollectionId(metadataCollectionId);
-            atlasRepositoryConnector.start();
+            atlasConnector = (ApacheAtlasOMRSRepositoryConnector) connector;
+            atlasConnector.setAuditLog(auditLog);
+            atlasConnector.setRepositoryHelper(new OMRSRepositoryContentHelper(contentMgr));
+            atlasConnector.setRepositoryValidator(new OMRSRepositoryContentValidator(contentMgr));
+            atlasConnector.setMetadataCollectionId(mdCollectionId);
         } catch (ConnectionCheckedException | ConnectorCheckedException e) {
             log.error("Unable to get connector via the broker.", e);
             assertNull(e);
         }
+        return atlasConnector;
+
+    }
+
+    private ApacheAtlasOMRSMetadataCollection startConnector(ApacheAtlasOMRSRepositoryConnector atlasConnector) {
 
         try {
-            OMRSMetadataCollection collection = atlasRepositoryConnector.getMetadataCollection();
+            atlasConnector.start();
+        } catch (ConnectorCheckedException e) {
+            log.error("Unable to start connector.", e);
+            assertNull(e);
+        }
+
+        ApacheAtlasOMRSMetadataCollection atlasCollection = null;
+        try {
+            OMRSMetadataCollection collection = atlasConnector.getMetadataCollection();
             assertTrue(collection instanceof ApacheAtlasOMRSMetadataCollection);
-            atlasMetadataCollection = (ApacheAtlasOMRSMetadataCollection) collection;
-            assertEquals(atlasMetadataCollection.getMetadataCollectionId(MockConstants.EGERIA_USER), metadataCollectionId);
+            atlasCollection = (ApacheAtlasOMRSMetadataCollection) collection;
+            assertEquals(atlasCollection.getMetadataCollectionId(MockConstants.EGERIA_USER), atlasConnector.getMetadataCollectionId());
         } catch (RepositoryErrorException e) {
             log.error("Unable to match metadata collection IDs.", e);
             assertNotNull(e);
         }
+        return atlasCollection;
 
+    }
+
+    private ApacheAtlasOMRSRepositoryEventMapper setupAndStartEventMapper(OMRSAuditLog auditLog,
+                                                                          OMRSRepositoryEventManager eventMgr,
+                                                                          ApacheAtlasOMRSRepositoryConnector atlasConnector) {
+
+        ConnectorBroker connectorBroker = new ConnectorBroker();
         ConnectorConfigurationFactory connectorConfigurationFactory = new ConnectorConfigurationFactory();
+        ApacheAtlasOMRSRepositoryEventMapper atlasEventMapper = null;
         try {
             Connection eventMapperConnection = connectorConfigurationFactory.getRepositoryEventMapperConnection(
                     "MockApacheAtlasServer",
@@ -139,20 +182,18 @@ public class ConnectorTest {
             );
             Object connector = connectorBroker.getConnector(eventMapperConnection);
             assertTrue(connector instanceof ApacheAtlasOMRSRepositoryEventMapper);
-            atlasRepositoryEventMapper = (ApacheAtlasOMRSRepositoryEventMapper) connector;
-            atlasRepositoryEventMapper.setAuditLog(auditLog);
-            atlasRepositoryEventMapper.setRepositoryEventProcessor(eventManager);
-            atlasRepositoryEventMapper.initialize("Mock Apache Atlas Event Mapper", atlasRepositoryConnector);
-            atlasRepositoryEventMapper.start();
+            atlasEventMapper = (ApacheAtlasOMRSRepositoryEventMapper) connector;
+            atlasEventMapper.setAuditLog(auditLog);
+            atlasEventMapper.setRepositoryEventProcessor(eventMgr);
+            atlasEventMapper.initialize("Mock Apache Atlas Event Mapper", atlasConnector);
+            atlasEventMapper.start();
         } catch (ConnectorCheckedException e) {
             log.info("As expected, could not fully start due to lack of Kafka.", e);
         } catch (Exception e) {
             log.error("Unexpected exception trying to start event mapper!", e);
             assertNull(e);
         }
-
-        repositoryHelper = atlasRepositoryConnector.getRepositoryHelper();
-        sourceName = atlasRepositoryConnector.getRepositoryName();
+        return atlasEventMapper;
 
     }
 
@@ -215,6 +256,46 @@ public class ConnectorTest {
             }
             contentManager.addTypeDef(atlasRepositoryConnector.getRepositoryName(), typeDef);
         }
+    }
+
+    @Test
+    public void testInvalidConnectors() {
+
+        Connection emptyEndpoint = new MockConnection();
+        emptyEndpoint.setEndpoint(null);
+
+        OMRSAuditLogDestination destination = new OMRSAuditLogDestination(null);
+        OMRSAuditLog auditLog = new OMRSAuditLog(destination, 1, "ConnectorTest2", "Testing of the connector", null);
+        OMRSRepositoryContentManager invalidContent = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
+        OMRSRepositoryEventManager invalidEvent = new OMRSRepositoryEventManager("Mock Outbound EventManager 2",
+                new OMRSRepositoryEventExchangeRule(OpenMetadataExchangeRule.SELECTED_TYPES, Collections.emptyList()),
+                new OMRSRepositoryContentValidator(invalidContent),
+                new OMRSAuditLog(destination, OMRSAuditingComponent.REPOSITORY_EVENT_MANAGER));
+
+        ApacheAtlasOMRSRepositoryConnector noEndpointConnector = setupConnector(
+                emptyEndpoint,
+                auditLog,
+                invalidContent,
+                invalidEvent,
+                otherMetadataCollectionId
+        );
+        assertNotNull(noEndpointConnector);
+        assertThrows(RepositoryErrorException.class, () -> noEndpointConnector.getMetadataCollection());
+
+        Connection invalidCredentials = new MockConnection();
+        invalidCredentials.setUserId("nonexistent");
+        invalidCredentials.setClearPassword("nonexistent");
+
+        ApacheAtlasOMRSRepositoryConnector invalidCredentialConnector = setupConnector(
+                invalidCredentials,
+                auditLog,
+                invalidContent,
+                invalidEvent,
+                otherMetadataCollectionId
+        );
+        assertNotNull(invalidCredentialConnector);
+        assertThrows(RepositoryErrorException.class, () -> invalidCredentialConnector.getMetadataCollection());
+
     }
 
     @Test
@@ -870,6 +951,36 @@ public class ConnectorTest {
         );
 
         confirmSingleConfidentiality(summary.getClassifications());
+
+    }
+
+    @Test
+    public void testUnknownInstances() {
+
+        String unknownGUID = "abc123def";
+        try {
+            EntityDetail detail = atlasMetadataCollection.isEntityKnown(MockConstants.EGERIA_USER, unknownGUID);
+            assertNull(detail);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            assertNull(e);
+        }
+
+        assertThrows(EntityNotKnownException.class, () -> atlasMetadataCollection.getRelationshipsForEntity(MockConstants.EGERIA_USER,
+                unknownGUID,
+                null,
+                0,
+                null,
+                null,
+                null,
+                null,
+                MockConstants.EGERIA_PAGESIZE));
+
+        try {
+            Relationship relationship = atlasMetadataCollection.isRelationshipKnown(MockConstants.EGERIA_USER, unknownGUID);
+            assertNull(relationship);
+        } catch (InvalidParameterException | RepositoryErrorException e) {
+            assertNull(e);
+        }
 
     }
 
