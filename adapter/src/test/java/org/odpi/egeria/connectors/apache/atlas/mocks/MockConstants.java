@@ -158,6 +158,14 @@ public class MockConstants {
     }
 
     /**
+     * Create a mock Atlas basic search request for a default response (no parameters).
+     * @return HttpRequest
+     */
+    public static HttpRequest basicSearchRequest() {
+        return request().withMethod("POST").withPath(EP_SEARCH + "basic");
+    }
+
+    /**
      * Create a mock Atlas basic search request using the provided parameters.
      * @param body the exact-match body of the request
      * @return HttpRequest
@@ -173,6 +181,14 @@ public class MockConstants {
      */
     public static HttpRequest basicSearchRequest(JsonBody body) {
         return request().withMethod("POST").withPath(EP_SEARCH + "basic").withBody(body);
+    }
+
+    /**
+     * Create a mock Atlas DSL search request for a default response (no parameters).
+     * @return HttpRequest
+     */
+    public static HttpRequest dslSearchRequest() {
+        return request().withMethod("GET").withPath(EP_SEARCH + "dsl");
     }
 
     /**
