@@ -179,7 +179,7 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <scope>provided</scope>
-                <version>2.4.0</version>
+                <version>${kafka.version}</version>
             </dependency>
             <!-- TODO: use below instead of more detailed dependencies, once it actually builds as a package
             <dependency>

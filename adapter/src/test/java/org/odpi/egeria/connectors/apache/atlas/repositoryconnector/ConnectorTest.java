@@ -271,7 +271,7 @@ public class ConnectorTest {
         assertNull(endpointMapping);
 
         Map<String, String> map = typeDefStore.getAllMappedAtlasTypeDefNames(nonExistentType);
-        assertNull(map);
+        assertTrue(map.isEmpty());
         map = typeDefStore.getAllMappedAtlasTypeDefNames(classification);
         assertNotNull(map);
         assertFalse(map.isEmpty());
@@ -665,6 +665,27 @@ public class ConnectorTest {
                 2
         );
 
+        ip = new InstanceProperties();
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "qualifiedName", repositoryHelper.getExactMatchRegex("default:atlas_janus@Sandbox"), methodName);
+        testFindEntitiesByProperty(
+                null,
+                "DataSet",
+                ip,
+                MatchCriteria.ALL,
+                5,
+                1
+        );
+
+        ip = repositoryHelper.addStringPropertyToInstance(sourceName, ip, "qualifiedName", repositoryHelper.getExactMatchRegex("default.test_hive_table1@Sandbox"), methodName);
+        testFindEntitiesByProperty(
+                null,
+                "RelationalTable",
+                ip,
+                MatchCriteria.ALL,
+                5,
+                1
+        );
+
     }
 
     @Test
@@ -843,13 +864,13 @@ public class ConnectorTest {
                 10);
 
         // TODO: Same search again, by supertype
-        /*testFindEntitiesByPropertyValue(
+        testFindEntitiesByPropertyValue(
                 "786a6199-0ce8-47bf-b006-9ace1c5510e4",
                 possibleTypes,
                 null,
                 repositoryHelper.getExactMatchRegex("atlas"),
                 MockConstants.EGERIA_PAGESIZE,
-                10);*/
+                10);
 
         // Test different basic regex matching
         testFindEntitiesByPropertyValue(

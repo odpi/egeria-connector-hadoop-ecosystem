@@ -141,6 +141,7 @@ public class MockServerExpectations implements PluginExpectationInitializer {
         setDefaultNoTypeFound(mockServerClient);
         setDefaultNoEntityFound(mockServerClient);
         setDefaultNoRelationshipFound(mockServerClient);
+        setDefaultSearchResponseToNoResults(mockServerClient);
     }
 
     private void setTypesQuery(MockServerClient mockServerClient) {
@@ -198,6 +199,22 @@ public class MockServerExpectations implements PluginExpectationInitializer {
                                 MatchType.ONLY_MATCHING_FIELDS
                         )))
                 .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_all.json")));
+        mockServerClient
+                .when(basicSearchRequest(
+                        json(
+                                "{\"typeName\":\"Referenceable\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"attributeName\":\"qualifiedName\",\"operator\":\"=\",\"attributeValue\":\"default:atlas_janus@Sandbox\"}}",
+                                MatchType.ONLY_MATCHING_FIELDS
+                        )
+                ))
+                .respond(withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_hbase_table.json")));
+        mockServerClient
+                .when(basicSearchRequest(
+                        json(
+                                "{\"typeName\":\"Referenceable\",\"excludeDeletedEntities\":false,\"includeClassificationAttributes\":true,\"entityFilters\":{\"attributeName\":\"qualifiedName\",\"operator\":\"=\",\"attributeValue\":\"default.test_hive_table1@Sandbox\"}}",
+                                MatchType.ONLY_MATCHING_FIELDS
+                        )
+                ))
+                .respond((withResponse(getResourceFileContents("by_case" + File.separator + caseName + File.separator + "results_hive_table.json"))));
     }
 
     private void setSearchByPropertySorting(MockServerClient mockServerClient) {
@@ -291,6 +308,15 @@ public class MockServerExpectations implements PluginExpectationInitializer {
         mockServerClient
                 .when(relationshipRequest())
                 .respond(withResponse("{\"errorCode\":\"ATLAS-404-00-00C\",\"errorMessage\":\"Given relationship guid 123 is invalid/not found\"}").withStatusCode(404));
+    }
+
+    private void setDefaultSearchResponseToNoResults(MockServerClient mockServerClient) {
+        mockServerClient
+                .when(MockConstants.basicSearchRequest())
+                .respond(withResponse(getResourceFileContents("no_results.json")));
+        mockServerClient
+                .when(MockConstants.dslSearchRequest())
+                .respond(withResponse(getResourceFileContents("no_results.json")));
     }
 
     /**

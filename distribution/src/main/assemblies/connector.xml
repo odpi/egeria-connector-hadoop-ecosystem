@@ -31,7 +31,6 @@
                 <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
                 <include>com.sun.jersey:jersey-client</include>
                 <include>com.sun.jersey:jersey-core</include>
-                <include>com.sun.jersey:jersey-json</include>
                 <include>com.sun.jersey.contribs:jersey-multipart</include>
                 <include>javax.ws.rs:jsr311-api</include>
             </includes>

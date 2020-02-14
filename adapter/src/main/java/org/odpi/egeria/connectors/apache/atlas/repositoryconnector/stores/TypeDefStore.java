@@ -269,7 +269,7 @@ public class TypeDefStore {
             map.put(null, omrsName);
             return map;
         } else {
-            return null;
+            return Collections.emptyMap();
         }
     }
 
