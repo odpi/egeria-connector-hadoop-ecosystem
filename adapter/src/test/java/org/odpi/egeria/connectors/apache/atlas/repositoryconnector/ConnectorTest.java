@@ -176,7 +176,6 @@ public class ConnectorTest {
         ApacheAtlasOMRSRepositoryEventMapper atlasEventMapper = null;
         try {
             Connection eventMapperConnection = connectorConfigurationFactory.getRepositoryEventMapperConnection(
-                    "MockApacheAtlasServer",
                     "org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider",
                     null,
                     "localhost:1080"
