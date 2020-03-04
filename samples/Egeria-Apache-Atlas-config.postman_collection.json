@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "78bb3df9-b4fa-4568-8eb9-5555610a284c",
+		"_postman_id": "820baea1-f851-410b-9559-c406e23777b8",
 		"name": "Egeria-Apache-Atlas-config",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -424,5 +424,6 @@
 			},
 			"response": []
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
