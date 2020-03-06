@@ -90,7 +90,7 @@
         <!-- Versions of dependent libraries -->
         <apacheatlas.version>2.0.0</apacheatlas.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <jackson.version>2.10.2</jackson.version>
+        <jackson.version>2.10.3</jackson.version>
         <spring.version>5.2.2.RELEASE</spring.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
@@ -103,12 +103,11 @@
         <junit.jupiter.version>5.6.0</junit.jupiter.version>
         <junit.version>4.12</junit.version>
         <surefire.plugin.version>3.0.0-M4</surefire.plugin.version>
-        <mockito.version>3.3.0</mockito.version>
         <testng.version>7.1.1</testng.version>
         <mock-server.version>5.9.0</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.12</rhino.version>
-        <nimbus.version>8.8</nimbus.version>
+        <nimbus.version>8.9</nimbus.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpclient.version>4.5.11</httpclient.version>
         <kafka.version>2.4.0</kafka.version>
@@ -494,11 +493,6 @@
                             <artifactId>junit-jupiter-api</artifactId>
                             <version>${junit.jupiter.version}</version>
                         </dependency>
-                        <dependency>
-                            <groupId>org.mockito</groupId>
-                            <artifactId>mockito-inline</artifactId>
-                            <version>${mockito.version}</version>
-                        </dependency>
                     </dependencies>
                 </plugin>
                 <plugin>
@@ -683,7 +677,6 @@
                             <ignoredUnusedDeclaredDependencies>
                                 <!-- Test dependencies - should only be used in test scope. False positive from dependency check -->
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:*</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.mockito:*</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.testng:*</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>junit:*</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.junit.platform:*</ignoredUnusedDeclaredDependency>
