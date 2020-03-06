@@ -64,28 +64,14 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
         super.start();
         final String methodName = "start";
 
-        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTING;
-        auditLog.logRecord(methodName,
-                auditCode.getLogMessageId(),
-                auditCode.getSeverity(),
-                auditCode.getFormattedLogMessage(),
-                null,
-                auditCode.getSystemAction(),
-                auditCode.getUserAction());
+        auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTING.getMessageDefinition());
 
         if (metadataCollection == null) {
             // If the metadata collection has not yet been created, attempt to create it now
             connectToAtlas(methodName);
         }
 
-        auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTED;
-        auditLog.logRecord(methodName,
-                auditCode.getLogMessageId(),
-                auditCode.getSeverity(),
-                auditCode.getFormattedLogMessage(getServerName()),
-                null,
-                auditCode.getSystemAction(),
-                auditCode.getUserAction());
+        auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_STARTED.getMessageDefinition(getServerName()));
 
     }
 
@@ -94,16 +80,8 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      */
     @Override
     public void disconnect() {
-
-        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_SHUTDOWN;
-        auditLog.logRecord("disconnect",
-                auditCode.getLogMessageId(),
-                auditCode.getSeverity(),
-                auditCode.getFormattedLogMessage(getServerName()),
-                null,
-                auditCode.getSystemAction(),
-                auditCode.getUserAction());
-
+        final String methodName = "disconnect";
+        auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.REPOSITORY_SERVICE_SHUTDOWN.getMessageDefinition(getServerName()));
     }
 
     /**
@@ -276,14 +254,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
 
             this.url = endpointProperties.getProtocol() + "://" + endpointProperties.getAddress();
 
-            ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.CONNECTING_TO_ATLAS;
-            auditLog.logRecord(methodName,
-                    auditCode.getLogMessageId(),
-                    auditCode.getSeverity(),
-                    auditCode.getFormattedLogMessage(getBaseURL()),
-                    null,
-                    auditCode.getSystemAction(),
-                    auditCode.getUserAction());
+            auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.CONNECTING_TO_ATLAS.getMessageDefinition(getBaseURL()));
 
             String username = connectionProperties.getUserId();
             String password = connectionProperties.getClearPassword();
@@ -303,14 +274,7 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
                 raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, null, getBaseURL());
             } else {
 
-                auditCode = ApacheAtlasOMRSAuditCode.CONNECTED_TO_ATLAS;
-                auditLog.logRecord(methodName,
-                        auditCode.getLogMessageId(),
-                        auditCode.getSeverity(),
-                        auditCode.getFormattedLogMessage(getBaseURL()),
-                        null,
-                        auditCode.getSystemAction(),
-                        auditCode.getUserAction());
+                auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.CONNECTED_TO_ATLAS.getMessageDefinition(getBaseURL()));
 
                 metadataCollection = new ApacheAtlasOMRSMetadataCollection(this,
                         serverName,

@@ -75,14 +75,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
 
         final String methodName = "start";
 
-        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.EVENT_MAPPER_STARTING;
-        auditLog.logRecord(methodName,
-                auditCode.getLogMessageId(),
-                auditCode.getSeverity(),
-                auditCode.getFormattedLogMessage(),
-                null,
-                auditCode.getSystemAction(),
-                auditCode.getUserAction());
+        auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.EVENT_MAPPER_STARTING.getMessageDefinition());
 
         if ( !(repositoryConnector instanceof ApacheAtlasOMRSRepositoryConnector) ) {
             raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.EVENT_MAPPER_IMPROPERLY_INITIALIZED, methodName, null, repositoryConnector.getServerName());
@@ -138,17 +131,12 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
         @Override
         public void run() {
 
+            final String methodName = "run";
+
             running.set(true);
             try (final Consumer<Long, String> consumer = new KafkaConsumer<>(atlasKafkaProperties)) {
                 consumer.subscribe(Collections.singletonList(atlasKafkaTopic));
-                ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.EVENT_MAPPER_RUNNING;
-                auditLog.logRecord("run",
-                        auditCode.getLogMessageId(),
-                        auditCode.getSeverity(),
-                        auditCode.getFormattedLogMessage(atlasRepositoryConnector.getServerName()),
-                        null,
-                        auditCode.getSystemAction(),
-                        auditCode.getUserAction());
+                auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.EVENT_MAPPER_RUNNING.getMessageDefinition(atlasRepositoryConnector.getServerName()));
                 while (running.get()) {
                     try {
                         ConsumerRecords<Long, String> events = consumer.poll(pollDuration);
@@ -156,15 +144,7 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
                             processEvent(event.value());
                         }
                     } catch (Exception e) {
-                        auditCode = ApacheAtlasOMRSAuditCode.EVENT_MAPPER_CONSUMER_FAILURE;
-                        auditLog.logException("consumer failure",
-                                auditCode.getLogMessageId(),
-                                auditCode.getSeverity(),
-                                auditCode.getFormattedLogMessage(),
-                                null,
-                                auditCode.getSystemAction(),
-                                auditCode.getUserAction(),
-                                e);
+                        auditLog.logException(methodName, ApacheAtlasOMRSAuditCode.EVENT_MAPPER_CONSUMER_FAILURE.getMessageDefinition(), e);
                     }
                 }
             }
@@ -425,15 +405,9 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
     @Override
     public void disconnect() throws ConnectorCheckedException {
         super.disconnect();
+        final String methodName = "disconnect";
         kafkaConsumer.stop();
-        ApacheAtlasOMRSAuditCode auditCode = ApacheAtlasOMRSAuditCode.EVENT_MAPPER_SHUTDOWN;
-        auditLog.logRecord("disconnect",
-                auditCode.getLogMessageId(),
-                auditCode.getSeverity(),
-                auditCode.getFormattedLogMessage(atlasRepositoryConnector.getServerName()),
-                null,
-                auditCode.getSystemAction(),
-                auditCode.getUserAction());
+        auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.EVENT_MAPPER_SHUTDOWN.getMessageDefinition(atlasRepositoryConnector.getServerName()));
     }
 
     /**
