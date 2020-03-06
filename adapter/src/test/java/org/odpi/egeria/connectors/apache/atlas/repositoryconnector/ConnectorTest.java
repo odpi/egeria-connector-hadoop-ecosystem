@@ -22,6 +22,7 @@ import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditingComponent;
 import org.odpi.openmetadata.repositoryservices.connectors.omrstopic.OMRSTopicConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.properties.OpenMetadataArchive;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.archivestore.properties.OpenMetadataArchiveTypeStore;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.auditlogstore.OMRSAuditLogStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.OMRSMetadataCollection;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.MatchCriteria;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.SequencingOrder;
@@ -86,7 +87,21 @@ public class ConnectorTest {
     public void startConnector() {
 
         Connection mockConnection = new MockConnection();
-        OMRSAuditLogDestination destination = new OMRSAuditLogDestination(null);
+        ConnectorConfigurationFactory connectorConfigurationFactory = new ConnectorConfigurationFactory();
+        ConnectorBroker connectorBroker = new ConnectorBroker();
+
+        Connector auditLogConnector = null;
+        try {
+            auditLogConnector = connectorBroker.getConnector(connectorConfigurationFactory.getDefaultAuditLogConnection());
+            auditLogConnector.start();
+        } catch (ConnectionCheckedException | ConnectorCheckedException e) {
+            log.error("Unable to get or start audit log via the broker.", e);
+            assertNull(e);
+        }
+        List<OMRSAuditLogStore> auditLogDestinations = new ArrayList<>();
+        auditLogDestinations.add((OMRSAuditLogStore)auditLogConnector);
+        OMRSAuditLogDestination destination = new OMRSAuditLogDestination("TestServer", "Test", "ODPi", auditLogDestinations);
+
         OMRSAuditLog auditLog = new OMRSAuditLog(destination, -1, "ConnectorTest", "Testing of the connector", null);
         contentManager = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
         eventManager = new OMRSRepositoryEventManager("Mock Outbound EventManager",
@@ -295,7 +310,21 @@ public class ConnectorTest {
         Connection emptyEndpoint = new MockConnection();
         emptyEndpoint.setEndpoint(null);
 
-        OMRSAuditLogDestination destination = new OMRSAuditLogDestination(null);
+        ConnectorConfigurationFactory connectorConfigurationFactory = new ConnectorConfigurationFactory();
+        ConnectorBroker connectorBroker = new ConnectorBroker();
+
+        Connector auditLogConnector = null;
+        try {
+            auditLogConnector = connectorBroker.getConnector(connectorConfigurationFactory.getDefaultAuditLogConnection());
+            auditLogConnector.start();
+        } catch (ConnectionCheckedException | ConnectorCheckedException e) {
+            log.error("Unable to get or start audit log via the broker.", e);
+            assertNull(e);
+        }
+        List<OMRSAuditLogStore> auditLogDestinations = new ArrayList<>();
+        auditLogDestinations.add((OMRSAuditLogStore)auditLogConnector);
+        OMRSAuditLogDestination destination = new OMRSAuditLogDestination("TestServer", "Test", "ODPi", auditLogDestinations);
+
         OMRSAuditLog auditLog = new OMRSAuditLog(destination, 1, "ConnectorTest2", "Testing of the connector", null);
         OMRSRepositoryContentManager invalidContent = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
         OMRSRepositoryEventManager invalidEvent = new OMRSRepositoryEventManager("Mock Outbound EventManager 2",

@@ -189,6 +189,12 @@
             </dependency> -->
             <dependency>
                 <groupId>org.odpi.egeria</groupId>
+                <artifactId>audit-log-framework</artifactId>
+                <scope>provided</scope>
+                <version>${open-metadata.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.odpi.egeria</groupId>
                 <artifactId>repository-services-apis</artifactId>
                 <scope>provided</scope>
                 <version>${open-metadata.version}</version>
