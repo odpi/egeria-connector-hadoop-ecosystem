@@ -28,12 +28,25 @@ you will find the following details:
     - `cohort.coco.cts.local` - the local CTS Workbench cohort registration
     - `cohort.coco.cts.remote` - the cohort members considered remote from the CTS Workbench's perspective
 
+## Egeria 1.5
+
+| Apache Atlas version | Conformant profile(s) | Notes |
+| :--- | :--- | :--- |
+| [v2.0.0](results/1.5/2.0.0) | None | (see known issues) |
+
 ## Egeria 1.3
 
 | Apache Atlas version | Conformant profile(s) | Notes |
 | :--- | :--- | :--- |
-|  |  |
+| [v2.0.0](results/1.3/2.0.0) | None | (see known issues) |
 
+## Known issues
+
+The following issues are known that prevent the Apache Atlas connector from conforming to the mandatory profile of the
+Conformance Test Suite (CTS):
+
+- It is currently not possible to search for the empty string (tracked under issue [#66](https://github.com/odpi/egeria-connector-apache-atlas/issues/66) / [JIRA-ATLAS-3573](https://issues.apache.org/jira/browse/ATLAS-3573))
+- Certain strings are problematic for search, particularly contains searches (tracked under issue [#67](https://github.com/odpi/egeria-connector-apache-atlas/issues/67) / [JIRA-ATLAS-3574](https://issues.apache.org/jira/browse/ATLAS-3574))
 
 ----
 License: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/),
