@@ -295,16 +295,16 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @throws ConnectorCheckedException always
      */
     private void raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws ConnectorCheckedException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new ConnectorCheckedException(
-                errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause
-        );
+        if (cause == null) {
+            throw new ConnectorCheckedException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new ConnectorCheckedException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -316,14 +316,16 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      * @throws RepositoryErrorException always
      */
     private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
 }

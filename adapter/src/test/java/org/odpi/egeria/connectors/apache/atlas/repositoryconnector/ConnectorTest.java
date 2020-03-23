@@ -231,7 +231,7 @@ public class ConnectorTest {
             } catch (TypeDefNotSupportedException e) {
                 log.debug("AttributeTypeDef is not supported -- skipping: {}", attributeTypeDef.getName());
             } catch (RepositoryErrorException e) {
-                if (e.getErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
+                if (e.getReportedErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
                     log.debug("AttributeTypeDef is supported: {}", attributeTypeDef.getName());
                     supported = true;
                 }
@@ -255,7 +255,7 @@ public class ConnectorTest {
             } catch (TypeDefNotSupportedException e) {
                 log.debug("TypeDef is not supported -- skipping: {}", typeDef.getName());
             } catch (RepositoryErrorException e) {
-                if (e.getErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
+                if (e.getReportedErrorMessage().startsWith("OMRS-ATLAS-REPOSITORY-400-001")) {
                     log.debug("TypeDef is supported: {}", typeDef.getName());
                     supported = true;
                 }

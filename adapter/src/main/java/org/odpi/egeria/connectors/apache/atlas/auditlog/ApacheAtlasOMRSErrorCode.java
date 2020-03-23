@@ -2,10 +2,27 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.egeria.connectors.apache.atlas.auditlog;
 
-import java.text.MessageFormat;
+import org.odpi.openmetadata.frameworks.auditlog.messagesets.ExceptionMessageDefinition;
+import org.odpi.openmetadata.frameworks.auditlog.messagesets.ExceptionMessageSet;
 
-public enum ApacheAtlasOMRSErrorCode {
+public enum ApacheAtlasOMRSErrorCode implements ExceptionMessageSet {
 
+    INVALID_CLASSIFICATION_FOR_ENTITY(400, "OMRS-ATLAS-REPOSITORY-400-006",
+            "Apache Atlas repository is unable to assign a classification of type {0} to an entity of type {1} because the classification type is not valid for this type of entity",
+            "The system is unable to classify an entity because the ClassificationDef for the classification does not list this entity type, or one of its super-types.",
+            "Update the ClassificationDef to include the entity's type and rerun the request. Alternatively use a different classification."),
+    INVALID_RELATIONSHIP_ENDS(400, "OMRS-ATLAS-REPOSITORY-400-047",
+            "A {0} request has been made to repository {1} for a relationship that has one or more ends of the wrong or invalid type.  Relationship type is {2}; entity proxy for end 1 is {3} and entity proxy for end 2 is {4}",
+            "The system is unable to perform the request because the instance has invalid values.",
+            "Correct the caller's code and retry the request."),
+    INVALID_INSTANCE(400, "OMRS-ATLAS-REPOSITORY-400-061",
+            "An invalid instance has been detected by repository helper method {0}.  The instance is {1}",
+            "The system is unable to work with the supplied instance because key values are missing from its contents.",
+            "This is probably a logic error in the connector. Raise a git issue to get this investigated and fixed."),
+    HOME_REFRESH(400, "OMRS-ATLAS-REPOSITORY-400-063",
+            "Method {0} is unable to request a refresh of instance {1} as it is a local member of metadata collection {2} in repository {3}",
+            "The system is unable to process the request.",
+            "Review the error message and other diagnostics created at the same time."),
     REST_CLIENT_FAILURE(500, "OMRS-ATLAS-REPOSITORY-500-001 ",
             "The Apache Atlas REST API was not successfully initialized to \"{0}\"",
             "The system was unable to login to or access the Apache Atlas environment via REST API.",
@@ -47,11 +64,7 @@ public enum ApacheAtlasOMRSErrorCode {
 
     ;
 
-    private int    httpErrorCode;
-    private String errorMessageId;
-    private String errorMessage;
-    private String systemAction;
-    private String userAction;
+    private ExceptionMessageDefinition messageDefinition;
 
     /**
      * The constructor for LocalAtlasOMRSErrorCode expects to be passed one of the enumeration rows defined in
@@ -68,59 +81,46 @@ public enum ApacheAtlasOMRSErrorCode {
      * @param newUserAction - instructions for resolving the error
      */
     ApacheAtlasOMRSErrorCode(int newHTTPErrorCode, String newErrorMessageId, String newErrorMessage, String newSystemAction, String newUserAction) {
-        this.httpErrorCode  = newHTTPErrorCode;
-        this.errorMessageId = newErrorMessageId;
-        this.errorMessage   = newErrorMessage;
-        this.systemAction   = newSystemAction;
-        this.userAction     = newUserAction;
+        this.messageDefinition = new ExceptionMessageDefinition(newHTTPErrorCode,
+                newErrorMessageId,
+                newErrorMessage,
+                newSystemAction,
+                newUserAction);
     }
 
-
-    public int getHTTPErrorCode() {
-        return httpErrorCode;
+    /**
+     * Retrieve a message definition object for an exception.  This method is used when there are no message inserts.
+     *
+     * @return message definition object.
+     */
+    @Override
+    public ExceptionMessageDefinition getMessageDefinition() {
+        return messageDefinition;
     }
 
 
     /**
-     * Returns the unique identifier for the error message.
+     * Retrieve a message definition object for an exception.  This method is used when there are values to be inserted into the message.
      *
-     * @return errorMessageId
+     * @param params array of parameters (all strings).  They are inserted into the message according to the numbering in the message text.
+     * @return message definition object.
      */
-    public String getErrorMessageId() {
-        return errorMessageId;
+    @Override
+    public ExceptionMessageDefinition getMessageDefinition(String... params) {
+        messageDefinition.setMessageParameters(params);
+        return messageDefinition;
     }
 
-
     /**
-     * Returns the error message with the placeholders filled out with the supplied parameters.
+     * toString() JSON-style
      *
-     * @param params - strings that plug into the placeholders in the errorMessage
-     * @return errorMessage (formatted with supplied parameters)
+     * @return string description
      */
-    public String getFormattedErrorMessage(String... params) {
-        MessageFormat mf = new MessageFormat(errorMessage);
-        return mf.format(params);
-    }
-
-
-    /**
-     * Returns a description of the action taken by the system when the condition that caused this exception was
-     * detected.
-     *
-     * @return systemAction
-     */
-    public String getSystemAction() {
-        return systemAction;
-    }
-
-
-    /**
-     * Returns instructions of how to resolve the issue reported in this exception.
-     *
-     * @return userAction
-     */
-    public String getUserAction() {
-        return userAction;
+    @Override
+    public String toString() {
+        return "ApacheAtlasOMRSErrorCode{" +
+                "messageDefinition=" + messageDefinition +
+                '}';
     }
 
 }

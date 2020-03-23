@@ -1451,17 +1451,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         EntityDetail entity = this.isEntityKnown(userId, entityGUID);
         if (entity != null) {
             if (metadataCollectionId.equals(entity.getMetadataCollectionId())) {
-                OMRSErrorCode errorCode = OMRSErrorCode.HOME_REFRESH;
-                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                        entityGUID,
-                        metadataCollectionId,
-                        repositoryName);
-                throw new HomeEntityException(errorCode.getHTTPErrorCode(),
+                throw new HomeEntityException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, entityGUID, metadataCollectionId, repositoryName),
                         this.getClass().getName(),
-                        methodName,
-                        errorMessage,
-                        errorCode.getSystemAction(),
-                        errorCode.getUserAction());
+                        methodName);
             }
         }
 
@@ -1511,18 +1503,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         Relationship relationship = this.isRelationshipKnown(userId, relationshipGUID);
         if (relationship != null) {
             if (metadataCollectionId.equals(relationship.getMetadataCollectionId())) {
-                OMRSErrorCode errorCode = OMRSErrorCode.HOME_REFRESH;
-                String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                        relationshipGUID,
-                        metadataCollectionId,
-                        repositoryName);
-
-                throw new HomeRelationshipException(errorCode.getHTTPErrorCode(),
+                throw new HomeRelationshipException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, relationshipGUID, metadataCollectionId, repositoryName),
                         this.getClass().getName(),
-                        methodName,
-                        errorMessage,
-                        errorCode.getSystemAction(),
-                        errorCode.getUserAction());
+                        methodName);
             }
         }
 
@@ -1631,14 +1614,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      */
     private void checkEventMapperIsConfigured(String methodName) throws RepositoryErrorException {
         if (eventMapper == null) {
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.EVENT_MAPPER_NOT_INITIALIZED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(repositoryName);
-            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+            throw new RepositoryErrorException(ApacheAtlasOMRSErrorCode.EVENT_MAPPER_NOT_INITIALIZED.getMessageDefinition(repositoryName),
                     this.getClass().getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+                    methodName);
         }
     }
 
@@ -2558,14 +2536,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws EntityNotKnownException always
      */
     private void raiseEntityNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws EntityNotKnownException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new EntityNotKnownException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new EntityNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new EntityNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -2577,14 +2557,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws RelationshipNotKnownException always
      */
     private void raiseRelationshipNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RelationshipNotKnownException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new RelationshipNotKnownException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new RelationshipNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new RelationshipNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -2596,14 +2578,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws RepositoryErrorException always
      */
     private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -2615,14 +2599,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws TypeDefNotKnownException always
      */
     private void raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotKnownException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new TypeDefNotKnownException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new TypeDefNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new TypeDefNotKnownException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -2634,14 +2620,16 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws TypeDefNotSupportedException always
      */
     private void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
     /**
@@ -2652,13 +2640,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @throws FunctionNotSupportedException always
      */
     private void raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, String ...params) throws FunctionNotSupportedException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new FunctionNotSupportedException(errorCode.getHTTPErrorCode(),
+        throw new FunctionNotSupportedException(errorCode.getMessageDefinition(params),
                 this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction());
+                methodName);
     }
 
 }

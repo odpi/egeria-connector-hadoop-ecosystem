@@ -103,14 +103,16 @@ public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
      * @throws TypeDefNotSupportedException always
      */
     private static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
-                ClassificationDefMapping.class.getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    ClassificationDefMapping.class.getName(),
+                    methodName);
+        } else {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    ClassificationDefMapping.class.getName(),
+                    methodName,
+                    cause);
+        }
     }
 
 }

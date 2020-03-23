@@ -14,7 +14,6 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollec
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
-import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeErrorException;
 import org.slf4j.Logger;
@@ -491,17 +490,7 @@ public class EntityMappingAtlas2OMRS {
                         classification.setVersion(omrsObj.getUpdateTime().getTime());
                         classifications.add(classification);
                     } catch (TypeErrorException e) {
-                        log.error("Unable to create a new classification.", e);
-                        OMRSErrorCode errorCode = OMRSErrorCode.INVALID_CLASSIFICATION_FOR_ENTITY;
-                        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(
-                                atlasClassificationName,
-                                omrsTypeDefName);
-                        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                                EntityMappingAtlas2OMRS.class.getName(),
-                                methodName,
-                                errorMessage,
-                                errorCode.getSystemAction(),
-                                errorCode.getUserAction());
+                        raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_CLASSIFICATION_FOR_ENTITY, methodName, e, atlasClassificationName, omrsTypeDefName);
                     }
                 } else {
                     log.warn("Classification {} unknown to repository -- skipping.", atlasClassificationName);
@@ -523,14 +512,16 @@ public class EntityMappingAtlas2OMRS {
      * @throws RepositoryErrorException always
      */
     private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
-                methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
-                cause);
+        if (cause == null) {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName);
+        } else {
+            throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                    this.getClass().getName(),
+                    methodName,
+                    cause);
+        }
     }
 
 }

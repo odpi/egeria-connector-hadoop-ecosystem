@@ -10,7 +10,6 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumElementDef;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.EnumDef;
-import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeDefNotSupportedException;
 
 import java.util.ArrayList;
@@ -74,14 +73,9 @@ public abstract class EnumDefMapping {
             attributeDefStore.addTypeDef(omrsEnumDef);
         } catch (AtlasServiceException e) {
             attributeDefStore.addUnimplementedTypeDef(omrsEnumDef);
-            ApacheAtlasOMRSErrorCode errorCode = ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(omrsTypeDefName, atlasRepositoryConnector.getServerName());
-            throw new TypeDefNotSupportedException(errorCode.getHTTPErrorCode(),
+            throw new TypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED.getMessageDefinition(omrsTypeDefName, atlasRepositoryConnector.getServerName()),
                     EnumDefMapping.class.getName(),
                     methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction(),
                     e);
         }
 

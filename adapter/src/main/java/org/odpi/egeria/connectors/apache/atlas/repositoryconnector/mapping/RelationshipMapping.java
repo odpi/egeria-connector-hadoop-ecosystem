@@ -15,7 +15,6 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollec
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefAttribute;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
-import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeErrorException;
 import org.slf4j.Logger;
@@ -309,18 +308,9 @@ public class RelationshipMapping {
             omrsRelationship.setEntityOneProxy(ep1);
             omrsRelationship.setEntityTwoProxy(ep2);
         } else {
-            OMRSErrorCode errorCode = OMRSErrorCode.INVALID_RELATIONSHIP_ENDS;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    repositoryName,
-                    omrsRelationshipType,
-                    ep1 == null ? null : ep1.getGUID(),
-                    ep2 == null ? null : ep2.getGUID());
-            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
+            throw new RepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_RELATIONSHIP_ENDS.getMessageDefinition(methodName, repositoryName, omrsRelationshipType, ep1 == null ? "null" : ep1.getGUID(), ep2 == null ? "null" : ep2.getGUID()),
                     RelationshipMapping.class.getName(),
-                    methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+                    methodName);
         }
 
         if (omrsRelationshipProperties != null) {
@@ -426,16 +416,10 @@ public class RelationshipMapping {
             );
             relationship.setType(instanceType);
         } catch (TypeErrorException e) {
-            log.error("Unable to construct and set InstanceType -- skipping relationship: {}", omrsRelationshipDef.getName());
-            OMRSErrorCode errorCode = OMRSErrorCode.INVALID_INSTANCE;
-            String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(methodName,
-                    omrsRelationshipDef.getName());
-            throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                    EntityMappingAtlas2OMRS.class.getName(),
+            throw new RepositoryErrorException(ApacheAtlasOMRSErrorCode.INVALID_INSTANCE.getMessageDefinition(methodName, omrsRelationshipDef.getName()),
+                    RelationshipMapping.class.getName(),
                     methodName,
-                    errorMessage,
-                    errorCode.getSystemAction(),
-                    errorCode.getUserAction());
+                    e);
         }
 
         return relationship;
@@ -451,13 +435,9 @@ public class RelationshipMapping {
      * @throws RepositoryErrorException always
      */
     private void raiseRepositoryErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws RepositoryErrorException {
-        String errorMessage = errorCode.getErrorMessageId() + errorCode.getFormattedErrorMessage(params);
-        throw new RepositoryErrorException(errorCode.getHTTPErrorCode(),
-                this.getClass().getName(),
+        throw new RepositoryErrorException(errorCode.getMessageDefinition(params),
+                RelationshipMapping.class.getName(),
                 methodName,
-                errorMessage,
-                errorCode.getSystemAction(),
-                errorCode.getUserAction(),
                 cause);
     }
 
