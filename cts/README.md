@@ -28,6 +28,12 @@ you will find the following details:
     - `cohort.coco.cts.local` - the local CTS Workbench cohort registration
     - `cohort.coco.cts.remote` - the cohort members considered remote from the CTS Workbench's perspective
 
+## Egeria 1.6
+
+| Apache Atlas version | Conformant profile(s) | Notes |
+| :--- | :--- | :--- |
+| [v2.0.0](results/1.6/2.0.0) | None | (see known issues) |
+
 ## Egeria 1.5
 
 | Apache Atlas version | Conformant profile(s) | Notes |
