@@ -112,7 +112,7 @@
         <httpclient.version>4.5.12</httpclient.version>
         <kafka.version>2.4.1</kafka.version>
         <zookeeper.version>3.5.6</zookeeper.version>
-        <netty.version>4.1.48.Final</netty.version>
+        <netty.version>4.1.49.Final</netty.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.0.2</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
@@ -245,6 +245,22 @@
                         <groupId>com.fasterxml.woodstox</groupId>
                         <artifactId>woodstox-core</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-hdfs-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-codec</groupId>
+                        <artifactId>commons-codec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.protobuf</groupId>
+                        <artifactId>protobuf-java</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -286,6 +302,10 @@
                     <exclusion>
                         <groupId>com.fasterxml.jackson.core</groupId>
                         <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.mail</groupId>
+                        <artifactId>mail</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -414,6 +434,12 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
                 <version>${netty.version}</version>
                 <scope>compile</scope>
             </dependency>
