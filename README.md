@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Copyright Contributors to the ODPi Egeria project. -->
 
-[![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-apache-atlas)](LICENSE) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-apache-atlas)](https://dev.azure.com/odpi/Egeria/_build) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=egeria-connector-apache-atlas&metric=alert_status)](https://sonarcloud.io/dashboard?id=egeria-connector-apache-atlas) [![Maven Central](https://img.shields.io/maven-central/v/org.odpi.egeria/egeria-connector-apache-atlas)](https://mvnrepository.com/artifact/org.odpi.egeria/egeria-connector-apache-atlas)
+[![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-hadoop-ecosystem)](LICENSE) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-hadoop-ecosystem)](https://dev.azure.com/odpi/Egeria/_build) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=egeria-connector-hadoop-ecosystem&metric=alert_status)](https://sonarcloud.io/dashboard?id=egeria-connector-hadoop-ecosystem) [![Maven Central](https://img.shields.io/maven-central/v/org.odpi.egeria/egeria-connector-apache-atlas)](https://mvnrepository.com/artifact/org.odpi.egeria/egeria-connector-apache-atlas)
 
 # Hadoop Ecosystem Repository Connectors
 
