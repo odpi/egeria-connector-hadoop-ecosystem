@@ -3,17 +3,22 @@
 
 [![GitHub](https://img.shields.io/github/license/odpi/egeria-connector-apache-atlas)](LICENSE) [![Azure](https://dev.azure.com/odpi/egeria/_apis/build/status/odpi.egeria-connector-apache-atlas)](https://dev.azure.com/odpi/Egeria/_build) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=egeria-connector-apache-atlas&metric=alert_status)](https://sonarcloud.io/dashboard?id=egeria-connector-apache-atlas) [![Maven Central](https://img.shields.io/maven-central/v/org.odpi.egeria/egeria-connector-apache-atlas)](https://mvnrepository.com/artifact/org.odpi.egeria/egeria-connector-apache-atlas)
 
-# Apache Atlas Repository Connector
+# Hadoop Ecosystem Repository Connectors
 
-[Apache Atlas](https://atlas.apache.org) is an open source metadata repository. This connector provides an example
-implementation for interacting with a metadata repository through the open metadata standards of Egeria.
+This repository houses the ODPi Egeria connectors for various Hadoop ecosystem components:
 
-Note that currently the implemented connector is read-only: it only implements those methods necessary to search, retrieve,
-and communicate metadata from Atlas out into the cohort -- it does *not* currently implement the ability to update Atlas
-based on events received from other members of the cohort. (This is due to some current limitations in Apache Atlas -- 
-see [open issues](https://github.com/odpi/egeria-connector-apache-atlas/issues?q=is%3Aissue+is%3Aopen+label%3Aexternal).)
+- [Apache Atlas](https://atlas.apache.org) is an open source metadata repository. This connector provides an example
+    implementation for interacting with a metadata repository through the open metadata standards of Egeria.
 
-Furthermore, [only a subset of the overall Open Metadata Types are currently implemented](docs/mappings/README.md).
+    Note that currently the implemented connector is read-only: it only implements those methods necessary to search, retrieve,
+    and communicate metadata from Atlas out into the cohort -- it does *not* currently implement the ability to update Atlas
+    based on events received from other members of the cohort. (This is due to some current limitations in Apache Atlas -- 
+    see [open issues](https://github.com/odpi/egeria-connector-apache-atlas/issues?q=is%3Aissue+is%3Aopen+label%3Aexternal).)
+
+    Furthermore, [only a subset of the overall Open Metadata Types are currently implemented](docs/mappings/README.md).
+
+- [Apache Ranger](https://ranger.apache.org) is a framework to enable, monitor and manage comprehensive data security
+    across the Hadoop platform.  (Coming soon.)
 
 ## How it works
 
