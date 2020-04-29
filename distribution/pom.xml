@@ -7,18 +7,18 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>egeria-connector-apache-atlas</artifactId>
+        <artifactId>egeria-connector-hadoop-ecosystem</artifactId>
         <groupId>org.odpi.egeria</groupId>
         <version>1.8-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Egeria Connector for Apache Atlas - packaging</name>
+    <name>Egeria Connector for Hadoop Ecosystem - packaging</name>
     <description>
-        Bundling of the Apache Atlas connectors for distribution and use within an OMAG Server Platform
+        Bundling of the Hadoop ecosystem connectors for distribution and use within an OMAG Server Platform
     </description>
 
-    <artifactId>egeria-connector-apache-atlas-package</artifactId>
+    <artifactId>egeria-connector-hadoop-ecosystem-package</artifactId>
 
     <dependencies>
         <dependency>
@@ -45,7 +45,7 @@
                                 <descriptor>src/main/assemblies/javadoc.xml</descriptor>
                                 <descriptor>src/main/assemblies/connector.xml</descriptor>
                             </descriptors>
-                            <finalName>egeria-connector-apache-atlas-${open-metadata.version}</finalName>
+                            <finalName>egeria-connector-hadoop-ecosystem-${open-metadata.version}</finalName>
                             <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>

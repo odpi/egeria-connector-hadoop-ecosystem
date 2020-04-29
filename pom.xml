@@ -9,17 +9,17 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Egeria Connector for Apache Atlas</name>
+    <name>Egeria Connector for Hadoop Ecosystem</name>
     <description>
-        An OCF OMRS Repository Connector for Apache Atlas (using its REST API to call into the Apache Atlas metadata repository).
+        An OCF OMRS Repository Connector for components of the Hadoop ecosystem.
     </description>
     <modules>
-        <module>adapter</module>
+        <module>apache-atlas-adapter</module>
         <module>distribution</module>
     </modules>
 
     <groupId>org.odpi.egeria</groupId>
-    <artifactId>egeria-connector-apache-atlas</artifactId>
+    <artifactId>egeria-connector-hadoop-ecosystem</artifactId>
     <version>1.8-SNAPSHOT</version>
 
     <url>https://odpi.github.io/Egeria</url>
@@ -42,14 +42,14 @@
     </organization>
 
     <scm>
-        <connection>scm:git:git://github.com/odpi/egeria-connector-apache-atlas.git</connection>
-        <developerConnection>scm:git:ssh://github.com:odpi/egeria-connector-apache-atlas.git</developerConnection>
-        <url>http://github.com/odpi/egeria-connector-apache-atlas/tree/master</url>
+        <connection>scm:git:git://github.com/odpi/egeria-connector-hadoop-ecosystem.git</connection>
+        <developerConnection>scm:git:ssh://github.com:odpi/egeria-connector-hadoop-ecosystem.git</developerConnection>
+        <url>http://github.com/odpi/egeria-connector-hadoop-ecosystem/tree/master</url>
     </scm>
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/odpi/egeria-connector-apache-atlas/issues</url>
+        <url>https://github.com/odpi/egeria-connector-hadoop-ecosystem/issues</url>
     </issueManagement>
 
     <inceptionYear>2018</inceptionYear>

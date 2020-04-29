@@ -10,7 +10,7 @@
         <format>jar</format>
     </formats>
     <id>sources</id>
-    <baseDirectory>egeria-connector-apache-atlas-sources-${open-metadata.version}</baseDirectory>
+    <baseDirectory>egeria-connector-hadoop-ecosystem-sources-${open-metadata.version}</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>..</directory>
