@@ -102,7 +102,7 @@
         <junit.platform.version>1.5.2</junit.platform.version>
         <junit.jupiter.version>5.6.2</junit.jupiter.version>
         <junit.version>4.12</junit.version>
-        <surefire.plugin.version>3.0.0-M4</surefire.plugin.version>
+        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
         <testng.version>7.2.0</testng.version>
         <mock-server.version>5.10.0</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
@@ -115,7 +115,7 @@
         <netty.version>4.1.50.Final</netty.version>
         <commons-codec.version>1.14</commons-codec.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
-        <spotbugs.version>4.0.3</spotbugs.version>
+        <spotbugs.version>4.0.6</spotbugs.version>
         <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
         <!-- Configuration of sonar code scanning-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -498,7 +498,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>4.0.0</version>
+                    <version>4.0.4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
