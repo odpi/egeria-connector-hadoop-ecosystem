@@ -34,8 +34,8 @@ The Apache Atlas Repository Connector works through a combination of the followi
 
 The quick version:
 
-1. Download the latest Apache Atlas connector from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-apache-atlas-package/2.0-SNAPSHOT/egeria-connector-apache-atlas-package-2.0-SNAPSHOT-jar-with-dependencies.jar
-1. Download the latest Egeria core from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/server-chassis-spring/2.0-SNAPSHOT/server-chassis-spring-2.0-SNAPSHOT.jar
+1. Download the latest Apache Atlas connector from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.2-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.2-SNAPSHOT-jar-with-dependencies.jar
+1. Download the latest Egeria core from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/server-chassis-spring/2.2-SNAPSHOT/server-chassis-spring-2.2-SNAPSHOT.jar
 1. Rename the downloaded Egeria core file to `egeria-server-chassis-spring.jar`.
 1. Run the following command to start Egeria from the command-line, waiting for the final line of output indicating the
     server is running and ready for configuration:
@@ -62,11 +62,11 @@ The quick version:
     `admin` with the username for your Apache Atlas environment, and `admin` with the password for your Apache Atlas
     environment):
     ```bash
-    $ curl -X POST -H "Content-Type: application/json" --data '{"producer":{"bootstrap.servers":"localhost:9092"},"consumer":{"bootstrap.servers":"localhost:9092"}}' "http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/event-bus?connectorProvider=org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider&topicURLRoot=OMRSTopic"
-    $ curl -X POST "http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/cohorts/mycohort"
-    $ curl -X POST -H "Content-Type: application/json" --data '{"class":"Connection","connectorType":{"class":"ConnectorType","connectorProviderClassName":"org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider"},"endpoint":{"class":"Endpoint","address":"atlas:21000","protocol":"http"},"userId":"admin","clearPassword":"admin"}' "http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/local-repository/mode/repository-proxy/connection"
-    $ curl -X POST "http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=atlas:9027"
-    $ curl -X POST "http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/instance"
+    $ curl -X POST -H "Content-Type: application/json" --data '{"producer":{"bootstrap.servers":"localhost:9092"},"consumer":{"bootstrap.servers":"localhost:9092"}}' "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/event-bus?connectorProvider=org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider&topicURLRoot=OMRSTopic"
+    $ curl -X POST "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/cohorts/mycohort"
+    $ curl -X POST -H "Content-Type: application/json" --data '{"class":"Connection","connectorType":{"class":"ConnectorType","connectorProviderClassName":"org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider"},"endpoint":{"class":"Endpoint","address":"atlas:21000","protocol":"http"},"userId":"admin","clearPassword":"admin"}' "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/local-repository/mode/repository-proxy/connection"
+    $ curl -X POST "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=atlas:9027"
+    $ curl -X POST "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/instance"
     ```
 
 ### Enable Apache Atlas's events
@@ -85,17 +85,17 @@ You will likely need to restart your environment after making this change.
 
 You can either download the latest released or snapshot version of the connector directly from ODPi, or build the
 connector yourself. In both cases, once you have the jar file for the connector
-(`egeria-connector-apache-atlas-package-VERSION-jar-with-dependencies.jar`) this needs to be copied to a
+(`egeria-connector-hadoop-ecosystem-package-VERSION-jar-with-dependencies.jar`) this needs to be copied to a
 location where it can be run alongside the OMAG Server Platform from Egeria core itself. For example, this could be
-placing the file into the `/lib` directory as `/lib/egeria-connector-apache-atlas-package-VERSION-jar-with-dependencies.jar`.
+placing the file into the `/lib` directory as `/lib/egeria-connector-hadoop-ecosystem-package-VERSION-jar-with-dependencies.jar`.
 
 #### Download from ODPi
 
 To download a pre-built version of the connector, use either of the following URLs (depending on whether you want an
 officially-released version or the latest snapshot):
 
-- Release: https://odpi.jfrog.io/odpi/egeria-release-local/org/odpi/egeria/egeria-connector-apache-atlas-package/1.8/egeria-connector-apache-atlas-package-1.8-jar-with-dependencies.jar
-- Snapshot: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-apache-atlas-package/2.0-SNAPSHOT/egeria-connector-apache-atlas-package-2.0-SNAPSHOT-jar-with-dependencies.jar
+- Release: https://odpi.jfrog.io/odpi/egeria-release-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.1/egeria-connector-hadoop-ecosystem-package-2.1-jar-with-dependencies.jar
+- Snapshot: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.2-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.2-SNAPSHOT-jar-with-dependencies.jar
 
 #### Building the connector yourself
 
@@ -103,7 +103,7 @@ Alternatively, you can build the connector yourself. To do this, you'll need to 
 build through Maven using `mvn clean install`. After building, the connector is available as:
 
 ```text
-distribution/target/egeria-connector-apache-atlas-package-VERSION-jar-with-dependencies.jar
+distribution/target/egeria-connector-hadoop-ecosystem-package-VERSION-jar-with-dependencies.jar
 ```
 
 ### Configure security
@@ -157,13 +157,13 @@ For example payloads and endpoints, see the [Postman samples](samples).
     to:
 
     ```
-    POST http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/event-bus?connectorProvider=org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider&topicURLRoot=OMRSTopic
+    POST https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/event-bus?connectorProvider=org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider&topicURLRoot=OMRSTopic
     ```
 
 1. Configure the cohort, by POSTing something like the following:
 
     ```
-    POST http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/cohorts/mycohort
+    POST https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/cohorts/mycohort
     ```
 
 1. Configure the Apache Atlas connector, by POSTing a payload like the following, replacing the `{{atlas_host}}` with
@@ -191,7 +191,7 @@ For example payloads and endpoints, see the [Postman samples](samples).
     to:
 
     ```
-    POST http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/local-repository/mode/repository-proxy/connection
+    POST https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/local-repository/mode/repository-proxy/connection
     ```
 
     Note that you also need to provide the `connectorProviderClassName` parameter, set to the name of the Apache Atlas
@@ -200,7 +200,7 @@ For example payloads and endpoints, see the [Postman samples](samples).
 1. Configure the event mapper for Apache Atlas, by POSTing something like the following:
 
     ```
-    POST http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=my.atlas.host.com:9027
+    POST https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=my.atlas.host.com:9027
     ```
 
     The hostname provided at the end should be the host on which your Apache Atlas Kafka bus is running, and include
@@ -210,7 +210,7 @@ For example payloads and endpoints, see the [Postman samples](samples).
     to start the instance by POSTing something like the following:
 
    ```
-   POST http://localhost:8080/open-metadata/admin-services/users/admin/servers/myserver/instance
+   POST https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/instance
    ```
 
 After following these instructions, your Apache Atlas instance will be participating in the Egeria cohort. For those

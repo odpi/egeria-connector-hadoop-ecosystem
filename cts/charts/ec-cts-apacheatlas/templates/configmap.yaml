@@ -20,7 +20,7 @@ data:
   # Used by Apache Atlas
   STRICT_SSL: "false"
   LOGGING_LEVEL_ROOT: {{ .Values.logging.level }}
-  ATLAS_ENDPOINT: http://{{ .Release.Name }}-apache-atlas-service:8080
+  ATLAS_ENDPOINT: https://{{ .Release.Name }}-apache-atlas-service:9443
   ATLAS_HOST: atlas
   ATLAS_OPTS: "-Dkafka.advertised.hostname=atlas"
   ATLAS_PORT: "21000"

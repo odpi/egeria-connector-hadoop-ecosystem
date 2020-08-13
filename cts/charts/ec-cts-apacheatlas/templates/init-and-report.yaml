@@ -82,79 +82,79 @@ spec:
             - "/bin/bash"
             - "-c"
             - >
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/server-url-root?url=${ATLAS_ENDPOINT}
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/server-type?typeName=Conformance
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 --header "Content-Type: application/json"
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/event-bus?topicURLRoot=egeria
                 --data '{"producer": {"bootstrap.servers": "'"${KAFKA_ENDPOINT}"'"}, "consumer": {"bootstrap.servers": "'"${KAFKA_ENDPOINT}"'"} }'
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/cohorts/${EGERIA_COHORT}
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 --header "Content-Type: application/json"
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/conformance-suite-workbenches/repository-workbench/repositories
                 --data '{"class":"RepositoryConformanceWorkbenchConfig","tutRepositoryServerName":"'"${ATLAS_SERVER}"'","maxSearchResults":5}'
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/instance
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/server-type?typeName=Apache%20Atlas
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/organization-name?name=ODPi
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 --header "Content-Type: application/json"
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/event-bus?topicURLRoot=egeria
                 --data '{"producer": {"bootstrap.servers": "'"${KAFKA_ENDPOINT}"'"}, "consumer": {"bootstrap.servers": "'"${KAFKA_ENDPOINT}"'"} }'
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 --header "Content-Type: application/json"
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/local-repository/mode/repository-proxy/connection
                 --data '{"class":"Connection","connectorType":{"class":"ConnectorType","connectorProviderClassName":"org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider"},"endpoint":{"class":"Endpoint","address":"'"${ATLAS_HOST}:${ATLAS_PORT}"'","protocol":"http"},"userId":"'"${ATLAS_USER}"'","clearPassword":"'"${ATLAS_PASS}"'","configurationProperties":{"defaultZones":["default"]}}'
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/cohorts/${EGERIA_COHORT}
                 &&
-                curl -f --verbose --basic admin:admin -X POST
+                curl -k -f --verbose --basic admin:admin -X POST
                 "${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=${ATLAS_KAFKA_ENDPOINT}"
                 &&
-                curl -f --verbose --basic admin:admin -X POST --max-time 900
+                curl -k -f --verbose --basic admin:admin -X POST --max-time 900
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/instance
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/cts/configuration > /tmp/omag.server.cts.config
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/open-metadata/admin-services/users/${EGERIA_USER}/servers/${ATLAS_SERVER}/configuration > /tmp/omag.server.${ATLAS_SERVER}.config
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/servers/cts/open-metadata/repository-services/users/${EGERIA_USER}/metadata-highway/local-registration > /tmp/cohort.${EGERIA_COHORT}.cts.local
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/servers/cts/open-metadata/repository-services/users/${EGERIA_USER}/metadata-highway/cohorts/${EGERIA_COHORT}/remote-members > /tmp/cohort.${EGERIA_COHORT}.cts.remote
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/servers/${ATLAS_SERVER}/open-metadata/repository-services/users/${EGERIA_USER}/metadata-highway/local-registration > /tmp/cohort.${EGERIA_COHORT}.${ATLAS_SERVER}.local
                 &&
-                curl -f --verbose --basic admin:admin -X GET
+                curl -k -f --verbose --basic admin:admin -X GET
                 ${ATLAS_ENDPOINT}/servers/${ATLAS_SERVER}/open-metadata/repository-services/users/${EGERIA_USER}/metadata-highway/cohorts/${EGERIA_COHORT}/remote-members > /tmp/cohort.${EGERIA_COHORT}.${ATLAS_SERVER}.remote
                 &&
                 echo ""; echo "Waiting 2 minutes for CTS to start..."; sleep 120
                 &&
-                until [ $(curl -f --silent --basic admin:admin -X GET ${ATLAS_ENDPOINT}/servers/cts/open-metadata/conformance-suite/users/${EGERIA_USER}/status/workbenches/repository-workbench | jq '.workbenchStatus.workbenchComplete') == "true" ]; do
+                until [ $(curl -k -f --silent --basic admin:admin -X GET ${ATLAS_ENDPOINT}/servers/cts/open-metadata/conformance-suite/users/${EGERIA_USER}/status/workbenches/repository-workbench | jq '.workbenchStatus.workbenchComplete') == "true" ]; do
                 echo "... waiting for CTS to complete";
                 sleep 20;
                 done
                 &&
-                curl -f --silent --basic admin:admin -X GET --max-time 900 ${ATLAS_ENDPOINT}/servers/cts/open-metadata/conformance-suite/users/${EGERIA_USER}/report > /tmp/openmetadata.conformance.testlab.results
+                curl -k -f --silent --basic admin:admin -X GET --max-time 900 ${ATLAS_ENDPOINT}/servers/cts/open-metadata/conformance-suite/users/${EGERIA_USER}/report > /tmp/openmetadata.conformance.testlab.results
                 &&
                 cd /tmp; tar cvf ${CTS_REPORT_NAME}.tar *.config cohort.* openmetadata.conformance.testlab.results; gzip ${CTS_REPORT_NAME}.tar
                 &&
