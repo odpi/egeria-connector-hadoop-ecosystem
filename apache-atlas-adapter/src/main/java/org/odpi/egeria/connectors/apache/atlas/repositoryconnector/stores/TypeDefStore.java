@@ -37,6 +37,7 @@ public class TypeDefStore {
     private Map<String, Map<String, EndpointMapping>> atlasNameToEndpointMapByPrefix;
 
     private Set<String> unmappedTypes;
+    private Set<String> superTypes;
 
     private ObjectMapper mapper;
 
@@ -57,6 +58,7 @@ public class TypeDefStore {
         omrsNameToEndpointMapByPrefix = new HashMap<>();
         atlasNameToEndpointMapByPrefix = new HashMap<>();
         unmappedTypes = new HashSet<>();
+        superTypes = new HashSet<>();
         mapper = new ObjectMapper();
         loadMappings();
         loadUnmapped();
@@ -81,66 +83,73 @@ public class TypeDefStore {
                 String omrsName = mapping.getOMRSName();
                 String prefix = mapping.getPrefix();
 
-                if (!omrsNameToAtlasNamesByPrefix.containsKey(omrsName)) {
-                    omrsNameToAtlasNamesByPrefix.put(omrsName, new HashMap<>());
-                }
-                omrsNameToAtlasNamesByPrefix.get(omrsName).put(prefix, atlasName);
-                if (!atlasNameToOmrsNamesByPrefix.containsKey(atlasName)) {
-                    atlasNameToOmrsNamesByPrefix.put(atlasName, new HashMap<>());
-                }
-                atlasNameToOmrsNamesByPrefix.get(atlasName).put(prefix, omrsName);
+                if (atlasName == null) {
+                    // If there is no Atlas-mapped name, treat it as a super-type that we need to keep track of
+                    // for inheritance purposes
+                    superTypes.add(omrsName);
+                } else {
 
-                if (prefix != null) {
-                    prefixToOmrsTypeName.put(prefix, omrsName);
-                }
+                    if (!omrsNameToAtlasNamesByPrefix.containsKey(omrsName)) {
+                        omrsNameToAtlasNamesByPrefix.put(omrsName, new HashMap<>());
+                    }
+                    omrsNameToAtlasNamesByPrefix.get(omrsName).put(prefix, atlasName);
+                    if (!atlasNameToOmrsNamesByPrefix.containsKey(atlasName)) {
+                        atlasNameToOmrsNamesByPrefix.put(atlasName, new HashMap<>());
+                    }
+                    atlasNameToOmrsNamesByPrefix.get(atlasName).put(prefix, omrsName);
 
-                // Process any property-to-property mappings within the types
-                List<MappingFromFile> properties = mapping.getPropertyMappings();
-                if (properties != null) {
-                    Map<String, String> propertyMapOmrsToAtlas = new HashMap<>();
-                    Map<String, String> propertyMapAtlasToOmrs = new HashMap<>();
-                    for (MappingFromFile property : properties) {
-                        String atlasProperty = property.getAtlasName();
-                        String omrsProperty = property.getOMRSName();
-                        propertyMapOmrsToAtlas.put(omrsProperty, atlasProperty);
-                        propertyMapAtlasToOmrs.put(atlasProperty, omrsProperty);
+                    if (prefix != null) {
+                        prefixToOmrsTypeName.put(prefix, omrsName);
                     }
-                    if (!omrsNameToAttributeMapByPrefix.containsKey(omrsName)) {
-                        omrsNameToAttributeMapByPrefix.put(omrsName, new HashMap<>());
-                    }
-                    omrsNameToAttributeMapByPrefix.get(omrsName).put(prefix, propertyMapOmrsToAtlas);
-                    if (!atlasNameToAttributeMapByPrefix.containsKey(atlasName)) {
-                        atlasNameToAttributeMapByPrefix.put(atlasName, new HashMap<>());
-                    }
-                    atlasNameToAttributeMapByPrefix.get(atlasName).put(prefix, propertyMapAtlasToOmrs);
-                }
 
-                // Process any endpoint-to-endpoint mappings within the types (for relationships)
-                List<MappingFromFile> endpoints = mapping.getEndpointMappings();
-                if (endpoints != null) {
-                    if (endpoints.size() != 2) {
-                        log.warn("Skipping mapping as found other than exactly 2 endpoints defined for the relationship '{}': {}", atlasName, endpoints);
-                    } else {
-                        MappingFromFile endpoint1 = endpoints.get(0);
-                        MappingFromFile endpoint2 = endpoints.get(1);
-                        EndpointMapping endpointMapping = new EndpointMapping(
-                                atlasName,
-                                omrsName,
-                                endpoint1.getAtlasName(),
-                                endpoint1.getOMRSName(),
-                                endpoint1.getPrefix(),
-                                endpoint2.getAtlasName(),
-                                endpoint2.getOMRSName(),
-                                endpoint2.getPrefix()
-                        );
-                        if (!omrsNameToEndpointMapByPrefix.containsKey(omrsName)) {
-                            omrsNameToEndpointMapByPrefix.put(omrsName, new HashMap<>());
+                    // Process any property-to-property mappings within the types
+                    List<MappingFromFile> properties = mapping.getPropertyMappings();
+                    if (properties != null) {
+                        Map<String, String> propertyMapOmrsToAtlas = new HashMap<>();
+                        Map<String, String> propertyMapAtlasToOmrs = new HashMap<>();
+                        for (MappingFromFile property : properties) {
+                            String atlasProperty = property.getAtlasName();
+                            String omrsProperty = property.getOMRSName();
+                            propertyMapOmrsToAtlas.put(omrsProperty, atlasProperty);
+                            propertyMapAtlasToOmrs.put(atlasProperty, omrsProperty);
                         }
-                        omrsNameToEndpointMapByPrefix.get(omrsName).put(prefix, endpointMapping);
-                        if (!atlasNameToEndpointMapByPrefix.containsKey(atlasName)) {
-                            atlasNameToEndpointMapByPrefix.put(atlasName, new HashMap<>());
+                        if (!omrsNameToAttributeMapByPrefix.containsKey(omrsName)) {
+                            omrsNameToAttributeMapByPrefix.put(omrsName, new HashMap<>());
                         }
-                        atlasNameToEndpointMapByPrefix.get(atlasName).put(prefix, endpointMapping);
+                        omrsNameToAttributeMapByPrefix.get(omrsName).put(prefix, propertyMapOmrsToAtlas);
+                        if (!atlasNameToAttributeMapByPrefix.containsKey(atlasName)) {
+                            atlasNameToAttributeMapByPrefix.put(atlasName, new HashMap<>());
+                        }
+                        atlasNameToAttributeMapByPrefix.get(atlasName).put(prefix, propertyMapAtlasToOmrs);
+                    }
+
+                    // Process any endpoint-to-endpoint mappings within the types (for relationships)
+                    List<MappingFromFile> endpoints = mapping.getEndpointMappings();
+                    if (endpoints != null) {
+                        if (endpoints.size() != 2) {
+                            log.warn("Skipping mapping as found other than exactly 2 endpoints defined for the relationship '{}': {}", atlasName, endpoints);
+                        } else {
+                            MappingFromFile endpoint1 = endpoints.get(0);
+                            MappingFromFile endpoint2 = endpoints.get(1);
+                            EndpointMapping endpointMapping = new EndpointMapping(
+                                    atlasName,
+                                    omrsName,
+                                    endpoint1.getAtlasName(),
+                                    endpoint1.getOMRSName(),
+                                    endpoint1.getPrefix(),
+                                    endpoint2.getAtlasName(),
+                                    endpoint2.getOMRSName(),
+                                    endpoint2.getPrefix()
+                            );
+                            if (!omrsNameToEndpointMapByPrefix.containsKey(omrsName)) {
+                                omrsNameToEndpointMapByPrefix.put(omrsName, new HashMap<>());
+                            }
+                            omrsNameToEndpointMapByPrefix.get(omrsName).put(prefix, endpointMapping);
+                            if (!atlasNameToEndpointMapByPrefix.containsKey(atlasName)) {
+                                atlasNameToEndpointMapByPrefix.put(atlasName, new HashMap<>());
+                            }
+                            atlasNameToEndpointMapByPrefix.get(atlasName).put(prefix, endpointMapping);
+                        }
                     }
                 }
 
@@ -180,6 +189,16 @@ public class TypeDefStore {
      */
     public boolean isTypeDefMapped(String omrsName) {
         return omrsNameToAtlasNamesByPrefix.containsKey(omrsName);
+    }
+
+    /**
+     * Indicates whether the provided OMRS TypeDef is a super type that is not itself actually mapped to anything.
+     *
+     * @param omrsName name of the OMRS TypeDef
+     * @return boolean
+     */
+    public boolean isUnimplementedSupertype(String omrsName) {
+        return superTypes.contains(omrsName);
     }
 
     /**

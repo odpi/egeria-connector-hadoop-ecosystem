@@ -14,6 +14,7 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDe
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipEndCardinality;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.RelationshipEndDef;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.PatchErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeDefNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,72 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         final String methodName = "addRelationshipTypeToAtlas";
 
         String omrsTypeDefName = omrsRelationshipDef.getName();
+        AtlasTypesDef atlasTypesDef = setupRelationshipType(omrsRelationshipDef, typeDefStore, attributeDefStore);
+
+        if (atlasTypesDef != null) {
+            // Only create the relationship if we can fully model it
+            try {
+                atlasRepositoryConnector.createTypeDef(atlasTypesDef);
+                typeDefStore.addTypeDef(omrsRelationshipDef);
+            } catch (AtlasServiceException e) {
+                typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
+                raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+            }
+        } else {
+            // Otherwise, we'll drop it as unimplemented
+            typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+        }
+
+    }
+
+    /**
+     * Updates the provided OMRS type definition in Apache Atlas (if possible), or throws a PatchErrorException
+     * if not possible.
+     *
+     * @param omrsRelationshipDef the OMRS RelationshipDef to add to Apache Atlas
+     * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
+     * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
+     * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
+     * @throws PatchErrorException if the patched typedef cannot be fully represented in Atlas
+     */
+    public static void updateRelationshipTypeInAtlas(RelationshipDef omrsRelationshipDef,
+                                                     TypeDefStore typeDefStore,
+                                                     AttributeTypeDefStore attributeDefStore,
+                                                     ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector) throws PatchErrorException {
+
+        final String methodName = "updateRelationshipTypeInAtlas";
+
+        String omrsTypeDefName = omrsRelationshipDef.getName();
+        AtlasTypesDef atlasTypesDef = setupRelationshipType(omrsRelationshipDef, typeDefStore, attributeDefStore);
+
+        if (atlasTypesDef != null) {
+            // Only create the relationship if we can fully model it
+            try {
+                atlasRepositoryConnector.updateTypeDef(atlasTypesDef);
+            } catch (AtlasServiceException e) {
+                typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
+                raisePatchErrorException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+            }
+        } else {
+            // Otherwise, we'll drop it as unimplemented
+            typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
+            raisePatchErrorException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+        }
+
+    }
+
+    /**
+     * Setup the provided OMRS type definition as an Apache Atlas type definition (if possible), or return null if
+     * not possible.
+     *
+     * @param omrsRelationshipDef the OMRS RelationshipDef to add to Apache Atlas
+     * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
+     * @param attributeDefStore the store of mapped / implemented TypeDefAttributes in Apache Atlas
+     */
+    private static AtlasTypesDef setupRelationshipType(RelationshipDef omrsRelationshipDef,
+                                                       TypeDefStore typeDefStore,
+                                                       AttributeTypeDefStore attributeDefStore) {
 
         // Map base properties
         AtlasRelationshipDef relationshipTypeDef = new AtlasRelationshipDef();
@@ -86,24 +153,15 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
 
         fullyCovered = fullyCovered && setupPropertyMappings(omrsRelationshipDef, relationshipTypeDef, attributeDefStore);
 
+        AtlasTypesDef atlasTypesDef = null;
         if (fullyCovered) {
             // Only create the relationship if we can fully model it
-            AtlasTypesDef atlasTypesDef = new AtlasTypesDef();
+            atlasTypesDef = new AtlasTypesDef();
             List<AtlasRelationshipDef> relationshipList = new ArrayList<>();
             relationshipList.add(relationshipTypeDef);
             atlasTypesDef.setRelationshipDefs(relationshipList);
-            try {
-                atlasRepositoryConnector.createTypeDef(atlasTypesDef);
-                typeDefStore.addTypeDef(omrsRelationshipDef);
-            } catch (AtlasServiceException e) {
-                typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
-                raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getServerName());
-            }
-        } else {
-            // Otherwise, we'll drop it as unimplemented
-            typeDefStore.addUnimplementedTypeDef(omrsRelationshipDef);
-            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getServerName());
         }
+        return atlasTypesDef;
 
     }
 
@@ -241,27 +299,6 @@ public abstract class RelationshipDefMapping extends BaseTypeDefMapping {
         } else {
             // catch-all is an ASSOCIATION
             relationshipTypeDef.setRelationshipCategory(AtlasRelationshipDef.RelationshipCategory.ASSOCIATION);
-        }
-    }
-
-    /**
-     * Throws a TypeDefNotSupportedException using the provided parameters.
-     * @param errorCode the error code for the exception
-     * @param methodName the method throwing the exception
-     * @param cause the underlying cause of the exception (if any, otherwise null)
-     * @param params any parameters for formatting the error message
-     * @throws TypeDefNotSupportedException always
-     */
-    private static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
-        if (cause == null) {
-            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
-                    RelationshipDefMapping.class.getName(),
-                    methodName);
-        } else {
-            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
-                    RelationshipDefMapping.class.getName(),
-                    methodName,
-                    cause);
         }
     }
 

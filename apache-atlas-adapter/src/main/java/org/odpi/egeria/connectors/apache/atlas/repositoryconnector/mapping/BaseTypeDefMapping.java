@@ -3,8 +3,11 @@
 package org.odpi.egeria.connectors.apache.atlas.repositoryconnector.mapping;
 
 import org.apache.atlas.model.typedef.*;
+import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.PatchErrorException;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeDefNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,6 +184,48 @@ class BaseTypeDefMapping {
 
         return atlasName;
 
+    }
+
+    /**
+     * Throws a TypeDefNotSupportedException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws TypeDefNotSupportedException always
+     */
+    protected static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
+        if (cause == null) {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    RelationshipDefMapping.class.getName(),
+                    methodName);
+        } else {
+            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
+                    RelationshipDefMapping.class.getName(),
+                    methodName,
+                    cause);
+        }
+    }
+
+    /**
+     * Throws a PatchErrorException using the provided parameters.
+     * @param errorCode the error code for the exception
+     * @param methodName the method throwing the exception
+     * @param cause the underlying cause of the exception (if any, otherwise null)
+     * @param params any parameters for formatting the error message
+     * @throws PatchErrorException always
+     */
+    protected static void raisePatchErrorException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws PatchErrorException {
+        if (cause == null) {
+            throw new PatchErrorException(errorCode.getMessageDefinition(params),
+                    RelationshipDefMapping.class.getName(),
+                    methodName);
+        } else {
+            throw new PatchErrorException(errorCode.getMessageDefinition(params),
+                    RelationshipDefMapping.class.getName(),
+                    methodName,
+                    cause);
+        }
     }
 
 }

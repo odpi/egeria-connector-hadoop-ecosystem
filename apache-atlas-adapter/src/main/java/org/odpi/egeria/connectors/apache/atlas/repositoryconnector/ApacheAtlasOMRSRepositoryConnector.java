@@ -190,10 +190,21 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
      *
      * @param typeDefs the TypeDefs to add to Apache Atlas
      * @return AtlasTypesDef
-     * @throws AtlasServiceException if there is any error retrieving the relationship
+     * @throws AtlasServiceException if there is any error creating the type definition
      */
     public AtlasTypesDef createTypeDef(AtlasTypesDef typeDefs) throws AtlasServiceException {
         return atlasClient.createAtlasTypeDefs(typeDefs);
+    }
+
+    /**
+     * Updates the list of TypeDefs provided in Apache Atlas.
+     *
+     * @param typeDefs the TypeDefs to update in Apache Atlas
+     * @return AtlasTypesDef
+     * @throws AtlasServiceException if there is any error applying the update
+     */
+    public AtlasTypesDef updateTypeDef(AtlasTypesDef typeDefs) throws AtlasServiceException {
+        return atlasClient.updateAtlasTypeDefs(typeDefs);
     }
 
     /**
