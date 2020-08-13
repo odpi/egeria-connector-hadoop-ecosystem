@@ -10,6 +10,7 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOM
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.AttributeTypeDefStore;
 import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDefStore;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
+import org.odpi.openmetadata.repositoryservices.ffdc.exception.PatchErrorException;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.TypeDefNotSupportedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,73 @@ public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
         final String methodName = "addClassificationTypeToAtlas";
 
         String omrsTypeDefName = omrsClassificationDef.getName();
+        AtlasTypesDef atlasTypesDef = setupClassificationType(omrsClassificationDef, typeDefStore, attributeDefStore);
+
+        if (atlasTypesDef != null) {
+            try {
+                atlasRepositoryConnector.createTypeDef(atlasTypesDef);
+                typeDefStore.addTypeDef(omrsClassificationDef);
+            } catch (AtlasServiceException e) {
+                typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
+                raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+            }
+        } else {
+            // Otherwise, we'll drop it as unimplemented
+            typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
+            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+        }
+
+    }
+
+    /**
+     * Updates the provided OMRS type definition in Apache Atlas (if possible), or throws a PatchErrorException
+     * if not possible.
+     *
+     * @param omrsClassificationDef the OMRS ClassificationDef to add to Apache Atlas
+     * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
+     * @param attributeDefStore the store of mapped / implemented AttributeTypeDefs in Apache Atlas
+     * @param atlasRepositoryConnector connectivity to the Apache Atlas environment
+     * @throws PatchErrorException if the patched typedef cannot be fully represented in Atlas
+     */
+    public static void updateClassificationTypeInAtlas(ClassificationDef omrsClassificationDef,
+                                                       TypeDefStore typeDefStore,
+                                                       AttributeTypeDefStore attributeDefStore,
+                                                       ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector) throws PatchErrorException {
+
+        final String methodName = "updateClassificationTypeInAtlas";
+
+        String omrsTypeDefName = omrsClassificationDef.getName();
+        AtlasTypesDef atlasTypesDef = setupClassificationType(omrsClassificationDef, typeDefStore, attributeDefStore);
+
+        if (atlasTypesDef != null) {
+            try {
+                atlasRepositoryConnector.updateTypeDef(atlasTypesDef);
+                typeDefStore.addTypeDef(omrsClassificationDef);
+            } catch (AtlasServiceException e) {
+                typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
+                raisePatchErrorException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+            }
+        } else {
+            // Otherwise, we'll drop it as unimplemented
+            typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
+            raisePatchErrorException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, atlasRepositoryConnector.getServerName());
+        }
+
+    }
+
+    /**
+     * Setup the provided OMRS type definition as an Apache Atlas type definition (if possible), or return null if
+     * not possible.
+     *
+     * @param omrsClassificationDef the OMRS ClassificationDef to add to Apache Atlas
+     * @param typeDefStore the store of mapped / implemented TypeDefs in Apache Atlas
+     * @param attributeDefStore the store of mapped / implemented AttributeTypeDefs in Apache Atlas
+     */
+    private static AtlasTypesDef setupClassificationType(ClassificationDef omrsClassificationDef,
+                                                         TypeDefStore typeDefStore,
+                                                         AttributeTypeDefStore attributeDefStore) {
+
+        String omrsTypeDefName = omrsClassificationDef.getName();
         boolean fullyCovered = true;
 
         // Map base properties
@@ -73,46 +141,16 @@ public abstract class ClassificationDefMapping extends BaseTypeDefMapping {
 
         fullyCovered = fullyCovered && setupPropertyMappings(omrsClassificationDef, classificationTypeDef, attributeDefStore);
 
+        AtlasTypesDef atlasTypesDef = null;
         if (fullyCovered) {
             // Only create the classification if we can fully model it
-            AtlasTypesDef atlasTypesDef = new AtlasTypesDef();
+            atlasTypesDef = new AtlasTypesDef();
             List<AtlasClassificationDef> classificationList = new ArrayList<>();
             classificationList.add(classificationTypeDef);
             atlasTypesDef.setClassificationDefs(classificationList);
-            try {
-                atlasRepositoryConnector.createTypeDef(atlasTypesDef);
-                typeDefStore.addTypeDef(omrsClassificationDef);
-            } catch (AtlasServiceException e) {
-                typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
-                raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, e, omrsClassificationDef.getName(), atlasRepositoryConnector.getServerName());
-            }
-        } else {
-            // Otherwise, we'll drop it as unimplemented
-            typeDefStore.addUnimplementedTypeDef(omrsClassificationDef);
-            raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsClassificationDef.getName(), atlasRepositoryConnector.getServerName());
         }
+        return atlasTypesDef;
 
-    }
-
-    /**
-     * Throws a TypeDefNotSupportedException using the provided parameters.
-     * @param errorCode the error code for the exception
-     * @param methodName the method throwing the exception
-     * @param cause the underlying cause of the exception (if any, otherwise null)
-     * @param params any parameters for formatting the error message
-     * @throws TypeDefNotSupportedException always
-     */
-    private static void raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode errorCode, String methodName, Throwable cause, String ...params) throws TypeDefNotSupportedException {
-        if (cause == null) {
-            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
-                    ClassificationDefMapping.class.getName(),
-                    methodName);
-        } else {
-            throw new TypeDefNotSupportedException(errorCode.getMessageDefinition(params),
-                    ClassificationDefMapping.class.getName(),
-                    methodName,
-                    cause);
-        }
     }
 
 }

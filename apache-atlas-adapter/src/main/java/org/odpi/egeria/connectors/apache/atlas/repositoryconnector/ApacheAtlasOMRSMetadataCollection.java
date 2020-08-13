@@ -19,7 +19,6 @@ import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollec
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryValidator;
-import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -328,6 +327,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
             typeDefStore.addTypeDef(newTypeDef);
 
+        } else if (typeDefStore.isUnimplementedSupertype(omrsTypeDefName)) {
+
+            // If it's one that we will ultimately inherit from, we should store it as a type
+            // (to support its various properties later on, particularly for updates to the super-types)
+            typeDefStore.addTypeDef(newTypeDef);
+
         } else if (!typeDefStore.isReserved(omrsTypeDefName)) {
 
             if (atlasRepositoryConnector.typeDefExistsByName(omrsTypeDefName)) {
@@ -389,8 +394,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
         }
 
-        checkEventMapperIsConfigured(methodName);
-        eventMapper.sendNewTypeDefEvent(newTypeDef);
+        if (eventMapper != null) {
+            eventMapper.sendNewTypeDefEvent(newTypeDef);
+        }
 
     }
 
@@ -451,8 +457,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             raiseTypeDefNotSupportedException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
         }
 
-        checkEventMapperIsConfigured(methodName);
-        eventMapper.sendNewAttributeTypeDefEvent(newAttributeTypeDef);
+        if (eventMapper != null) {
+            eventMapper.sendNewAttributeTypeDefEvent(newAttributeTypeDef);
+        }
 
     }
 
@@ -588,6 +595,73 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
         }
 
         return bImplemented;
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TypeDef updateTypeDef(String userId, TypeDefPatch typeDefPatch) throws
+            InvalidParameterException,
+            RepositoryErrorException,
+            TypeDefNotKnownException,
+            PatchErrorException,
+            FunctionNotSupportedException,
+            UserNotAuthorizedException {
+
+        final String methodName = "updateTypeDef";
+        super.updateTypeDefParameterValidation(userId, typeDefPatch, methodName);
+
+        String omrsTypeDefName = typeDefPatch.getTypeDefName();
+        String omrsTypeDefGUID = typeDefPatch.getTypeDefGUID();
+        TypeDef existing = typeDefStore.getTypeDefByGUID(omrsTypeDefGUID);
+        TypeDef revised = null;
+
+        if (existing != null) {
+            log.info("Updating TypeDef '{}' based on patch.", omrsTypeDefName);
+            revised = repositoryHelper.applyPatch(atlasRepositoryConnector.getServerName(), existing, typeDefPatch);
+            // TODO: update the Atlas type itself first?
+            switch(revised.getCategory()) {
+                case ENTITY_DEF:
+                    // For a mapped type (entity) that already exists, all we need to do is update the stored
+                    // TypeDef itself -- the mapping will not change for read-only connectivity
+                    break;
+                case RELATIONSHIP_DEF:
+                    RelationshipDefMapping.updateRelationshipTypeInAtlas(
+                            (RelationshipDef) revised,
+                            typeDefStore,
+                            attributeTypeDefStore,
+                            atlasRepositoryConnector
+                    );
+                    break;
+                case CLASSIFICATION_DEF:
+                    ClassificationDefMapping.updateClassificationTypeInAtlas(
+                            (ClassificationDef) revised,
+                            typeDefStore,
+                            attributeTypeDefStore,
+                            atlasRepositoryConnector
+                    );
+                    break;
+                default:
+                    typeDefStore.addUnimplementedTypeDef(revised);
+                    raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
+            }
+            typeDefStore.addTypeDef(revised);
+            if (eventMapper != null) {
+                eventMapper.sendUpdatedTypeDefEvent(typeDefPatch);
+            }
+        } else {
+            // Still need to update unimplemented TypeDefs so that we have the latest for supertypes
+            log.info("Updating unmapped TypeDef '{}' based on patch.", omrsTypeDefName);
+            TypeDef unimplemented = typeDefStore.getUnimplementedTypeDefByGUID(omrsTypeDefGUID);
+            if (unimplemented != null) {
+                revised = repositoryHelper.applyPatch(atlasRepositoryConnector.getServerName(), unimplemented, typeDefPatch);
+            }
+            raiseTypeDefNotKnownException(ApacheAtlasOMRSErrorCode.TYPEDEF_NOT_SUPPORTED, methodName, null, omrsTypeDefName, repositoryName);
+        }
+
+        return revised;
 
     }
 
@@ -1445,28 +1519,31 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 homeParameterName,
                 methodName);
 
-        /*
-         * Validate that the entity GUID is ok
-         */
-        EntityDetail entity = this.isEntityKnown(userId, entityGUID);
-        if (entity != null) {
-            if (metadataCollectionId.equals(entity.getMetadataCollectionId())) {
-                throw new HomeEntityException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, entityGUID, metadataCollectionId, repositoryName),
-                        this.getClass().getName(),
-                        methodName);
+        // Only bother doing any work if there is an event mapper configured into which to actually push
+        // the refresh event
+        if (eventMapper != null) {
+            /*
+             * Validate that the entity GUID is ok
+             */
+            EntityDetail entity = this.isEntityKnown(userId, entityGUID);
+            if (entity != null) {
+                if (metadataCollectionId.equals(entity.getMetadataCollectionId())) {
+                    throw new HomeEntityException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, entityGUID, metadataCollectionId, repositoryName),
+                            this.getClass().getName(),
+                            methodName);
+                }
             }
-        }
 
-        /*
-         * Send refresh message
-         */
-        checkEventMapperIsConfigured(methodName);
-        eventMapper.sendRefreshEntityRequest(
-                typeDefGUID,
-                typeDefName,
-                entityGUID,
-                homeMetadataCollectionId
-        );
+            /*
+             * Send refresh message
+             */
+            eventMapper.sendRefreshEntityRequest(
+                    typeDefGUID,
+                    typeDefName,
+                    entityGUID,
+                    homeMetadataCollectionId
+            );
+        }
 
     }
 
@@ -1500,25 +1577,28 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 homeParameterName,
                 methodName);
 
-        Relationship relationship = this.isRelationshipKnown(userId, relationshipGUID);
-        if (relationship != null) {
-            if (metadataCollectionId.equals(relationship.getMetadataCollectionId())) {
-                throw new HomeRelationshipException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, relationshipGUID, metadataCollectionId, repositoryName),
-                        this.getClass().getName(),
-                        methodName);
+        // Only bother doing any work if there is an event mapper configured into which to actually push
+        // the refresh event
+        if (eventMapper != null) {
+            Relationship relationship = this.isRelationshipKnown(userId, relationshipGUID);
+            if (relationship != null) {
+                if (metadataCollectionId.equals(relationship.getMetadataCollectionId())) {
+                    throw new HomeRelationshipException(ApacheAtlasOMRSErrorCode.HOME_REFRESH.getMessageDefinition(methodName, relationshipGUID, metadataCollectionId, repositoryName),
+                            this.getClass().getName(),
+                            methodName);
+                }
             }
-        }
 
-        /*
-         * Process refresh request
-         */
-        checkEventMapperIsConfigured(methodName);
-        eventMapper.sendRefreshRelationshipRequest(
-                typeDefGUID,
-                typeDefName,
-                relationshipGUID,
-                homeMetadataCollectionId
-        );
+            /*
+             * Process refresh request
+             */
+            eventMapper.sendRefreshRelationshipRequest(
+                    typeDefGUID,
+                    typeDefName,
+                    relationshipGUID,
+                    homeMetadataCollectionId
+            );
+        }
 
     }
 
@@ -1572,12 +1652,15 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
             TypeDef typeDef = typeDefStore.getTypeDefByGUID(entityTypeGUID, false);
             if (typeDef != null) {
                 String omrsTypeName = typeDef.getName();
-                atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
-                results.put(omrsTypeName, atlasTypeNamesByPrefix);
+                if (typeDefStore.isUnimplementedSupertype(omrsTypeName)) {
+                    requestedTypeName = omrsTypeName;
+                } else {
+                    atlasTypeNamesByPrefix = typeDefStore.getAllMappedAtlasTypeDefNames(omrsTypeName);
+                    results.put(omrsTypeName, atlasTypeNamesByPrefix);
+                }
             } else {
                 TypeDef unimplemented = typeDefStore.getUnimplementedTypeDefByGUID(entityTypeGUID);
                 requestedTypeName = unimplemented.getName();
-                log.warn("Unable to search for type, unknown to repository: {}", entityTypeGUID);
             }
         } else {
             atlasTypeNamesByPrefix.put(null, "Referenceable");
@@ -1591,7 +1674,9 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 List<TypeDef> allEntityTypes = findTypeDefsByCategory(userId, TypeDefCategory.ENTITY_DEF);
                 for (TypeDef typeDef : allEntityTypes) {
                     String typeDefName = typeDef.getName();
-                    if (!typeDefName.equals("Referenceable") && repositoryHelper.isTypeOf(metadataCollectionId, typeDefName, requestedTypeName)) {
+                    if (!typeDefName.equals("Referenceable")
+                            && !typeDefStore.isUnimplementedSupertype(typeDefName)
+                            && repositoryHelper.isTypeOf(metadataCollectionId, typeDefName, requestedTypeName)) {
                         Map<String, String> mappings = typeDefStore.getAllMappedAtlasTypeDefNames(typeDefName);
                         if (!mappings.isEmpty()) {
                             results.put(typeDefName, mappings);
@@ -1605,19 +1690,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
 
         return results;
 
-    }
-
-    /**
-     * Ensure that the event mapper is configured and throw exception if it is not.
-     *
-     * @param methodName the method attempting to use the event mapper
-     */
-    private void checkEventMapperIsConfigured(String methodName) throws RepositoryErrorException {
-        if (eventMapper == null) {
-            throw new RepositoryErrorException(ApacheAtlasOMRSErrorCode.EVENT_MAPPER_NOT_INITIALIZED.getMessageDefinition(repositoryName),
-                    this.getClass().getName(),
-                    methodName);
-        }
     }
 
     /**
@@ -1706,7 +1778,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
                             String omrsPropertyName = property.getKey();
                             InstancePropertyValue value = property.getValue();
-                            addSearchConditionFromValue(
+                            boolean added = addSearchConditionFromValue(
                                     propertyCriteria,
                                     omrsPropertyName,
                                     value,
@@ -1715,6 +1787,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                     true
                             );
+                            if (!added) {
+                                if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                    // If we are asked to find everything, but one of the properties cannot be searched,
+                                    // then we should skip the search
+                                    skipSearch = true;
+                                    log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                }
+                            }
                         }
                     }
                     if (!propertyCriteria.isEmpty()) {
@@ -1758,6 +1838,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         // We are searching only for a state that Atlas does not support, so we should ensure no
                         // results are returned (in fact, skip searching entirely).
                         skipSearch = true;
+                        log.info("Skipping search ({}) -- one or more unsupported statuses requested: {}", entityTypeGUID, limitSet);
                     }
                 }
 
@@ -1912,6 +1993,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
                 List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
 
+                boolean skipSearch = false;
                 if (matchProperties != null) {
                     Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
                     // By default, include only Referenceable's properties (as these will be the only properties that exist
@@ -1920,7 +2002,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
                             String omrsPropertyName = property.getKey();
                             InstancePropertyValue value = property.getValue();
-                            addSearchConditionFromValue(
+                            boolean added = addSearchConditionFromValue(
                                     criteria,
                                     omrsPropertyName,
                                     value,
@@ -1929,6 +2011,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                     false
                             );
+                            if (!added) {
+                                if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                    // If we are asked to find everything, but one of the properties cannot be searched,
+                                    // then we should skip the search
+                                    skipSearch = true;
+                                    log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                }
+                            }
                         }
                     }
                 } else if (fullTextQuery != null) {
@@ -1962,7 +2052,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     log.debug(" ... attribute is mapped, to: {}", atlasPropertyName);
                                     if (atlasPropertyName != null) {
                                         log.debug(" ... adding criterion for value: {}", primitivePropertyValue);
-                                        addSearchConditionFromValue(
+                                        boolean added = addSearchConditionFromValue(
                                                 criteria,
                                                 omrsPropertyName,
                                                 primitivePropertyValue,
@@ -1971,6 +2061,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                 (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                                 false
                                         );
+                                        if (!added) {
+                                            if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                                // If we are asked to find everything, but one of the properties cannot be searched,
+                                                // then we should skip the search
+                                                skipSearch = true;
+                                                log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -2004,8 +2102,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 }
                 searchParameters.setEntityFilters(entityFilters);
 
-                boolean skipSearch = false;
-
                 if (limitResultsByStatus != null) {
                     Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
                     if (limitSet.equals(availableStates) || (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED))) {
@@ -2018,6 +2114,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         // Otherwise we must be searching only for states that Atlas does not support, so we should ensure
                         // that no results are returned (by skipping the search entirely).
                         skipSearch = true;
+                        log.info("Skipping search ({}) -- searching for unsupported states: {}", entityTypeGUID, limitSet);
                     }
                 }
 
@@ -2161,7 +2258,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             log.error("Unable to find any TypeDef for entityTypeGUID: {}", entityTypeGUID);
                         }
                     } else {
-                        log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
+                        log.error("Entity with GUID {} not mapped -- excluding from results.", atlasEntityHeader.getGuid());
                     }
                 } catch (EntityNotKnownException e) {
                     log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
@@ -2174,7 +2271,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Adds the provided value to the search criteria for Apache Atlas.
+     * Adds the provided value to the search criteria for Apache Atlas, returning whether it was able to add the
+     * condition (true) or not (false).
      *
      * @param criteria the search criteria to which to append
      * @param omrsPropertyName the OMRS property name to search
@@ -2182,203 +2280,208 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param omrsToAtlasPropertyMap the mappings from OMRS property name to Atlas property name
      * @param omrsTypeDefAttrMap the mappings from OMRS property name to TypeDefAttribute definition of the property
      * @param negateCondition if true, negate (invert) the condition / operator
+     * @return boolean indicating whether the condition could be added (true) or not (false)
      * @throws FunctionNotSupportedException when a regular expression is used for the search that is not supported
      */
     @SuppressWarnings("unchecked")
-    private <T> void addSearchConditionFromValue(List<T> criteria,
-                                                 String omrsPropertyName,
-                                                 InstancePropertyValue value,
-                                                 Map<String, String> omrsToAtlasPropertyMap,
-                                                 Map<String, TypeDefAttribute> omrsTypeDefAttrMap,
-                                                 boolean negateCondition,
-                                                 boolean dslQuery) throws FunctionNotSupportedException {
+    private <T> boolean addSearchConditionFromValue(List<T> criteria,
+                                                    String omrsPropertyName,
+                                                    InstancePropertyValue value,
+                                                    Map<String, String> omrsToAtlasPropertyMap,
+                                                    Map<String, TypeDefAttribute> omrsTypeDefAttrMap,
+                                                    boolean negateCondition,
+                                                    boolean dslQuery) throws FunctionNotSupportedException {
 
         final String methodName = "addSearchConditionFromValue";
+        boolean added = true;
 
         if (omrsPropertyName != null) {
-            String atlasPropertyName = omrsToAtlasPropertyMap.get(omrsPropertyName);
-            if (atlasPropertyName != null) {
+            if (omrsToAtlasPropertyMap != null) {
+                String atlasPropertyName = omrsToAtlasPropertyMap.get(omrsPropertyName);
+                if (atlasPropertyName != null) {
 
-                SearchParameters.FilterCriteria atlasCriterion = new SearchParameters.FilterCriteria();
-                StringBuilder sbCriterion = new StringBuilder();
-                InstancePropertyCategory category = value.getInstancePropertyCategory();
-                switch (category) {
-                    case PRIMITIVE:
-                        PrimitivePropertyValue actualValue = (PrimitivePropertyValue) value;
-                        PrimitiveDefCategory primitiveType = actualValue.getPrimitiveDefCategory();
-                        switch (primitiveType) {
-                            case OM_PRIMITIVE_TYPE_BOOLEAN:
-                            case OM_PRIMITIVE_TYPE_SHORT:
-                            case OM_PRIMITIVE_TYPE_INT:
-                            case OM_PRIMITIVE_TYPE_LONG:
-                            case OM_PRIMITIVE_TYPE_FLOAT:
-                            case OM_PRIMITIVE_TYPE_DOUBLE:
-                            case OM_PRIMITIVE_TYPE_BIGINTEGER:
-                            case OM_PRIMITIVE_TYPE_BIGDECIMAL:
-                                String nonString = actualValue.getPrimitiveValue().toString();
-                                atlasCriterion.setAttributeName(atlasPropertyName);
-                                sbCriterion.append(atlasPropertyName);
-                                if (negateCondition) {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                    sbCriterion.append(" != ");
-                                } else {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                    sbCriterion.append(" = ");
-                                }
-                                atlasCriterion.setAttributeValue(nonString);
-                                sbCriterion.append(nonString);
-                                if (dslQuery) {
-                                    criteria.add((T) sbCriterion.toString());
-                                } else {
-                                    criteria.add((T) atlasCriterion);
-                                }
-                                break;
-                            case OM_PRIMITIVE_TYPE_BYTE:
-                            case OM_PRIMITIVE_TYPE_CHAR:
-                                String single = actualValue.getPrimitiveValue().toString();
-                                atlasCriterion.setAttributeName(atlasPropertyName);
-                                sbCriterion.append(atlasPropertyName);
-                                if (negateCondition) {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                    sbCriterion.append(" != \"");
-                                } else {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                    sbCriterion.append(" = \"");
-                                }
-                                atlasCriterion.setAttributeValue(single);
-                                sbCriterion.append(single);
-                                sbCriterion.append("\"");
-                                if (dslQuery) {
-                                    criteria.add((T) sbCriterion.toString());
-                                } else {
-                                    criteria.add((T) atlasCriterion);
-                                }
-                                break;
-                            case OM_PRIMITIVE_TYPE_DATE:
-                                Long epoch = (Long) actualValue.getPrimitiveValue();
-                                String formattedDate = atlasDateFormat.format(new Date(epoch));
-                                atlasCriterion.setAttributeName(atlasPropertyName);
-                                if (atlasPropertyName.equals("createTime")) {
-                                    sbCriterion.append("__timestamp");
-                                } else if (atlasPropertyName.equals("updateTime")) {
-                                    sbCriterion.append("__modificationTimestamp");
-                                } else {
+                    SearchParameters.FilterCriteria atlasCriterion = new SearchParameters.FilterCriteria();
+                    StringBuilder sbCriterion = new StringBuilder();
+                    InstancePropertyCategory category = value.getInstancePropertyCategory();
+                    switch (category) {
+                        case PRIMITIVE:
+                            PrimitivePropertyValue actualValue = (PrimitivePropertyValue) value;
+                            PrimitiveDefCategory primitiveType = actualValue.getPrimitiveDefCategory();
+                            switch (primitiveType) {
+                                case OM_PRIMITIVE_TYPE_BOOLEAN:
+                                case OM_PRIMITIVE_TYPE_SHORT:
+                                case OM_PRIMITIVE_TYPE_INT:
+                                case OM_PRIMITIVE_TYPE_LONG:
+                                case OM_PRIMITIVE_TYPE_FLOAT:
+                                case OM_PRIMITIVE_TYPE_DOUBLE:
+                                case OM_PRIMITIVE_TYPE_BIGINTEGER:
+                                case OM_PRIMITIVE_TYPE_BIGDECIMAL:
+                                    String nonString = actualValue.getPrimitiveValue().toString();
+                                    atlasCriterion.setAttributeName(atlasPropertyName);
                                     sbCriterion.append(atlasPropertyName);
-                                }
-                                if (negateCondition) {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                    sbCriterion.append(" != \"");
-                                } else {
-                                    atlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                    sbCriterion.append(" = \"");
-                                }
-                                atlasCriterion.setAttributeValue(formattedDate);
-                                sbCriterion.append(epoch);
-                                sbCriterion.append("\"");
-                                if (dslQuery) {
-                                    criteria.add((T) sbCriterion.toString());
-                                } else {
-                                    criteria.add((T) atlasCriterion);
-                                }
-                                break;
-                            case OM_PRIMITIVE_TYPE_STRING:
-                            default:
-                                atlasCriterion.setAttributeName(atlasPropertyName);
-                                sbCriterion.append(atlasPropertyName);
-                                String candidateValue = actualValue.getPrimitiveValue().toString();
-                                String unqualifiedValue = repositoryHelper.getUnqualifiedLiteralString(candidateValue);
-                                if (repositoryHelper.isContainsRegex(candidateValue)) {
-                                    sbCriterion.append(" LIKE \"*");
-                                    sbCriterion.append(unqualifiedValue);
-                                    sbCriterion.append("\"*");
-                                    atlasCriterion.setOperator(SearchParameters.Operator.CONTAINS);
-                                } else if (repositoryHelper.isEndsWithRegex(candidateValue)) {
-                                    sbCriterion.append(" LIKE \"*");
-                                    sbCriterion.append(unqualifiedValue);
-                                    sbCriterion.append("\"");
-                                    atlasCriterion.setOperator(SearchParameters.Operator.ENDS_WITH);
-                                } else if (repositoryHelper.isStartsWithRegex(candidateValue)) {
-                                    sbCriterion.append(" LIKE \"");
-                                    sbCriterion.append(unqualifiedValue);
-                                    sbCriterion.append("*\"");
-                                    atlasCriterion.setOperator(SearchParameters.Operator.STARTS_WITH);
-                                } else if (repositoryHelper.isExactMatchRegex(candidateValue)) {
                                     if (negateCondition) {
-                                        if (unqualifiedValue.equals("")) {
-                                            atlasCriterion.setOperator(SearchParameters.Operator.NOT_NULL);
-                                        } else {
-                                            atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                        }
-                                        sbCriterion.append(" != \"");
+                                        atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                        sbCriterion.append(" != ");
                                     } else {
-                                        if (unqualifiedValue.equals("")) {
-                                            atlasCriterion.setOperator(SearchParameters.Operator.IS_NULL);
-                                        } else {
-                                            atlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                        }
-                                        sbCriterion.append(" = \"");
+                                        atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                        sbCriterion.append(" = ");
                                     }
-                                    sbCriterion.append(unqualifiedValue);
-                                    sbCriterion.append("\"");
-                                } else {
-                                    raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED, methodName, repositoryName, candidateValue);
-                                }
-                                atlasCriterion.setAttributeValue(unqualifiedValue);
-                                if (dslQuery) {
-                                    criteria.add((T) sbCriterion.toString());
-                                } else {
-                                    criteria.add((T) atlasCriterion);
-                                }
-                                break;
-                        }
-                        break;
-                    case ENUM:
-                        String omrsEnumValue = ((EnumPropertyValue) value).getSymbolicName();
-                        TypeDefAttribute typeDefAttribute = omrsTypeDefAttrMap.get(omrsPropertyName);
-                        if (typeDefAttribute != null) {
-                            Map<String, Set<String>> elementMap = attributeTypeDefStore.getElementMappingsForOMRSTypeDef(typeDefAttribute.getAttributeType().getName());
-                            if (elementMap != null) {
-                                Set<String> atlasEnumValues = elementMap.get(omrsEnumValue);
-                                if (atlasEnumValues != null && !atlasEnumValues.isEmpty()) {
-                                    // build a list of the OR-able sub-conditions
-                                    List<SearchParameters.FilterCriteria> subAtlasCriteria = new ArrayList<>();
-                                    List<String> subCriteria = new ArrayList<>();
-                                    sbCriterion.append("(");
-                                    for (String atlasEnumValue : atlasEnumValues) {
-                                        StringBuilder subCriterion = new StringBuilder();
-                                        SearchParameters.FilterCriteria subAtlasCriterion = new SearchParameters.FilterCriteria();
-                                        subAtlasCriterion.setAttributeName(atlasPropertyName);
-                                        subCriterion.append(atlasPropertyName);
-                                        if (negateCondition) {
-                                            subAtlasCriterion.setOperator(SearchParameters.Operator.NEQ);
-                                            subCriterion.append(" != \"");
-                                        } else {
-                                            subAtlasCriterion.setOperator(SearchParameters.Operator.EQ);
-                                            subCriterion.append(" = \"");
-                                        }
-                                        subAtlasCriterion.setAttributeValue(atlasEnumValue);
-                                        subCriterion.append(atlasEnumValue);
-                                        subCriterion.append("\"");
-                                        subAtlasCriteria.add(subAtlasCriterion);
-                                        subCriteria.add(subCriterion.toString());
-                                    }
-                                    sbCriterion.append(String.join(" OR ", subCriteria));
-                                    sbCriterion.append(")");
-                                    atlasCriterion.setCriterion(subAtlasCriteria);
-                                    atlasCriterion.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                                    atlasCriterion.setAttributeValue(nonString);
+                                    sbCriterion.append(nonString);
                                     if (dslQuery) {
                                         criteria.add((T) sbCriterion.toString());
                                     } else {
                                         criteria.add((T) atlasCriterion);
                                     }
-                                } else {
-                                    log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
-                                }
+                                    break;
+                                case OM_PRIMITIVE_TYPE_BYTE:
+                                case OM_PRIMITIVE_TYPE_CHAR:
+                                    String single = actualValue.getPrimitiveValue().toString();
+                                    atlasCriterion.setAttributeName(atlasPropertyName);
+                                    sbCriterion.append(atlasPropertyName);
+                                    if (negateCondition) {
+                                        atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                        sbCriterion.append(" != \"");
+                                    } else {
+                                        atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                        sbCriterion.append(" = \"");
+                                    }
+                                    atlasCriterion.setAttributeValue(single);
+                                    sbCriterion.append(single);
+                                    sbCriterion.append("\"");
+                                    if (dslQuery) {
+                                        criteria.add((T) sbCriterion.toString());
+                                    } else {
+                                        criteria.add((T) atlasCriterion);
+                                    }
+                                    break;
+                                case OM_PRIMITIVE_TYPE_DATE:
+                                    Long epoch = (Long) actualValue.getPrimitiveValue();
+                                    String formattedDate = atlasDateFormat.format(new Date(epoch));
+                                    atlasCriterion.setAttributeName(atlasPropertyName);
+                                    if (atlasPropertyName.equals("createTime")) {
+                                        sbCriterion.append("__timestamp");
+                                    } else if (atlasPropertyName.equals("updateTime")) {
+                                        sbCriterion.append("__modificationTimestamp");
+                                    } else {
+                                        sbCriterion.append(atlasPropertyName);
+                                    }
+                                    if (negateCondition) {
+                                        atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                        sbCriterion.append(" != \"");
+                                    } else {
+                                        atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                        sbCriterion.append(" = \"");
+                                    }
+                                    atlasCriterion.setAttributeValue(formattedDate);
+                                    sbCriterion.append(epoch);
+                                    sbCriterion.append("\"");
+                                    if (dslQuery) {
+                                        criteria.add((T) sbCriterion.toString());
+                                    } else {
+                                        criteria.add((T) atlasCriterion);
+                                    }
+                                    break;
+                                case OM_PRIMITIVE_TYPE_STRING:
+                                default:
+                                    atlasCriterion.setAttributeName(atlasPropertyName);
+                                    sbCriterion.append(atlasPropertyName);
+                                    String candidateValue = actualValue.getPrimitiveValue().toString();
+                                    String unqualifiedValue = repositoryHelper.getUnqualifiedLiteralString(candidateValue);
+                                    if (repositoryHelper.isContainsRegex(candidateValue)) {
+                                        sbCriterion.append(" LIKE \"*");
+                                        sbCriterion.append(unqualifiedValue);
+                                        sbCriterion.append("\"*");
+                                        atlasCriterion.setOperator(SearchParameters.Operator.CONTAINS);
+                                    } else if (repositoryHelper.isEndsWithRegex(candidateValue)) {
+                                        sbCriterion.append(" LIKE \"*");
+                                        sbCriterion.append(unqualifiedValue);
+                                        sbCriterion.append("\"");
+                                        atlasCriterion.setOperator(SearchParameters.Operator.ENDS_WITH);
+                                    } else if (repositoryHelper.isStartsWithRegex(candidateValue)) {
+                                        sbCriterion.append(" LIKE \"");
+                                        sbCriterion.append(unqualifiedValue);
+                                        sbCriterion.append("*\"");
+                                        atlasCriterion.setOperator(SearchParameters.Operator.STARTS_WITH);
+                                    } else if (repositoryHelper.isExactMatchRegex(candidateValue)) {
+                                        if (negateCondition) {
+                                            if (unqualifiedValue.equals("")) {
+                                                atlasCriterion.setOperator(SearchParameters.Operator.NOT_NULL);
+                                            } else {
+                                                atlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                            }
+                                            sbCriterion.append(" != \"");
+                                        } else {
+                                            if (unqualifiedValue.equals("")) {
+                                                atlasCriterion.setOperator(SearchParameters.Operator.IS_NULL);
+                                            } else {
+                                                atlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                            }
+                                            sbCriterion.append(" = \"");
+                                        }
+                                        sbCriterion.append(unqualifiedValue);
+                                        sbCriterion.append("\"");
+                                    } else {
+                                        raiseFunctionNotSupportedException(ApacheAtlasOMRSErrorCode.REGEX_NOT_IMPLEMENTED, methodName, repositoryName, candidateValue);
+                                    }
+                                    atlasCriterion.setAttributeValue(unqualifiedValue);
+                                    if (dslQuery) {
+                                        criteria.add((T) sbCriterion.toString());
+                                    } else {
+                                        criteria.add((T) atlasCriterion);
+                                    }
+                                    break;
                             }
-                        } else {
-                            log.warn("Unable to find enum with name: {}", omrsPropertyName);
-                        }
-                        break;
+                            break;
+                        case ENUM:
+                            String omrsEnumValue = ((EnumPropertyValue) value).getSymbolicName();
+                            TypeDefAttribute typeDefAttribute = omrsTypeDefAttrMap.get(omrsPropertyName);
+                            if (typeDefAttribute != null) {
+                                Map<String, Set<String>> elementMap = attributeTypeDefStore.getElementMappingsForOMRSTypeDef(typeDefAttribute.getAttributeType().getName());
+                                if (elementMap != null) {
+                                    Set<String> atlasEnumValues = elementMap.get(omrsEnumValue);
+                                    if (atlasEnumValues != null && !atlasEnumValues.isEmpty()) {
+                                        // build a list of the OR-able sub-conditions
+                                        List<SearchParameters.FilterCriteria> subAtlasCriteria = new ArrayList<>();
+                                        List<String> subCriteria = new ArrayList<>();
+                                        sbCriterion.append("(");
+                                        for (String atlasEnumValue : atlasEnumValues) {
+                                            StringBuilder subCriterion = new StringBuilder();
+                                            SearchParameters.FilterCriteria subAtlasCriterion = new SearchParameters.FilterCriteria();
+                                            subAtlasCriterion.setAttributeName(atlasPropertyName);
+                                            subCriterion.append(atlasPropertyName);
+                                            if (negateCondition) {
+                                                subAtlasCriterion.setOperator(SearchParameters.Operator.NEQ);
+                                                subCriterion.append(" != \"");
+                                            } else {
+                                                subAtlasCriterion.setOperator(SearchParameters.Operator.EQ);
+                                                subCriterion.append(" = \"");
+                                            }
+                                            subAtlasCriterion.setAttributeValue(atlasEnumValue);
+                                            subCriterion.append(atlasEnumValue);
+                                            subCriterion.append("\"");
+                                            subAtlasCriteria.add(subAtlasCriterion);
+                                            subCriteria.add(subCriterion.toString());
+                                        }
+                                        sbCriterion.append(String.join(" OR ", subCriteria));
+                                        sbCriterion.append(")");
+                                        atlasCriterion.setCriterion(subAtlasCriteria);
+                                        atlasCriterion.setCondition(SearchParameters.FilterCriteria.Condition.OR);
+                                        if (dslQuery) {
+                                            criteria.add((T) sbCriterion.toString());
+                                        } else {
+                                            criteria.add((T) atlasCriterion);
+                                        }
+                                    } else {
+                                        log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
+                                        added = false;
+                                    }
+                                }
+                            } else {
+                                log.warn("Unable to find enum with name: {}", omrsPropertyName);
+                                added = false;
+                            }
+                            break;
                     /*case STRUCT:
                         Map<String, InstancePropertyValue> structValues = ((StructPropertyValue) value).getAttributes().getInstanceProperties();
                         for (Map.Entry<String, InstancePropertyValue> nextEntry : structValues.entrySet()) {
@@ -2391,46 +2494,55 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             );
                         }
                         break;*/
-                    case MAP:
-                        Map<String, InstancePropertyValue> mapValues = ((MapPropertyValue) value).getMapValues().getInstanceProperties();
-                        for (Map.Entry<String, InstancePropertyValue> nextEntry : mapValues.entrySet()) {
-                            addSearchConditionFromValue(
-                                    criteria,
-                                    nextEntry.getKey(),
-                                    nextEntry.getValue(),
-                                    omrsToAtlasPropertyMap,
-                                    omrsTypeDefAttrMap,
-                                    negateCondition,
-                                    dslQuery
-                            );
-                        }
-                        break;
-                    case ARRAY:
-                        Map<String, InstancePropertyValue> arrayValues = ((ArrayPropertyValue) value).getArrayValues().getInstanceProperties();
-                        for (Map.Entry<String, InstancePropertyValue> nextEntry : arrayValues.entrySet()) {
-                            addSearchConditionFromValue(
-                                    criteria,
-                                    atlasPropertyName,
-                                    nextEntry.getValue(),
-                                    omrsToAtlasPropertyMap,
-                                    omrsTypeDefAttrMap,
-                                    negateCondition,
-                                    dslQuery
-                            );
-                        }
-                        break;
-                    default:
-                        // Do nothing
-                        log.warn("Unable to handle search criteria for value type: {}", category);
-                        break;
-                }
+                        case MAP:
+                            Map<String, InstancePropertyValue> mapValues = ((MapPropertyValue) value).getMapValues().getInstanceProperties();
+                            for (Map.Entry<String, InstancePropertyValue> nextEntry : mapValues.entrySet()) {
+                                added = added && addSearchConditionFromValue(
+                                        criteria,
+                                        nextEntry.getKey(),
+                                        nextEntry.getValue(),
+                                        omrsToAtlasPropertyMap,
+                                        omrsTypeDefAttrMap,
+                                        negateCondition,
+                                        dslQuery
+                                );
+                            }
+                            break;
+                        case ARRAY:
+                            Map<String, InstancePropertyValue> arrayValues = ((ArrayPropertyValue) value).getArrayValues().getInstanceProperties();
+                            for (Map.Entry<String, InstancePropertyValue> nextEntry : arrayValues.entrySet()) {
+                                added = added && addSearchConditionFromValue(
+                                        criteria,
+                                        atlasPropertyName,
+                                        nextEntry.getValue(),
+                                        omrsToAtlasPropertyMap,
+                                        omrsTypeDefAttrMap,
+                                        negateCondition,
+                                        dslQuery
+                                );
+                            }
+                            break;
+                        default:
+                            // Do nothing
+                            log.warn("Unable to handle search criteria for value type: {}", category);
+                            added = false;
+                            break;
+                    }
 
+                } else {
+                    log.warn("Unable to add search condition, no mapped Atlas property for '{}': {}", omrsPropertyName, value);
+                    added = false;
+                }
             } else {
-                log.warn("Unable to add search condition, no mapped Atlas property for '{}': {}", omrsPropertyName, value);
+                log.info("Unable to add search condition, no mapped Atlas property for property: {}", omrsPropertyName);
+                added = false;
             }
         } else {
             log.warn("Unable to add search condition, no OMRS property: {}", value);
+            added = false;
         }
+
+        return added;
 
     }
 

@@ -14,6 +14,10 @@
     "omrs": "Asset",
     "propertyMappings": [
       {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
         "atlas": "name",
         "omrs": "name"
       },
@@ -29,11 +33,264 @@
   },
   {
     "atlas": "DataSet",
-    "omrs": "DataSet"
+    "omrs": "DataSet",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
   },
   {
     "atlas": "Process",
-    "omrs": "Process"
+    "omrs": "Process",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_namespace",
+    "omrs": "DataStore",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      },
+      {
+        "atlas": "createTime",
+        "omrs": "createTime"
+      },
+      {
+        "atlas": "modifiedTime",
+        "omrs": "modifiedTime"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_namespace",
+    "omrs": "Connection",
+    "prefix": "HBNC",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "clusterName",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "parameters",
+        "omrs": "configurationProperties"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_namespace",
+    "omrs": "ConnectionToAsset",
+    "prefix": "HBNCTA",
+    "endpointMappings": [
+      {
+        "omrs": "connections",
+        "prefix": "HBNC"
+      },
+      {
+        "omrs": "asset"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_namespace",
+    "omrs": "Endpoint",
+    "prefix": "HBNE",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "clusterName",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_namespace",
+    "omrs": "ConnectionEndpoint",
+    "prefix": "HBNCE",
+    "endpointMappings": [
+      {
+        "omrs": "connectionEndpoint",
+        "prefix": "HBNE"
+      },
+      {
+        "omrs": "connections",
+        "prefix": "HBNC"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_table",
+    "omrs": "DataSet",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_table_namespace",
+    "omrs": "DataContentForDataSet",
+    "endpointMappings": [
+      {
+        "atlas": "namespace",
+        "omrs": "dataContent"
+      },
+      {
+        "atlas": "tables",
+        "omrs": "supportedDataSets"
+      }
+    ]
+  },
+  {
+    "omrs": "SchemaElement"
+  },
+  {
+    "omrs": "SchemaType"
+  },
+  {
+    "omrs": "ComplexSchemaType"
+  },
+  {
+    "atlas": "hbase_column_family",
+    "omrs": "TabularSchemaType",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "author"
+      },
+      {
+        "atlas": "dataBlockEncoding",
+        "omrs": "encodingStandard"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_table_column_families",
+    "omrs": "AssetSchemaType",
+    "endpointMappings": [
+      {
+        "atlas": "table",
+        "omrs": "describesAssets"
+      },
+      {
+        "atlas": "column_families",
+        "omrs": "schema"
+      }
+    ]
+  },
+  {
+    "omrs": "SchemaAttribute"
+  },
+  {
+    "atlas": "hbase_column",
+    "omrs": "TabularColumn",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "displayName"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      }
+    ]
+  },
+  {
+    "atlas": "hbase_column_family_columns",
+    "omrs": "AttributeForSchema",
+    "endpointMappings": [
+      {
+        "atlas": "column_family",
+        "omrs": "parentSchemas"
+      },
+      {
+        "atlas": "columns",
+        "omrs": "attributes"
+      }
+    ]
   },
   {
     "atlas": "hdfs_path",
@@ -230,10 +487,6 @@
         "omrs": "description"
       },
       {
-        "atlas": "comment",
-        "omrs": "comment"
-      },
-      {
         "atlas": "tableType",
         "omrs": "nativeClass"
       }
@@ -291,12 +544,17 @@
       {
         "atlas": "description",
         "omrs": "description"
-      },
-      {
-        "atlas": "comment",
-        "omrs": "comment"
       }
     ]
+  },
+  {
+    "omrs": "SimpleSchemaType"
+  },
+  {
+    "omrs": "PrimitiveSchemaType"
+  },
+  {
+    "omrs": "TabularColumnType"
   },
   {
     "atlas": "hive_column",
@@ -347,211 +605,6 @@
       {
         "omrs": "attributes",
         "atlas": "columns"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_namespace",
-    "omrs": "DataStore",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "name",
-        "omrs": "name"
-      },
-      {
-        "atlas": "description",
-        "omrs": "description"
-      },
-      {
-        "atlas": "owner",
-        "omrs": "owner"
-      },
-      {
-        "atlas": "createTime",
-        "omrs": "createTime"
-      },
-      {
-        "atlas": "modifiedTime",
-        "omrs": "modifiedTime"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_namespace",
-    "omrs": "Connection",
-    "prefix": "HBNC",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "clusterName",
-        "omrs": "displayName"
-      },
-      {
-        "atlas": "description",
-        "omrs": "description"
-      },
-      {
-        "atlas": "parameters",
-        "omrs": "configurationProperties"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_namespace",
-    "omrs": "ConnectionToAsset",
-    "prefix": "HBNCTA",
-    "endpointMappings": [
-      {
-        "omrs": "connections",
-        "prefix": "HBNC"
-      },
-      {
-        "omrs": "asset"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_namespace",
-    "omrs": "Endpoint",
-    "prefix": "HBNE",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "clusterName",
-        "omrs": "name"
-      },
-      {
-        "atlas": "description",
-        "omrs": "description"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_namespace",
-    "omrs": "ConnectionEndpoint",
-    "prefix": "HBNCE",
-    "endpointMappings": [
-      {
-        "omrs": "connectionEndpoint",
-        "prefix": "HBNE"
-      },
-      {
-        "omrs": "connections",
-        "prefix": "HBNC"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_table",
-    "omrs": "DataSet",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "name",
-        "omrs": "name"
-      },
-      {
-        "atlas": "description",
-        "omrs": "description"
-      },
-      {
-        "atlas": "owner",
-        "omrs": "owner"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_table_namespace",
-    "omrs": "DataContentForDataSet",
-    "endpointMappings": [
-      {
-        "atlas": "namespace",
-        "omrs": "dataContent"
-      },
-      {
-        "atlas": "tables",
-        "omrs": "supportedDataSets"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_column_family",
-    "omrs": "TabularSchemaType",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "name",
-        "omrs": "displayName"
-      },
-      {
-        "atlas": "owner",
-        "omrs": "author"
-      },
-      {
-        "atlas": "dataBlockEncoding",
-        "omrs": "encodingStandard"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_table_column_families",
-    "omrs": "AssetSchemaType",
-    "endpointMappings": [
-      {
-        "atlas": "table",
-        "omrs": "describesAssets"
-      },
-      {
-        "atlas": "column_families",
-        "omrs": "schema"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_column",
-    "omrs": "TabularColumn",
-    "propertyMappings": [
-      {
-        "atlas": "qualifiedName",
-        "omrs": "qualifiedName"
-      },
-      {
-        "atlas": "name",
-        "omrs": "displayName"
-      },
-      {
-        "atlas": "description",
-        "omrs": "description"
-      }
-    ]
-  },
-  {
-    "atlas": "hbase_column_family_columns",
-    "omrs": "AttributeForSchema",
-    "endpointMappings": [
-      {
-        "atlas": "column_family",
-        "omrs": "parentSchemas"
-      },
-      {
-        "atlas": "columns",
-        "omrs": "attributes"
       }
     ]
   },

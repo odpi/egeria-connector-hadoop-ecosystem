@@ -24,6 +24,7 @@ import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Ope
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.AttributeTypeDef;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDef;
+import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.typedefs.TypeDefPatch;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryeventmapper.OMRSRepositoryEventMapperBase;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.RepositoryErrorException;
 import org.slf4j.Logger;
@@ -439,6 +440,21 @@ public class ApacheAtlasOMRSRepositoryEventMapper extends OMRSRepositoryEventMap
                 localServerType,
                 localOrganizationName,
                 newAttributeTypeDef);
+    }
+
+    /**
+     * Sends an updated TypeDef event.
+     *
+     * @param typeDefPatch the patch that was applied to achieve the update
+     */
+    public void sendUpdatedTypeDefEvent(TypeDefPatch typeDefPatch) {
+        repositoryEventProcessor.processUpdatedTypeDefEvent(
+                sourceName,
+                metadataCollectionId,
+                localServerName,
+                localServerType,
+                localOrganizationName,
+                typeDefPatch);
     }
 
     /**

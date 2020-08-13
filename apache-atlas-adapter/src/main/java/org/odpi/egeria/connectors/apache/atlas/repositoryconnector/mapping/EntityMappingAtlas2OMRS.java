@@ -69,12 +69,14 @@ public class EntityMappingAtlas2OMRS {
      */
     public EntitySummary getEntitySummary() throws RepositoryErrorException {
 
-        String atlasTypeDefName = atlasEntity.getTypeName();
-        String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
-        log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
-
         EntitySummary summary = null;
-        if (omrsTypeDefName != null) {
+        String atlasTypeDefName = atlasEntity.getTypeName();
+        EntityMapping mapping = getMappingForAtlasType(atlasTypeDefName);
+
+        if (mapping != null) {
+            String omrsTypeDefName = mapping.getOmrsTypeName();
+            atlasTypeDefName = mapping.getAtlasTypeName();
+            log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
             summary = getSkeletonEntitySummary(omrsTypeDefName, prefix);
             if (summary != null) {
                 addClassifications(summary);
@@ -96,12 +98,14 @@ public class EntityMappingAtlas2OMRS {
     public EntityDetail getEntityDetail() throws RepositoryErrorException {
 
         final String methodName = "getEntityDetail";
-        String atlasTypeDefName = atlasEntity.getTypeName();
-        String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
-        log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
-
         EntityDetail detail = null;
-        if (omrsTypeDefName != null) {
+        String atlasTypeDefName = atlasEntity.getTypeName();
+        EntityMapping mapping = getMappingForAtlasType(atlasTypeDefName);
+
+        if (mapping != null) {
+            String omrsTypeDefName = mapping.getOmrsTypeName();
+            atlasTypeDefName = mapping.getAtlasTypeName();
+            log.info("Found mapped type for Atlas type '{}' with prefix '{}': {}", atlasTypeDefName, prefix, omrsTypeDefName);
 
             // Create the basic skeleton
             detail = getSkeletonEntityDetail(omrsTypeDefName, prefix);
@@ -325,6 +329,28 @@ public class EntityMappingAtlas2OMRS {
     }
 
     /**
+     * Attempt to resolve the Atlas entity to a mapping, using the most granular mapping we can find. If there is not
+     * a mapping for the Atlas entity type directly, traverse up the inheritance hierarchy to find the lowest level
+     * we can for the type that still has a mapping (even if this means we eventually only map it as a Referenceable).
+     *
+     * @param atlasTypeDefName the name of the Apache Atlas type def for which to find the mapping
+     * @return String giving the OMRS type name of the lowest-level mapping we can find
+     */
+    private EntityMapping getMappingForAtlasType(String atlasTypeDefName) {
+        if (atlasTypeDefName != null) {
+            String omrsTypeDefName = typeDefStore.getMappedOMRSTypeDefName(atlasTypeDefName, prefix);
+            if (omrsTypeDefName == null) {
+                String parent = atlasRepositoryConnector.getParentTypeForAtlasEntityType(atlasTypeDefName);
+                return getMappingForAtlasType(parent);
+            } else {
+                return new EntityMapping(atlasTypeDefName, omrsTypeDefName);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Create the base skeleton of an EntitySummary, irrespective of the specific Apache Atlas object.
      *
      * @param omrsTypeDefName the name of the OMRS TypeDef for which to create a skeleton EntitySummary
@@ -500,6 +526,25 @@ public class EntityMappingAtlas2OMRS {
         if (!classifications.isEmpty()) {
             omrsObj.setClassifications(classifications);
         }
+
+    }
+
+    /**
+     * For translating between entity representations.
+     */
+    private final class EntityMapping {
+
+        private String atlasTypeName;
+        private String omrsTypeName;
+
+        EntityMapping(String atlasTypeName,
+                      String omrsTypeName) {
+            this.atlasTypeName = atlasTypeName;
+            this.omrsTypeName = omrsTypeName;
+        }
+
+        public String getAtlasTypeName() { return atlasTypeName; }
+        public String getOmrsTypeName() { return omrsTypeName; }
 
     }
 
