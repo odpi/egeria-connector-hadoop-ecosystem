@@ -1778,7 +1778,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
                             String omrsPropertyName = property.getKey();
                             InstancePropertyValue value = property.getValue();
-                            addSearchConditionFromValue(
+                            boolean added = addSearchConditionFromValue(
                                     propertyCriteria,
                                     omrsPropertyName,
                                     value,
@@ -1787,6 +1787,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                     true
                             );
+                            if (!added) {
+                                if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                    // If we are asked to find everything, but one of the properties cannot be searched,
+                                    // then we should skip the search
+                                    skipSearch = true;
+                                    log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                }
+                            }
                         }
                     }
                     if (!propertyCriteria.isEmpty()) {
@@ -1830,6 +1838,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         // We are searching only for a state that Atlas does not support, so we should ensure no
                         // results are returned (in fact, skip searching entirely).
                         skipSearch = true;
+                        log.info("Skipping search ({}) -- one or more unsupported statuses requested: {}", entityTypeGUID, limitSet);
                     }
                 }
 
@@ -1984,6 +1993,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 Map<String, TypeDefAttribute> omrsAttrTypeDefs = typeDefStore.getAllTypeDefAttributesForName(omrsTypeName);
                 List<SearchParameters.FilterCriteria> criteria = new ArrayList<>();
 
+                boolean skipSearch = false;
                 if (matchProperties != null) {
                     Map<String, InstancePropertyValue> properties = matchProperties.getInstanceProperties();
                     // By default, include only Referenceable's properties (as these will be the only properties that exist
@@ -1992,7 +2002,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         for (Map.Entry<String, InstancePropertyValue> property : properties.entrySet()) {
                             String omrsPropertyName = property.getKey();
                             InstancePropertyValue value = property.getValue();
-                            addSearchConditionFromValue(
+                            boolean added = addSearchConditionFromValue(
                                     criteria,
                                     omrsPropertyName,
                                     value,
@@ -2001,6 +2011,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                     false
                             );
+                            if (!added) {
+                                if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                    // If we are asked to find everything, but one of the properties cannot be searched,
+                                    // then we should skip the search
+                                    skipSearch = true;
+                                    log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                }
+                            }
                         }
                     }
                 } else if (fullTextQuery != null) {
@@ -2034,7 +2052,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                     log.debug(" ... attribute is mapped, to: {}", atlasPropertyName);
                                     if (atlasPropertyName != null) {
                                         log.debug(" ... adding criterion for value: {}", primitivePropertyValue);
-                                        addSearchConditionFromValue(
+                                        boolean added = addSearchConditionFromValue(
                                                 criteria,
                                                 omrsPropertyName,
                                                 primitivePropertyValue,
@@ -2043,6 +2061,14 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                                 (matchCriteria != null) && matchCriteria.equals(MatchCriteria.NONE),
                                                 false
                                         );
+                                        if (!added) {
+                                            if (matchCriteria == null || matchCriteria.equals(MatchCriteria.ALL)) {
+                                                // If we are asked to find everything, but one of the properties cannot be searched,
+                                                // then we should skip the search
+                                                skipSearch = true;
+                                                log.info("Skipping search ({}) -- ALL criteria should match, but this one is unmapped: {}", entityTypeGUID, omrsPropertyName);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -2076,8 +2102,6 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                 }
                 searchParameters.setEntityFilters(entityFilters);
 
-                boolean skipSearch = false;
-
                 if (limitResultsByStatus != null) {
                     Set<InstanceStatus> limitSet = new HashSet<>(limitResultsByStatus);
                     if (limitSet.equals(availableStates) || (limitSet.size() == 1 && limitSet.contains(InstanceStatus.DELETED))) {
@@ -2090,6 +2114,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         // Otherwise we must be searching only for states that Atlas does not support, so we should ensure
                         // that no results are returned (by skipping the search entirely).
                         skipSearch = true;
+                        log.info("Skipping search ({}) -- searching for unsupported states: {}", entityTypeGUID, limitSet);
                     }
                 }
 
@@ -2233,7 +2258,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                             log.error("Unable to find any TypeDef for entityTypeGUID: {}", entityTypeGUID);
                         }
                     } else {
-                        log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
+                        log.error("Entity with GUID {} not mapped -- excluding from results.", atlasEntityHeader.getGuid());
                     }
                 } catch (EntityNotKnownException e) {
                     log.error("Entity with GUID {} not known -- excluding from results.", atlasEntityHeader.getGuid());
@@ -2246,7 +2271,8 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
     }
 
     /**
-     * Adds the provided value to the search criteria for Apache Atlas.
+     * Adds the provided value to the search criteria for Apache Atlas, returning whether it was able to add the
+     * condition (true) or not (false).
      *
      * @param criteria the search criteria to which to append
      * @param omrsPropertyName the OMRS property name to search
@@ -2254,18 +2280,20 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
      * @param omrsToAtlasPropertyMap the mappings from OMRS property name to Atlas property name
      * @param omrsTypeDefAttrMap the mappings from OMRS property name to TypeDefAttribute definition of the property
      * @param negateCondition if true, negate (invert) the condition / operator
+     * @return boolean indicating whether the condition could be added (true) or not (false)
      * @throws FunctionNotSupportedException when a regular expression is used for the search that is not supported
      */
     @SuppressWarnings("unchecked")
-    private <T> void addSearchConditionFromValue(List<T> criteria,
-                                                 String omrsPropertyName,
-                                                 InstancePropertyValue value,
-                                                 Map<String, String> omrsToAtlasPropertyMap,
-                                                 Map<String, TypeDefAttribute> omrsTypeDefAttrMap,
-                                                 boolean negateCondition,
-                                                 boolean dslQuery) throws FunctionNotSupportedException {
+    private <T> boolean addSearchConditionFromValue(List<T> criteria,
+                                                    String omrsPropertyName,
+                                                    InstancePropertyValue value,
+                                                    Map<String, String> omrsToAtlasPropertyMap,
+                                                    Map<String, TypeDefAttribute> omrsTypeDefAttrMap,
+                                                    boolean negateCondition,
+                                                    boolean dslQuery) throws FunctionNotSupportedException {
 
         final String methodName = "addSearchConditionFromValue";
+        boolean added = true;
 
         if (omrsPropertyName != null) {
             if (omrsToAtlasPropertyMap != null) {
@@ -2446,10 +2474,12 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                                         }
                                     } else {
                                         log.warn("Unable to find mapped enum value for {}: {}", omrsPropertyName, omrsEnumValue);
+                                        added = false;
                                     }
                                 }
                             } else {
                                 log.warn("Unable to find enum with name: {}", omrsPropertyName);
+                                added = false;
                             }
                             break;
                     /*case STRUCT:
@@ -2467,7 +2497,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         case MAP:
                             Map<String, InstancePropertyValue> mapValues = ((MapPropertyValue) value).getMapValues().getInstanceProperties();
                             for (Map.Entry<String, InstancePropertyValue> nextEntry : mapValues.entrySet()) {
-                                addSearchConditionFromValue(
+                                added = added && addSearchConditionFromValue(
                                         criteria,
                                         nextEntry.getKey(),
                                         nextEntry.getValue(),
@@ -2481,7 +2511,7 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         case ARRAY:
                             Map<String, InstancePropertyValue> arrayValues = ((ArrayPropertyValue) value).getArrayValues().getInstanceProperties();
                             for (Map.Entry<String, InstancePropertyValue> nextEntry : arrayValues.entrySet()) {
-                                addSearchConditionFromValue(
+                                added = added && addSearchConditionFromValue(
                                         criteria,
                                         atlasPropertyName,
                                         nextEntry.getValue(),
@@ -2495,18 +2525,24 @@ public class ApacheAtlasOMRSMetadataCollection extends OMRSMetadataCollectionBas
                         default:
                             // Do nothing
                             log.warn("Unable to handle search criteria for value type: {}", category);
+                            added = false;
                             break;
                     }
 
                 } else {
                     log.warn("Unable to add search condition, no mapped Atlas property for '{}': {}", omrsPropertyName, value);
+                    added = false;
                 }
             } else {
                 log.info("Unable to add search condition, no mapped Atlas property for property: {}", omrsPropertyName);
+                added = false;
             }
         } else {
             log.warn("Unable to add search condition, no OMRS property: {}", value);
+            added = false;
         }
+
+        return added;
 
     }
 

@@ -14,6 +14,10 @@
     "omrs": "Asset",
     "propertyMappings": [
       {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
         "atlas": "name",
         "omrs": "name"
       },
@@ -29,11 +33,47 @@
   },
   {
     "atlas": "DataSet",
-    "omrs": "DataSet"
+    "omrs": "DataSet",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
   },
   {
     "atlas": "Process",
-    "omrs": "Process"
+    "omrs": "Process",
+    "propertyMappings": [
+      {
+        "atlas": "qualifiedName",
+        "omrs": "qualifiedName"
+      },
+      {
+        "atlas": "name",
+        "omrs": "name"
+      },
+      {
+        "atlas": "description",
+        "omrs": "description"
+      },
+      {
+        "atlas": "owner",
+        "omrs": "owner"
+      }
+    ]
   },
   {
     "atlas": "hbase_namespace",
@@ -447,10 +487,6 @@
         "omrs": "description"
       },
       {
-        "atlas": "comment",
-        "omrs": "comment"
-      },
-      {
         "atlas": "tableType",
         "omrs": "nativeClass"
       }
@@ -508,10 +544,6 @@
       {
         "atlas": "description",
         "omrs": "description"
-      },
-      {
-        "atlas": "comment",
-        "omrs": "comment"
       }
     ]
   },

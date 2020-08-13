@@ -8,6 +8,7 @@ import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSAuditCode;
 import org.odpi.egeria.connectors.apache.atlas.auditlog.ApacheAtlasOMRSErrorCode;
@@ -21,6 +22,11 @@ import org.apache.atlas.AtlasClientV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector {
 
     private static final Logger log = LoggerFactory.getLogger(ApacheAtlasOMRSRepositoryConnector.class);
@@ -29,13 +35,15 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
 
     private String url;
     private AtlasClientV2 atlasClient;
+    private Map<String, AtlasEntityDef> atlasEntityTypesByName;
+
     private boolean successfulInit = false;
 
     /**
      * Default constructor used by the OCF Connector Provider.
      */
     public ApacheAtlasOMRSRepositoryConnector() {
-        // Nothing to do...
+        atlasEntityTypesByName = new HashMap<>();
     }
 
     /**
@@ -232,6 +240,23 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
     }
 
     /**
+     * Resolve the parent type for the provided Apache Atlas entity type.
+     *
+     * @param type the Apache Atlas entity type
+     * @return String the Apache Atlas parent entity type
+     */
+    public String getParentTypeForAtlasEntityType(String type) {
+        AtlasEntityDef atlasEntityDef = atlasEntityTypesByName.getOrDefault(type, null);
+        if (atlasEntityDef != null) {
+            Set<String> superTypes = atlasEntityDef.getSuperTypes();
+            if (superTypes != null && !superTypes.isEmpty()) {
+                return superTypes.iterator().next();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Save the entity provided to Apache Atlas.
      *
      * @param atlasEntity the Apache Atlas entity to save
@@ -284,6 +309,14 @@ public class ApacheAtlasOMRSRepositoryConnector extends OMRSRepositoryConnector 
             if (!successfulInit) {
                 raiseConnectorCheckedException(ApacheAtlasOMRSErrorCode.REST_CLIENT_FAILURE, methodName, null, getBaseURL());
             } else {
+
+                List<AtlasEntityDef> atlasEntityDefs = atlasTypes.getEntityDefs();
+                if (atlasEntityDefs != null) {
+                    for (AtlasEntityDef atlasEntityDef : atlasEntityDefs) {
+                        String atlasEntityTypeName = atlasEntityDef.getName();
+                        atlasEntityTypesByName.put(atlasEntityTypeName, atlasEntityDef);
+                    }
+                }
 
                 auditLog.logMessage(methodName, ApacheAtlasOMRSAuditCode.CONNECTED_TO_ATLAS.getMessageDefinition(getBaseURL()));
 
