@@ -1,0 +1,121 @@
+Name:           v200-apache-atlas-677c4f8899-7jqgf
+Namespace:      default
+Priority:       0
+Node:           cgk8s-node-1.fyre.ibm.com/9.20.193.94
+Start Time:     Tue, 15 Sep 2020 04:28:55 -0700
+Labels:         app.kubernetes.io/component=apache-atlas-service
+                app.kubernetes.io/instance=v200
+                app.kubernetes.io/name=ec-cts-apacheatlas
+                pod-template-hash=677c4f8899
+Annotations:    <none>
+Status:         Running
+IP:             10.233.72.184
+Controlled By:  ReplicaSet/v200-apache-atlas-677c4f8899
+Init Containers:
+  init-connector:
+    Container ID:  docker://edf65e5de52ebcbf36d71ee59a4a6ec5a9058ba3a69a2a328578cfffc95f1c18
+    Image:         docker.io/odpi/egeria-configure:2.2
+    Image ID:      docker-pullable://odpi/egeria-configure@sha256:8890cec89164d960306d7355b99f240a7c6a489be7b5b425340027c014dc52ec
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/bash
+      -c
+      cd /opt/egeria/connectors && wget ${CONNECTOR_URL}
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 15 Sep 2020 04:29:03 -0700
+      Finished:     Tue, 15 Sep 2020 04:29:06 -0700
+    Ready:          True
+    Restart Count:  0
+    Environment Variables from:
+      v200-configmap  ConfigMap  Optional: false
+    Environment:      <none>
+    Mounts:
+      /opt/egeria/connectors from egeria-atlas-connector-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-8pp4q (ro)
+Containers:
+  proxy:
+    Container ID:   docker://0797352f8e1dafbe48ef3d5df5dcf6d32f33fc33b1b2ba264be7e3640fbe8f43
+    Image:          docker.io/odpi/egeria:2.2
+    Image ID:       docker-pullable://odpi/egeria@sha256:c4c085af90afc3e9f587c10bbc7e38f47123d079ead9a924690e42895cb7f7b9
+    Port:           9443/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Tue, 15 Sep 2020 04:29:43 -0700
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     1
+      memory:  2Gi
+    Requests:
+      cpu:      250m
+      memory:   1Gi
+    Readiness:  tcp-socket :9443 delay=10s timeout=1s period=10s #success=1 #failure=6
+    Environment Variables from:
+      v200-configmap  ConfigMap  Optional: false
+    Environment:
+      LOADER_PATH:                                            /opt/egeria/connectors
+      LOGGING_LEVEL_ORG_ODPI_EGERIA_CONNECTORS_APACHE_ATLAS:  DEBUG
+    Mounts:
+      /opt/egeria/connectors from egeria-atlas-connector-volume (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-8pp4q (ro)
+  apache-atlas:
+    Container ID:   docker://c244386688d95b605a44d69627b81593ccb5e27a7628e475368c7d13c1753aca
+    Image:          hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas:v200-samples
+    Image ID:       docker-pullable://hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas@sha256:040a6af5781eee30189363591993a99ff1ff31758efa9656f303286883878415
+    Ports:          21000/TCP, 9026/TCP, 9027/TCP
+    Host Ports:     0/TCP, 0/TCP, 0/TCP
+    State:          Running
+      Started:      Tue, 15 Sep 2020 04:29:44 -0700
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     4
+      memory:  4Gi
+    Requests:
+      cpu:        2
+      memory:     2Gi
+    Liveness:     http-get http://:21000/login.jsp delay=180s timeout=1s period=20s #success=1 #failure=3
+    Readiness:    http-get http://:21000/login.jsp delay=180s timeout=1s period=20s #success=1 #failure=12
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-8pp4q (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  egeria-atlas-connector-volume:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  default-token-8pp4q:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-8pp4q
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type     Reason     Age                From                                Message
+  ----     ------     ----               ----                                -------
+  Normal   Scheduled  30m                default-scheduler                   Successfully assigned default/v200-apache-atlas-677c4f8899-7jqgf to cgk8s-node-1.fyre.ibm.com
+  Normal   Pulling    30m                kubelet, cgk8s-node-1.fyre.ibm.com  Pulling image "docker.io/odpi/egeria-configure:2.2"
+  Normal   Pulled     30m                kubelet, cgk8s-node-1.fyre.ibm.com  Successfully pulled image "docker.io/odpi/egeria-configure:2.2"
+  Normal   Created    30m                kubelet, cgk8s-node-1.fyre.ibm.com  Created container init-connector
+  Normal   Started    30m                kubelet, cgk8s-node-1.fyre.ibm.com  Started container init-connector
+  Normal   Pulling    30m                kubelet, cgk8s-node-1.fyre.ibm.com  Pulling image "docker.io/odpi/egeria:2.2"
+  Normal   Pulled     29m                kubelet, cgk8s-node-1.fyre.ibm.com  Successfully pulled image "docker.io/odpi/egeria:2.2"
+  Normal   Created    29m                kubelet, cgk8s-node-1.fyre.ibm.com  Created container proxy
+  Normal   Started    29m                kubelet, cgk8s-node-1.fyre.ibm.com  Started container proxy
+  Normal   Pulled     29m                kubelet, cgk8s-node-1.fyre.ibm.com  Container image "hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas:v200-samples" already present on machine
+  Normal   Created    29m                kubelet, cgk8s-node-1.fyre.ibm.com  Created container apache-atlas
+  Normal   Started    29m                kubelet, cgk8s-node-1.fyre.ibm.com  Started container apache-atlas
+  Warning  Unhealthy  29m (x2 over 29m)  kubelet, cgk8s-node-1.fyre.ibm.com  Readiness probe failed: dial tcp 10.233.72.184:9443: connect: connection refused
+  Warning  Unhealthy  26m                kubelet, cgk8s-node-1.fyre.ibm.com  Readiness probe failed: Get http://10.233.72.184:21000/login.jsp: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
