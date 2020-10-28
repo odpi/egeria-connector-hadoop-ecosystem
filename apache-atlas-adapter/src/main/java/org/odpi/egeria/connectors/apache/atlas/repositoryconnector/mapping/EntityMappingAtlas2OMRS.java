@@ -46,7 +46,7 @@ public class EntityMappingAtlas2OMRS {
      * @param prefix the prefix indicating a generated type (and GUID), or null if not generated
      * @param userId the user through which to do the mapping
      */
-    public EntityMappingAtlas2OMRS(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
+    public        EntityMappingAtlas2OMRS(ApacheAtlasOMRSRepositoryConnector atlasRepositoryConnector,
                                    TypeDefStore typeDefStore,
                                    AttributeTypeDefStore attributeDefStore,
                                    AtlasEntity.AtlasEntityWithExtInfo instance,
@@ -364,6 +364,7 @@ public class EntityMappingAtlas2OMRS {
             summary = atlasRepositoryConnector.getRepositoryHelper().getSkeletonEntitySummary(
                     atlasRepositoryConnector.getRepositoryName(),
                     atlasRepositoryConnector.getMetadataCollectionId(),
+                    atlasRepositoryConnector.getMetadataCollectionName(),
                     InstanceProvenanceType.LOCAL_COHORT,
                     userId,
                     omrsTypeDefName
@@ -395,6 +396,7 @@ public class EntityMappingAtlas2OMRS {
             detail = atlasRepositoryConnector.getRepositoryHelper().getSkeletonEntity(
                     atlasRepositoryConnector.getRepositoryName(),
                     atlasRepositoryConnector.getMetadataCollectionId(),
+                    atlasRepositoryConnector.getMetadataCollectionName(),
                     InstanceProvenanceType.LOCAL_COHORT,
                     userId,
                     omrsTypeDefName
@@ -501,6 +503,9 @@ public class EntityMappingAtlas2OMRS {
                         // TODO: currently hard-coded to ASSIGNED classifications, need to also handle PROPAGATED
                         Classification classification = atlasRepositoryConnector.getRepositoryHelper().getNewClassification(
                                 repositoryName,
+                                atlasRepositoryConnector.getMetadataCollectionId(),
+                                atlasRepositoryConnector.getMetadataCollectionName(),
+                                InstanceProvenanceType.LOCAL_COHORT,
                                 userId,
                                 atlasClassificationName,
                                 omrsTypeDefName,
