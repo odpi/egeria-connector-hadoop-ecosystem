@@ -88,7 +88,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Versions of dependent libraries -->
-        <apacheatlas.version>2.0.0</apacheatlas.version>
+        <apacheatlas.version>2.1.0</apacheatlas.version>
         <slf4j.version>1.7.30</slf4j.version>
         <jackson.version>2.11.3</jackson.version>
         <spring.version>5.2.8.RELEASE</spring.version>
@@ -104,15 +104,15 @@
         <junit.version>4.12</junit.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
         <testng.version>7.3.0</testng.version>
-        <mock-server.version>5.11.1</mock-server.version>
+        <mock-server.version>5.11.2</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.13</rhino.version>
-        <nimbus.version>9.1.1</nimbus.version>
+        <nimbus.version>9.1.2</nimbus.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpclient.version>4.5.13</httpclient.version>
         <kafka.version>2.4.1</kafka.version>
         <zookeeper.version>3.5.6</zookeeper.version>
-        <netty.version>4.1.53.Final</netty.version>
+        <netty.version>4.1.54.Final</netty.version>
         <commons-codec.version>1.15</commons-codec.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.1.4</spotbugs.version>
@@ -508,7 +508,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>6.0.2</version>
+                    <version>6.0.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -832,7 +832,7 @@
                                 <plugin>
                                     <groupId>com.h3xstream.findsecbugs</groupId>
                                     <artifactId>findsecbugs-plugin</artifactId>
-                                    <version>1.10.1</version> <!-- Auto-update to the latest stable -->
+                                    <version>1.11.0</version> <!-- Auto-update to the latest stable -->
                                 </plugin>
                             </plugins>
                         </configuration>
