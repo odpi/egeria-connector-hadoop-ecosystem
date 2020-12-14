@@ -55,7 +55,7 @@ placing the file into the `/lib` directory as `/lib/egeria-connector-hadoop-ecos
 To download a pre-built version of the connector, use either of the following URLs (depending on whether you want an
 officially-released version or the latest snapshot):
 
-- Release: https://odpi.jfrog.io/odpi/egeria-release-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.2/egeria-connector-hadoop-ecosystem-package-2.2-jar-with-dependencies.jar
+- Release: https://odpi.jfrog.io/odpi/egeria-release-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.5/egeria-connector-hadoop-ecosystem-package-2.5-jar-with-dependencies.jar
 - Snapshot: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.5-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.5-SNAPSHOT-jar-with-dependencies.jar
 
 #### Building the connector yourself
