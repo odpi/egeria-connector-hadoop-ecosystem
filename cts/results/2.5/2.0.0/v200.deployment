@@ -1,0 +1,123 @@
+Name:         v200-apache-atlas-dc99d6c-xd2tc
+Namespace:    default
+Priority:     0
+Node:         cgk8s-node-2.fyre.ibm.com/9.20.194.190
+Start Time:   Wed, 16 Dec 2020 06:46:22 -0800
+Labels:       app.kubernetes.io/component=apache-atlas-service
+              app.kubernetes.io/instance=v200
+              app.kubernetes.io/name=ec-cts-apacheatlas
+              pod-template-hash=dc99d6c
+Annotations:  <none>
+Status:       Running
+IP:           10.233.104.36
+IPs:
+  IP:           10.233.104.36
+Controlled By:  ReplicaSet/v200-apache-atlas-dc99d6c
+Init Containers:
+  init-connector:
+    Container ID:  docker://eff0a08b84963519d9314758d2828673609c1a2ee16aca02a7274892c7a8a43f
+    Image:         docker.io/odpi/egeria-configure:2.5
+    Image ID:      docker-pullable://odpi/egeria-configure@sha256:d2d11d864d69b86f9228d4d06f596baea75a16b485a4a822b2d3c2408b53cbc5
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/bash
+      -c
+      cd /opt/egeria/connectors && wget ${CONNECTOR_URL}
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Wed, 16 Dec 2020 06:46:26 -0800
+      Finished:     Wed, 16 Dec 2020 06:46:28 -0800
+    Ready:          True
+    Restart Count:  0
+    Environment Variables from:
+      v200-configmap  ConfigMap  Optional: false
+    Environment:      <none>
+    Mounts:
+      /opt/egeria/connectors from egeria-atlas-connector-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-qs6sx (ro)
+Containers:
+  proxy:
+    Container ID:   docker://0df3e93301a8c480fdf86a1a3e908baa0769d54dd93aec0bea991fc1e92fab30
+    Image:          docker.io/odpi/egeria:2.5
+    Image ID:       docker-pullable://odpi/egeria@sha256:0f7ee68bb53664c2013bc5a308898e0ffff00883bf4d326b46b300f67e56c315
+    Port:           9443/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Wed, 16 Dec 2020 06:46:31 -0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     1
+      memory:  2Gi
+    Requests:
+      cpu:      250m
+      memory:   1Gi
+    Readiness:  tcp-socket :9443 delay=10s timeout=1s period=10s #success=1 #failure=6
+    Environment Variables from:
+      v200-configmap  ConfigMap  Optional: false
+    Environment:
+      LOADER_PATH:                                            /opt/egeria/connectors
+      LOGGING_LEVEL_ORG_ODPI_EGERIA_CONNECTORS_APACHE_ATLAS:  DEBUG
+    Mounts:
+      /opt/egeria/connectors from egeria-atlas-connector-volume (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-qs6sx (ro)
+  apache-atlas:
+    Container ID:   docker://78045468214fa33cd6237535f618366ddb1df16baf84c7e10a9c859bb75b0e8b
+    Image:          hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas:v200-samples
+    Image ID:       docker-pullable://hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas@sha256:040a6af5781eee30189363591993a99ff1ff31758efa9656f303286883878415
+    Ports:          21000/TCP, 9026/TCP, 9027/TCP
+    Host Ports:     0/TCP, 0/TCP, 0/TCP
+    State:          Running
+      Started:      Wed, 16 Dec 2020 06:46:31 -0800
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     4
+      memory:  4Gi
+    Requests:
+      cpu:        2
+      memory:     2Gi
+    Liveness:     http-get http://:21000/login.jsp delay=180s timeout=1s period=20s #success=1 #failure=3
+    Readiness:    http-get http://:21000/login.jsp delay=180s timeout=1s period=20s #success=1 #failure=12
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-qs6sx (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  egeria-atlas-connector-volume:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  default-token-qs6sx:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-qs6sx
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  31m                default-scheduler  Successfully assigned default/v200-apache-atlas-dc99d6c-xd2tc to cgk8s-node-2.fyre.ibm.com
+  Normal   Pulling    31m                kubelet            Pulling image "docker.io/odpi/egeria-configure:2.5"
+  Normal   Pulled     31m                kubelet            Successfully pulled image "docker.io/odpi/egeria-configure:2.5"
+  Normal   Created    31m                kubelet            Created container init-connector
+  Normal   Started    31m                kubelet            Started container init-connector
+  Normal   Pulling    31m                kubelet            Pulling image "docker.io/odpi/egeria:2.5"
+  Normal   Pulled     31m                kubelet            Successfully pulled image "docker.io/odpi/egeria:2.5"
+  Normal   Created    31m                kubelet            Created container proxy
+  Normal   Started    31m                kubelet            Started container proxy
+  Normal   Pulled     31m                kubelet            Container image "hyc-daell-infosvr-docker-local.artifactory.swg-devops.com/apache/atlas:v200-samples" already present on machine
+  Normal   Created    31m                kubelet            Created container apache-atlas
+  Normal   Started    31m                kubelet            Started container apache-atlas
+  Warning  Unhealthy  30m (x4 over 30m)  kubelet            Readiness probe failed: dial tcp 10.233.104.36:9443: connect: connection refused
+  Warning  Unhealthy  28m                kubelet            Readiness probe failed: Get http://10.233.104.36:21000/login.jsp: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
