@@ -1,5 +1,8 @@
 [
   {
+    "omrs": "OpenMetadataRoot"
+  },
+  {
     "atlas": "Referenceable",
     "omrs": "Referenceable",
     "propertyMappings": [
