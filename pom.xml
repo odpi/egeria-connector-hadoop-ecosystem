@@ -90,7 +90,7 @@
         <!-- Versions of dependent libraries -->
         <apacheatlas.version>2.1.0</apacheatlas.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <jackson.version>2.11.3</jackson.version>
+        <jackson.version>2.12.0</jackson.version>
         <spring.version>5.2.8.RELEASE</spring.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
@@ -107,12 +107,12 @@
         <mock-server.version>5.11.2</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.13</rhino.version>
-        <nimbus.version>9.2</nimbus.version>
+        <nimbus.version>9.4</nimbus.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpclient.version>4.5.13</httpclient.version>
         <kafka.version>2.4.1</kafka.version>
         <zookeeper.version>3.5.6</zookeeper.version>
-        <netty.version>4.1.55.Final</netty.version>
+        <netty.version>4.1.56.Final</netty.version>
         <commons-codec.version>1.15</commons-codec.version>
         <maven-compiler.version>3.8.1</maven-compiler.version>
         <spotbugs.version>4.2.0</spotbugs.version>
@@ -498,7 +498,7 @@
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>4.1.4</version>
+                    <version>4.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -508,7 +508,7 @@
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>6.0.3</version>
+                    <version>6.0.4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
