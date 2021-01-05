@@ -1,0 +1,70 @@
+apiVersion: v1
+data:
+  ATLAS_ENDPOINT: https://v200-apache-atlas-service:9443
+  ATLAS_HOST: atlas
+  ATLAS_KAFKA_ENDPOINT: atlas:9027
+  ATLAS_OPTS: -Dkafka.advertised.hostname=atlas
+  ATLAS_PASS: admin
+  ATLAS_PORT: "21000"
+  ATLAS_SERVER: atlas
+  ATLAS_USER: admin
+  CONNECTOR_URL: https://odpi.jfrog.io/odpi/egeria-staging-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.5/egeria-connector-hadoop-ecosystem-package-2.5-jar-with-dependencies.jar
+  CTS_REPORT_NAME: v200
+  EGERIA_COHORT: coco
+  EGERIA_SERVER: myserver
+  EGERIA_USER: myuser
+  KAFKA_ENDPOINT: v200-kafka:9092
+  LOGGING_LEVEL_ROOT: INFO
+  STRICT_SSL: "false"
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: v200
+    meta.helm.sh/release-namespace: default
+  creationTimestamp: "2020-12-16T14:46:21Z"
+  labels:
+    app.kubernetes.io/instance: v200
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ec-cts-apacheatlas
+    helm.sh/chart: ec-cts-apacheatlas-0.1
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        .: {}
+        f:ATLAS_ENDPOINT: {}
+        f:ATLAS_HOST: {}
+        f:ATLAS_KAFKA_ENDPOINT: {}
+        f:ATLAS_OPTS: {}
+        f:ATLAS_PASS: {}
+        f:ATLAS_PORT: {}
+        f:ATLAS_SERVER: {}
+        f:ATLAS_USER: {}
+        f:CONNECTOR_URL: {}
+        f:CTS_REPORT_NAME: {}
+        f:EGERIA_COHORT: {}
+        f:EGERIA_SERVER: {}
+        f:EGERIA_USER: {}
+        f:KAFKA_ENDPOINT: {}
+        f:LOGGING_LEVEL_ROOT: {}
+        f:STRICT_SSL: {}
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:meta.helm.sh/release-name: {}
+          f:meta.helm.sh/release-namespace: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/instance: {}
+          f:app.kubernetes.io/managed-by: {}
+          f:app.kubernetes.io/name: {}
+          f:helm.sh/chart: {}
+    manager: Go-http-client
+    operation: Update
+    time: "2020-12-16T14:46:21Z"
+  name: v200-configmap
+  namespace: default
+  resourceVersion: "437958"
+  selfLink: /api/v1/namespaces/default/configmaps/v200-configmap
+  uid: 1ff42b82-7647-4300-a42d-9c2274a1ab12
