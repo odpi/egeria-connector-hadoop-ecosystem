@@ -17,8 +17,8 @@ This repository houses the ODPi Egeria connectors for various Hadoop ecosystem c
 
 The quick version:
 
-1. Download the latest connectors from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.6-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.6-SNAPSHOT-jar-with-dependencies.jar
-1. Download the latest Egeria core from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/server-chassis-spring/2.6-SNAPSHOT/server-chassis-spring-2.6-SNAPSHOT.jar
+1. Download the latest connectors from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.7-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.7-SNAPSHOT-jar-with-dependencies.jar
+1. Download the latest Egeria core from: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/server-chassis-spring/2.7-SNAPSHOT/server-chassis-spring-2.7-SNAPSHOT.jar
 1. Rename the downloaded Egeria core file to `egeria-server-chassis-spring.jar`.
 1. Download the `truststore.p12` file from: https://github.com/odpi/egeria/blob/master/truststore.p12
 1. Run the following command to start Egeria from the command-line, waiting for the final line of output indicating the
@@ -56,7 +56,7 @@ To download a pre-built version of the connector, use either of the following UR
 officially-released version or the latest snapshot):
 
 - Release: https://odpi.jfrog.io/odpi/egeria-release-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.5/egeria-connector-hadoop-ecosystem-package-2.5-jar-with-dependencies.jar
-- Snapshot: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.6-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.6-SNAPSHOT-jar-with-dependencies.jar
+- Snapshot: https://odpi.jfrog.io/odpi/egeria-snapshot-local/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.7-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.7-SNAPSHOT-jar-with-dependencies.jar
 
 #### Building the connector yourself
 
