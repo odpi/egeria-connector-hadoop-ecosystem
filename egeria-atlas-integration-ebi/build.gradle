@@ -70,10 +70,10 @@ apply plugin: 'java-library'
     // As we've migrated from maven - we'll assume all submodules publish directly to maven
     apply plugin: 'maven-publish'
     ext {
-        egeriaversion = '3.3-SNAPSHOT'
+        egeriaversion = '3.2'
         atlasversion  = '2.2.0'
         logbackVersion = '1.2.6'
-        jacksonVersion = '2.12.2'
+        jacksonVersion = '2.13'
         mockitoVersion = '3.12.4'
         junitjupiterVersion = '5.8.1'
         httpcoreVersion = '4.4.14'
@@ -85,16 +85,16 @@ apply plugin: 'java-library'
             implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
             implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
             implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-            implementation "com.fasterxml.jackson.core:jackson-datatype-jsr310:${jacksonVersion}"
+
             implementation "org.junit.jupiter:junit-jupiter:${junitjupiterVersion}"
-            implementation "org.odpi.egeria:open-connector-framework:${junitjupiterVersion}"
+            implementation "org.odpi.egeria:open-connector-framework:${egeriaversion}"
             implementation "org.odpi.egeria:audit-log-framework:${egeriaversion}"
             implementation "org.odpi.egeria:repository-services:${egeriaversion}"
-            implementation "org.apache.atlas:atlas-common:${altasversion}"
-            implementation "org.apache.atlas:atlas-client-v2:${altasversion}"
-            implementation "org.apache.atlas:atlas-intg:${altasversion}"
-            implementation "org.apache.atlas:atlas-client-common:${altasversion}"
-            implementation "org.apache.atlas:atlas-notification:${altasversion}"
+            implementation "org.apache.atlas:atlas-common:${atlasversion}"
+            implementation "org.apache.atlas:atlas-client-v2:${atlasversion}"
+            implementation "org.apache.atlas:atlas-intg:${atlasversion}"
+            implementation "org.apache.atlas:atlas-client-common:${atlasversion}"
+            implementation "org.apache.atlas:atlas-notification:${atlasversion}"
     }
 
     // sources required to publish a legitimate maven package for distribution
