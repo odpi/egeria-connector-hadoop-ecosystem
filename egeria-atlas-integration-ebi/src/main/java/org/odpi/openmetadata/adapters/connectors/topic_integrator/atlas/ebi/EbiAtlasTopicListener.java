@@ -2,7 +2,9 @@
 /* Copyright Contributors to the ODPi Egeria project. */
 package org.odpi.openmetadata.adapters.connectors.topic_integrator.atlas.ebi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.atlas.model.notification.EntityNotification;
 import org.odpi.openmetadata.frameworks.auditlog.AuditLog;
 import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicListener;
 import org.slf4j.Logger;
@@ -35,7 +37,16 @@ public class EbiAtlasTopicListener implements OpenMetadataTopicListener {
             log.debug("Null instance event - ignoring event");
         } else {
             log.debug("Instance event - " + atlasEvent);
-            OBJECT_MAPPER.readValue(atlasEvent, AtlasEntity.class);
+
+            try {
+                EntityNotification entityNotification = OBJECT_MAPPER.readValue(atlasEvent, EntityNotification.class);
+                log.debug("entityNotification - " + entityNotification);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+//                                auditLog.logException("process Data Engine inTopic Event",
+//                                                      DataEngineAuditCode.PROCESS_EVENT_EXCEPTION.getMessageDefinition(e.getMessage()), e);
+            }
+
         }
     }
 //

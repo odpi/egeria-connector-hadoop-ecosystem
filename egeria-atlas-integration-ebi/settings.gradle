@@ -13,5 +13,5 @@ pluginManagement {
         //id 'maven-publish' version
     }
 }
-rootProject.name = 'egeria'
+rootProject.name = 'egeria-integration-connector-atlas-ebi'
 

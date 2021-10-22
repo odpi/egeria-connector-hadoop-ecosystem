@@ -18,11 +18,6 @@ buildscript {
     }
 }
 
-/*
- * Plugins for this parent module only - so just high level project related
- */
-
-
 plugins {
         //id "nebula.lint" version "16.9.0"
         //id "nebula-aggregate-javadocs"
@@ -30,25 +25,13 @@ plugins {
 
 /* run './gradlew aggregateJavadocs' at top level to build all docs & output to build/docs/javadoc */
 apply plugin: 'nebula-aggregate-javadocs'
-
-
-
-/*
- * Configuration for all projects - INCLUDING this one
- */
-
     group = 'org.odpi.egeria'
     version = 1
 
 
-    repositories {
-         jcenter()
+repositories {
          mavenCentral()
-         // snapshots of egeria core ie -SNAPSHOT
-         maven { url("https://odpi.jfrog.io/odpi/egeria-snapshot") }
     }
-
-
 
     // This enforces version checking but is slow to process
     //apply plugin: 'nebula.lint'
@@ -73,28 +56,23 @@ apply plugin: 'java-library'
         egeriaversion = '3.2'
         atlasversion  = '2.2.0'
         logbackVersion = '1.2.6'
-        jacksonVersion = '2.13'
+        jacksonVersion = '2.13.0'
         mockitoVersion = '3.12.4'
         junitjupiterVersion = '5.8.1'
         httpcoreVersion = '4.4.14'
     }
     // Dependency Management - to fix versions. Pick up maven build settings for now
     dependencies {
-
             implementation "org.slf4j:slf4j-api:${logbackVersion}"
             implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
             implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
             implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-
             implementation "org.junit.jupiter:junit-jupiter:${junitjupiterVersion}"
             implementation "org.odpi.egeria:open-connector-framework:${egeriaversion}"
             implementation "org.odpi.egeria:audit-log-framework:${egeriaversion}"
             implementation "org.odpi.egeria:repository-services:${egeriaversion}"
-            implementation "org.apache.atlas:atlas-common:${atlasversion}"
-            implementation "org.apache.atlas:atlas-client-v2:${atlasversion}"
+            implementation "org.odpi.egeria:repository-services-apis:${egeriaversion}"
             implementation "org.apache.atlas:atlas-intg:${atlasversion}"
-            implementation "org.apache.atlas:atlas-client-common:${atlasversion}"
-            implementation "org.apache.atlas:atlas-notification:${atlasversion}"
     }
 
     // sources required to publish a legitimate maven package for distribution
@@ -135,9 +113,27 @@ apply plugin: 'java-library'
         }
     }
 
-    // Java language settings
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+// Maven Central (technically sonatype oss) requires we distribute source and javadoc
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    withJavadocJar()
+    withSourcesJar()
+}
+// More Java language settings
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    sourceCompatibility = "11"
+    targetCompatibility = "11"
+    options.incremental = true
+    options.fork = true
+    options.failOnError = true
+    options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
+}
+
+// For later java versions this is recommended - keep conditional in case we want to build on 8
+javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
     }
+}
