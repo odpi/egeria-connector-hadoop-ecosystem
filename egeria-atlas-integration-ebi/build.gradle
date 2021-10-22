@@ -72,6 +72,7 @@ apply plugin: 'java-library'
             implementation "org.odpi.egeria:audit-log-framework:${egeriaversion}"
             implementation "org.odpi.egeria:repository-services:${egeriaversion}"
             implementation "org.odpi.egeria:repository-services-apis:${egeriaversion}"
+            implementation "org.odpi.egeria:topic-integrator-api:${egeriaversion}"
             implementation "org.apache.atlas:atlas-intg:${atlasversion}"
     }
 

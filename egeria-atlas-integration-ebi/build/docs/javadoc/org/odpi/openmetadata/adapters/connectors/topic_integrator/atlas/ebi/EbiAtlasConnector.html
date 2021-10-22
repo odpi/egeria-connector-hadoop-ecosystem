@@ -27,7 +27,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -128,10 +128,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li>org.odpi.openmetadata.frameworks.connectors.ConnectorBase</li>
 <li>
 <ul class="inheritance">
-<li>org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector</li>
+<li>org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnectorBase</li>
+<li>
+<ul class="inheritance">
+<li>org.odpi.openmetadata.integrationservices.topic.connector.TopicIntegratorConnector</li>
 <li>
 <ul class="inheritance">
 <li>org.odpi.openmetadata.adapters.connectors.topic_integrator.atlas.ebi.EbiAtlasConnector</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -146,11 +151,11 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Runnable</code>, <code>org.odpi.openmetadata.frameworks.auditlog.AuditLoggingComponent</code>, <code>org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopic</code></dd>
+<dd><code>org.odpi.openmetadata.frameworks.auditlog.AuditLoggingComponent</code>, <code>org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnector</code></dd>
 </dl>
 <hr>
 <pre>public class <span class="typeNameLabel">EbiAtlasConnector</span>
-extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector</pre>
+extends org.odpi.openmetadata.integrationservices.topic.connector.TopicIntegratorConnector</pre>
 </li>
 </ul>
 </div>
@@ -182,11 +187,11 @@ extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Op
 </a>
 <h3>Field Summary</h3>
 <ul class="blockList">
-<li class="blockList"><a id="fields.inherited.from.class.org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector">
+<li class="blockList"><a id="fields.inherited.from.class.org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnectorBase">
 <!--   -->
 </a>
-<h3>Fields inherited from class&nbsp;org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector</h3>
-<code>auditLog</code></li>
+<h3>Fields inherited from class&nbsp;org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnectorBase</h3>
+<code>auditLog, connectorName</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="fields.inherited.from.class.org.odpi.openmetadata.frameworks.connectors.ConnectorBase">
@@ -213,10 +218,7 @@ extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Op
 </tr>
 <tr class="altColor">
 <th class="colConstructorName" scope="row"><code><span class="memberNameLink"><a href="#%3Cinit%3E()">EbiAtlasConnector</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Constructor used to initialize the ConnectorProviderBase with the Java class name of the specific
- store implementation.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -238,23 +240,54 @@ extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Op
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#sendEvent(java.lang.String)">sendEvent</a></span>&#8203;(java.lang.String&nbsp;event)</code></th>
-<td class="colLast">&nbsp;</td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#disconnect()">disconnect</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Shutdown file monitoring</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#initialize(java.lang.String,org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties)">initialize</a></span>&#8203;(java.lang.String&nbsp;connectorInstanceId,
+          org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties&nbsp;connectionProperties)</code></th>
+<td class="colLast">
+<div class="block">Initialize the connector.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#refresh()">refresh</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Requests that the connector does a comparison of the metadata in the third party technology and open metadata repositories.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#start()">start</a></span>()</code></th>
+<td class="colLast">
+<div class="block">Indicates that the connector is completely configured and can begin processing.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a id="methods.inherited.from.class.org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector">
+<li class="blockList"><a id="methods.inherited.from.class.org.odpi.openmetadata.integrationservices.topic.connector.TopicIntegratorConnector">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector</h3>
-<code>checkForEvents, checkForIncomingEvents, disconnect, registerListener, run, setAuditLog, start</code></li>
+<h3>Methods inherited from class&nbsp;org.odpi.openmetadata.integrationservices.topic.connector.TopicIntegratorConnector</h3>
+<code>getContext, setContext</code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a id="methods.inherited.from.class.org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnectorBase">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnectorBase</h3>
+<code>engage, setAuditLog, setConnectorName</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.org.odpi.openmetadata.frameworks.connectors.ConnectorBase">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.odpi.openmetadata.frameworks.connectors.ConnectorBase</h3>
-<code>equals, getConnectedAssetProperties, getConnection, getConnectorInstanceId, hashCode, initialize, initializeConnectedAssetProperties, isActive, toString</code></li>
+<code>equals, getConnectedAssetProperties, getConnection, getConnectorInstanceId, hashCode, initializeConnectedAssetProperties, isActive, toString</code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -286,8 +319,6 @@ extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Op
 <li class="blockList">
 <h4>EbiAtlasConnector</h4>
 <pre>public&nbsp;EbiAtlasConnector()</pre>
-<div class="block">Constructor used to initialize the ConnectorProviderBase with the Java class name of the specific
- store implementation.</div>
 </li>
 </ul>
 </li>
@@ -300,17 +331,81 @@ extends org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.Op
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="sendEvent(java.lang.String)">
+<a id="initialize(java.lang.String,org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>initialize</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;initialize&#8203;(java.lang.String&nbsp;connectorInstanceId,
+                       org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties&nbsp;connectionProperties)</pre>
+<div class="block">Initialize the connector.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code>initialize</code>&nbsp;in class&nbsp;<code>org.odpi.openmetadata.frameworks.connectors.ConnectorBase</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>connectorInstanceId</code> - - unique id for the connector instance - useful for messages etc</dd>
+<dd><code>connectionProperties</code> - - POJO for the configuration used to create the connector.</dd>
+</dl>
+</li>
+</ul>
+<a id="start()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>start</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;start()
+           throws org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</pre>
+<div class="block">Indicates that the connector is completely configured and can begin processing.
+ This call can be used to register with non-blocking services.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>start</code>&nbsp;in interface&nbsp;<code>org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnector</code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code>start</code>&nbsp;in class&nbsp;<code>org.odpi.openmetadata.frameworks.connectors.ConnectorBase</code></dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</code> - there is a problem within the connector.</dd>
+</dl>
+</li>
+</ul>
+<a id="refresh()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>refresh</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;refresh()
+             throws org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</pre>
+<div class="block">Requests that the connector does a comparison of the metadata in the third party technology and open metadata repositories.
+ Refresh is called when the integration connector first starts and then at intervals defined in the connector's configuration
+ as well as any external REST API calls to explicitly refresh the connector.
+
+ This method performs two sweeps.  It first retrieves the files in the directory and validates that are in the
+ catalog - adding or updating them if necessary.  The second sweep is to ensure that all of the assets catalogued
+ in this directory actually exist on the file system.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</code> - there is a problem with the connector.  It is not able to refresh the metadata.</dd>
+</dl>
+</li>
+</ul>
+<a id="disconnect()">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>sendEvent</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;sendEvent&#8203;(java.lang.String&nbsp;event)
-               throws org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</pre>
+<h4>disconnect</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;disconnect()
+                throws org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</pre>
+<div class="block">Shutdown file monitoring</div>
 <dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>disconnect</code>&nbsp;in interface&nbsp;<code>org.odpi.openmetadata.governanceservers.integrationdaemonservices.connectors.IntegrationConnector</code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code>disconnect</code>&nbsp;in class&nbsp;<code>org.odpi.openmetadata.frameworks.connectors.ConnectorBase</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</code></dd>
+<dd><code>org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException</code> - something failed in the super class</dd>
 </dl>
 </li>
 </ul>

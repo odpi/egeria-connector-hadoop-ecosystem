@@ -17,7 +17,7 @@ public class EbiAtlasConnectorProvider extends ConnectorProviderBase
      */
     public EbiAtlasConnectorProvider()
     {
-        Class<?> connectorClass = EbiAtlasConnectorProvider.class;
+        Class<?> connectorClass = EbiAtlasConnector.class;
 
         super.setConnectorClassName(connectorClass.getName());
 
