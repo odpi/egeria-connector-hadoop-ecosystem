@@ -30,5 +30,6 @@ data:
   ATLAS_SERVER: {{ .Values.apacheatlas.proxyserver }}
 
   # Used for downloads
+  CONNECTOR_JAR: egeria-connector-hadoop-ecosystem-package-{{  .Values.connector.version }}-jar-with-dependencies.jar
   CONNECTOR_URL: {{  .Values.connector.url }}
   CTS_REPORT_NAME: {{ .Release.Name }}

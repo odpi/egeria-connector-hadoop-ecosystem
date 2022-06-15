@@ -1,6 +1,6 @@
 apiVersion: v1
 data:
-  ATLAS_ENDPOINT: https://atlas-cts-apache-atlas-service:9443
+  ATLAS_ENDPOINT: https://v200-apache-atlas-service:9443
   ATLAS_HOST: atlas
   ATLAS_KAFKA_ENDPOINT: atlas:9027
   ATLAS_OPTS: -Dkafka.advertised.hostname=atlas
@@ -8,27 +8,28 @@ data:
   ATLAS_PORT: "21000"
   ATLAS_SERVER: atlas
   ATLAS_USER: admin
-  CONNECTOR_URL: https://oss.sonatype.org/content/repositories/snapshots/org/odpi/egeria/egeria-connector-hadoop-ecosystem-package/2.10-SNAPSHOT/egeria-connector-hadoop-ecosystem-package-2.10-20210611.104943-15-jar-with-dependencies.jar
-  CTS_REPORT_NAME: atlas-cts
+  CONNECTOR_JAR: egeria-connector-hadoop-ecosystem-package-2.10-jar-with-dependencies.jar
+  CONNECTOR_URL: http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=org.odpi.egeria&a=egeria-connector-hadoop-ecosystem-package&v=RELEASE&c=jar-with-dependencies
+  CTS_REPORT_NAME: v200
   EGERIA_COHORT: coco
   EGERIA_SERVER: myserver
   EGERIA_USER: myuser
-  KAFKA_ENDPOINT: atlas-cts-kafka:9092
+  KAFKA_ENDPOINT: v200-kafka:9092
   LOGGING_LEVEL_ROOT: INFO
   STRICT_SSL: "false"
 kind: ConfigMap
 metadata:
   annotations:
-    meta.helm.sh/release-name: atlas-cts
+    meta.helm.sh/release-name: v200
     meta.helm.sh/release-namespace: default
-  creationTimestamp: "2021-06-11T15:01:40Z"
+  creationTimestamp: "2021-06-16T08:43:27Z"
   labels:
-    app.kubernetes.io/instance: atlas-cts
+    app.kubernetes.io/instance: v200
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ec-cts-apacheatlas
     helm.sh/chart: ec-cts-apacheatlas-0.1
-  name: atlas-cts-configmap
+  name: v200-configmap
   namespace: default
-  resourceVersion: "27528609"
-  selfLink: /api/v1/namespaces/default/configmaps/atlas-cts-configmap
-  uid: e82877a6-8b4c-479b-97cd-3675d6f8aa55
+  resourceVersion: "28623422"
+  selfLink: /api/v1/namespaces/default/configmaps/v200-configmap
+  uid: 3d455fda-faf4-4eda-af3b-94f7435036fb
