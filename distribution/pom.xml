@@ -9,7 +9,7 @@
     <parent>
         <artifactId>egeria-connector-hadoop-ecosystem</artifactId>
         <groupId>org.odpi.egeria</groupId>
-        <version>2.11</version>
+        <version>3.13-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -24,7 +24,7 @@
         <dependency>
             <groupId>org.odpi.egeria</groupId>
             <artifactId>egeria-connector-apache-atlas-adapter</artifactId>
-            <version>${open-metadata.version}</version>
+            <version>3.13-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

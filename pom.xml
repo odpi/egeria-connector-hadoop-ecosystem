@@ -20,7 +20,7 @@
 
     <groupId>org.odpi.egeria</groupId>
     <artifactId>egeria-connector-hadoop-ecosystem</artifactId>
-    <version>2.11</version>
+    <version>3.13-SNAPSHOT</version>
 
     <url>https://odpi.github.io/Egeria</url>
 
@@ -80,44 +80,44 @@
     <packaging>pom</packaging>
 
     <properties>
-        <open-metadata.version>2.11</open-metadata.version>
+        <open-metadata.version>3.12</open-metadata.version>
         <!-- Level of Java  -->
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
         <!-- Platform encoding  -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Versions of dependent libraries -->
-        <apacheatlas.version>2.1.0</apacheatlas.version>
-        <slf4j.version>1.7.30</slf4j.version>
-        <jackson.version>2.12.3</jackson.version>
-        <spring.version>5.3.8</spring.version>
+        <apacheatlas.version>2.2.0</apacheatlas.version>
+        <slf4j.version>2.0.1</slf4j.version>
+        <jackson.version>2.13.4</jackson.version>
+        <spring.version>5.3.23</spring.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
-        <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
-        <maven-download.version>1.4.1</maven-download.version>
-        <maven-antrun.version>1.8</maven-antrun.version>
-        <maven-install.version>3.0.0-M1</maven-install.version>
-        <maven-shade.version>3.2.1</maven-shade.version>
-        <junit.platform.version>1.5.2</junit.platform.version>
-        <junit.jupiter.version>5.6.2</junit.jupiter.version>
-        <junit.version>4.12</junit.version>
-        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
-        <logback.version>1.2.3</logback.version>
-        <testng.version>7.4.0</testng.version>
+        <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+        <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
+        <maven-download.version>1.6.8</maven-download.version>
+        <maven-antrun.version>3.1.0</maven-antrun.version>
+        <maven-install.version>3.0.1</maven-install.version>
+        <maven-shade.version>3.4.0</maven-shade.version>
+        <junit.platform.version>1.9.1</junit.platform.version>
+        <junit.jupiter.version>5.9.1</junit.jupiter.version>
+        <junit.version>4.13.2</junit.version>
+        <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
+        <logback.version>1.4.1</logback.version>
+        <testng.version>7.6.1</testng.version>
         <mock-server.version>5.11.2</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
-        <rhino.version>1.7.13</rhino.version>
-        <nimbus.version>9.10</nimbus.version>
+        <rhino.version>1.7.14</rhino.version>
+        <nimbus.version>9.25.4</nimbus.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpclient.version>4.5.13</httpclient.version>
-        <kafka.version>2.4.1</kafka.version>
-        <zookeeper.version>3.7.0</zookeeper.version>
-        <netty.version>4.1.65.Final</netty.version>
+        <kafka.version>2.8.2</kafka.version>
+        <zookeeper.version>3.8.0</zookeeper.version>
+        <netty.version>4.1.82.Final</netty.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <maven-compiler.version>3.8.1</maven-compiler.version>
-        <spotbugs.version>4.2.3</spotbugs.version>
-        <jacoco-plugin.version>0.8.5</jacoco-plugin.version>
+        <maven-compiler.version>3.10.1</maven-compiler.version>
+        <spotbugs.version>4.7.2</spotbugs.version>
+        <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
         <!-- Configuration of sonar code scanning-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <!--suppress UnresolvedMavenProperty -->
@@ -479,13 +479,6 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>ossrh-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-    </repositories>
-
     <build>
 
         <pluginManagement>
@@ -700,7 +693,7 @@
             <!-- Note test scope dependencies can't be reliably checked -->
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>analyze</id>
@@ -723,6 +716,7 @@
                                 <!-- Ignore these as used for packaging -->
                                 <ignoredUnusedDeclaredDependency>org.odpi.egeria:egeria-connector-apache-atlas-adapter:*</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.atlas:atlas-common:*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>javax.xml.bind:jaxb-api:*</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

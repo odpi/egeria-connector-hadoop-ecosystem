@@ -10,6 +10,7 @@ import org.odpi.egeria.connectors.apache.atlas.repositoryconnector.stores.TypeDe
 import org.odpi.openmetadata.adapters.eventbus.topic.inmemory.InMemoryOpenMetadataTopicConnector;
 import org.odpi.openmetadata.adapters.repositoryservices.ConnectorConfigurationFactory;
 import org.odpi.openmetadata.adminservices.configuration.properties.OpenMetadataExchangeRule;
+import org.odpi.openmetadata.frameworks.auditlog.ComponentDevelopmentStatus;
 import org.odpi.openmetadata.frameworks.connectors.Connector;
 import org.odpi.openmetadata.frameworks.connectors.ConnectorBroker;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectionCheckedException;
@@ -102,7 +103,7 @@ public class ConnectorTest {
         auditLogDestinations.add((OMRSAuditLogStore)auditLogConnector);
         OMRSAuditLogDestination destination = new OMRSAuditLogDestination("TestServer", "Test", "ODPi", auditLogDestinations);
 
-        OMRSAuditLog auditLog = new OMRSAuditLog(destination, -1, "ConnectorTest", "Testing of the connector", null);
+        OMRSAuditLog auditLog = new OMRSAuditLog(destination, -1, ComponentDevelopmentStatus.SAMPLE, "ConnectorTest", "Testing of the connector", null);
         contentManager = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
         eventManager = new OMRSRepositoryEventManager("Mock Outbound EventManager",
                 new OMRSRepositoryEventExchangeRule(OpenMetadataExchangeRule.SELECTED_TYPES, Collections.emptyList()),
@@ -325,7 +326,7 @@ public class ConnectorTest {
         auditLogDestinations.add((OMRSAuditLogStore)auditLogConnector);
         OMRSAuditLogDestination destination = new OMRSAuditLogDestination("TestServer", "Test", "ODPi", auditLogDestinations);
 
-        OMRSAuditLog auditLog = new OMRSAuditLog(destination, 1, "ConnectorTest2", "Testing of the connector", null);
+        OMRSAuditLog auditLog = new OMRSAuditLog(destination, 1, ComponentDevelopmentStatus.SAMPLE, "ConnectorTest2", "Testing of the connector", null);
         OMRSRepositoryContentManager invalidContent = new OMRSRepositoryContentManager(MockConstants.EGERIA_USER, auditLog);
         OMRSRepositoryEventManager invalidEvent = new OMRSRepositoryEventManager("Mock Outbound EventManager 2",
                 new OMRSRepositoryEventExchangeRule(OpenMetadataExchangeRule.SELECTED_TYPES, Collections.emptyList()),
