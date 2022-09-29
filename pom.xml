@@ -15,7 +15,6 @@
     </description>
     <modules>
         <module>apache-atlas-adapter</module>
-        <module>distribution</module>
     </modules>
 
     <groupId>org.odpi.egeria</groupId>
