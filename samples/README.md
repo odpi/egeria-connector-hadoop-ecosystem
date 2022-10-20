@@ -7,7 +7,7 @@ These sample Postman collections illustrate configuring and using the Apache Atl
 for ODPi Egeria.
 
 Each should be used with the
-[environment defined in the Egeria Core samples](https://github.com/odpi/egeria/blob/master/open-metadata-resources/open-metadata-samples/postman-rest-samples/README.md),
+[environment defined in the Egeria Core samples](https://github.com/odpi/egeria/blob/main/open-metadata-resources/open-metadata-samples/postman-rest-samples/README.md),
 which has all of the needed variables defined within it.
 
 # Egeria-Apache-Atlas-config.postman_collection.json

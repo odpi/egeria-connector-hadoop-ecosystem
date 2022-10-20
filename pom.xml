@@ -43,7 +43,7 @@
     <scm>
         <connection>scm:git:git://github.com/odpi/egeria-connector-hadoop-ecosystem.git</connection>
         <developerConnection>scm:git:ssh://github.com:odpi/egeria-connector-hadoop-ecosystem.git</developerConnection>
-        <url>http://github.com/odpi/egeria-connector-hadoop-ecosystem/tree/master</url>
+        <url>http://github.com/odpi/egeria-connector-hadoop-ecosystem/tree/main</url>
     </scm>
 
     <issueManagement>

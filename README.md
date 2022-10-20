@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Copyright Contributors to the ODPi Egeria project. -->
 
-![Egeria Logo](https://raw.githubusercontent.com/odpi/egeria/master/assets/img/ODPi_Egeria_Logo_color.png)
+![Egeria Logo](https://raw.githubusercontent.com/odpi/egeria/main/assets/img/ODPi_Egeria_Logo_color.png)
 
 [![GitHub](https://img.shields.io/github/license/odpi/egeria)](LICENSE)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3044/badge)](https://bestpractices.coreinfrastructure.org/projects/3044)

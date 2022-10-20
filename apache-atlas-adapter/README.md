@@ -144,7 +144,7 @@ If you have a completely empty Apache Atlas environment, you may want to load so
 
 Samples are provided under [samples](../samples):
 
-- `AtlasGlossary.zip` contains a sample glossary, set of categories and terms as defined in the [Coco Pharmaceuticals](https://github.com/odpi/egeria/tree/master/open-metadata-resources/open-metadata-deployment/sample-data/coco-pharmaceuticals)
+- `AtlasGlossary.zip` contains a sample glossary, set of categories and terms as defined in the [Coco Pharmaceuticals](https://github.com/odpi/egeria/tree/main/open-metadata-resources/open-metadata-deployment/sample-data/coco-pharmaceuticals)
   set of samples.
 
 These can be loaded to the environment using the following command:
