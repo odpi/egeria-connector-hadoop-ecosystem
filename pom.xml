@@ -90,6 +90,7 @@
         <apacheatlas.version>2.2.0</apacheatlas.version>
         <slf4j.version>2.0.3</slf4j.version>
         <jackson.version>2.13.4</jackson.version>
+        <jackson-databind.version>2.13.4.1</jackson-databind.version>
         <spring.version>5.3.23</spring.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
@@ -192,7 +193,7 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <scope>provided</scope>
-                <version>${jackson.version}</version>
+                <version>${jackson-databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
