@@ -108,7 +108,7 @@
         <mock-server.version>5.14.0</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
         <rhino.version>1.7.14</rhino.version>
-        <nimbus.version>9.25.4</nimbus.version>
+        <nimbus.version>9.25.6</nimbus.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpclient.version>4.5.13</httpclient.version>
         <kafka.version>2.8.2</kafka.version>
