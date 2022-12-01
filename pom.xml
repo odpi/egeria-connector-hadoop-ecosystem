@@ -103,7 +103,7 @@
         <junit.jupiter.version>5.9.1</junit.jupiter.version>
         <junit.version>4.13.2</junit.version>
         <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
-        <logback.version>1.4.1</logback.version>
+        <logback.version>1.4.5</logback.version>
         <testng.version>7.6.1</testng.version>
         <mock-server.version>5.14.0</mock-server.version>
         <sleepycat.version>18.3.12</sleepycat.version>
