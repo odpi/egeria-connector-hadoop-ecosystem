@@ -88,7 +88,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Versions of dependent libraries -->
         <apacheatlas.version>2.2.0</apacheatlas.version>
-        <slf4j.version>2.0.3</slf4j.version>
+        <slf4j.version>2.0.5</slf4j.version>
         <jackson.version>2.13.4</jackson.version>
         <jackson-databind.version>2.13.4.1</jackson-databind.version>
         <spring.version>5.3.23</spring.version>
