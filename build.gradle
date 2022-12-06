@@ -1,0 +1,277 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright Contributors to the ODPi Egeria project.
+ */
+
+
+/*
+ * Plugins for this parent module only - so just high level project related
+ */
+plugins {
+    id "io.freefair.aggregate-javadoc" version "6.5.1"
+    // Checks for unnecessary dependencies
+    id 'com.autonomousapps.dependency-analysis' version "1.17.0"
+    // helps resolve log implementation clashes
+    id 'dev.jacomet.logging-capabilities' version "0.10.0"
+    // This plugin helps resolve jakarta/javax dev.jacomet.logging-capabilities
+    id 'org.gradlex.java-ecosystem-capabilities' version "1.0"
+}
+
+
+/*
+ * Configuration for all projects - INCLUDING this one
+ */
+
+allprojects {
+
+    group = 'org.odpi.egeria'
+    version = '1.0-SNAPSHOT'
+
+    // Mostly java, so default to this for now
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+    apply plugin: 'org.gradlex.java-ecosystem-capabilities'
+    apply plugin: 'dev.jacomet.logging-capabilities'
+    // As we've migrated from maven - we'll assume all submodules publish directly to maven
+    apply plugin: 'maven-publish'
+
+    // Only use maven central and snapshots
+    repositories {
+        mavenCentral()
+        maven { url("https://oss.sonatype.org/content/repositories/snapshots") }
+        maven { url("https://packages.atlassian.com/maven-3rdparty") }
+    }
+
+    // ensures we pick up the very latest snapshots when built
+    configurations.all {
+        // check for updates every build
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
+    /*
+     * Dependency Management - to fix versions. Pick up maven build settings for now
+     */
+
+    // Assign variables for any constraints
+    ext {
+        // add version variables here
+        egeriaversion='3.13'
+        atlasversion='2.2.0'
+        jacksonVersion = '2.14.0'
+        jaxbversion = '2.3.1'
+        logbackversion='1.2.11'
+        testngversion='7.6.1'
+        mockserverversion='5.14.0'
+        springwebversion='5.3.23'
+        slf4jversion='1.7.36'
+        kafkaversion='3.2.3'
+        jacksonaslVersion = '1.9.14-atlassian-6'
+    }
+
+    dependencies {
+        implementation platform("org.odpi.egeria:egeria:${egeriaversion}")
+        constraints {
+            implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+            implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+            implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+            implementation "org.apache.atlas:atlas-common:${atlasversion}"
+            implementation "org.apache.atlas:atlas-client-v2:${atlasversion}"
+            implementation "org.apache.atlas:atlas-intg:${atlasversion}"
+            implementation "org.apache.atlas:atlas-client-common:${atlasversion}"
+            implementation "org.apache.atlas:atlas-notification:${atlasversion}"
+            implementation "javax.xml.bind:jaxb-api:${jaxbversion}"
+            testImplementation "ch.qos.logback:logback-classic:${logbackversion}"
+            testImplementation "org.testng:testng:${testngversion}"
+            testImplementation "org.mock-server:mockserver-client-java:${mockserverversion}"
+            testImplementation "org.mock-server:mockserver-core:${mockserverversion}"
+            testImplementation "org.odpi.egeria:repository-services-implementation:${egeriaversion}"
+            testImplementation "org.odpi.egeria:open-metadata-types:${egeriaversion}"
+            testImplementation "org.odpi.egeria:admin-services-api:${egeriaversion}"
+            testImplementation "org.odpi.egeria:connector-configuration-factory:${egeriaversion}"
+            testImplementation "org.odpi.egeria:inmemory-open-metadata-topic-connector:${egeriaversion}"
+            compileOnly "org.springframework:spring-core:${springwebversion}"
+
+            compileOnly "org.odpi.egeria:audit-log-framework:${egeriaversion}"
+            compileOnly "org.odpi.egeria:repository-services-apis:${egeriaversion}"
+            compileOnly "org.odpi.egeria:open-connector-framework:${egeriaversion}"
+            compileOnly "org.slf4j:slf4j-api:${slf4jversion}"
+            compileOnly "org.apache.kafka:kafka-clients:${kafkaversion}"
+            runtimeOnly("org.codehaus.jackson:jackson-mapper-asl:${jacksonaslVersion}")
+            runtimeOnly("org.codehaus.jackson:jackson-core-asl:${jacksonaslVersion}")
+        }
+    }
+
+    /*
+     * Java related configuration
+     */
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+    tasks.withType(JavaCompile) {
+        options.release = 11
+        options.encoding = 'UTF-8'
+        options.incremental = true
+        options.failOnError = true
+        options.compilerArgs << "-Xlint:all"
+    }
+
+    // javadoc
+    javadoc {
+        options.addBooleanOption('html5', true)
+    }
+
+    // code coverage
+    jacoco {
+        toolVersion = "0.8.8"
+    }
+
+    // Testing
+    test {
+        useJUnitPlatform {
+            includeEngines 'junit-jupiter'
+        }
+        dependencies {
+            testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+            testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+        }
+
+        testLogging {
+            events "passed", "skipped", "failed"
+        }
+
+        reports {
+            html.required = true
+        }
+    }
+    /*
+     * Publishing of maven artifacts -- and signing (only for CI)
+     */
+    if (System.getenv("CI")) {
+        apply plugin: 'signing'
+    }
+
+    publishing {
+        publications {
+            connector(MavenPublication) {
+                from components.java
+                pom {
+                    url = 'http://egeria.odpi.org'
+                    licenses {
+                        // Code
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                        // Docs
+                        license {
+                            name = 'Creative Commons Attribution 4.0 International (CC BY 4.0)'
+                            url = 'https://creativecommons.org/licenses/by/4.0'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'planetf1'
+                            name = 'Nigel Jones'
+                            email = 'nigel.l.jones+git@gmail.com'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:https://github.com/odpi/egeria-connector-hadoop-ecosystem'
+                        developerConnection = 'scm:git:https://github.com/odpi/egeria-connector-hadoop-ecosystem'
+                        url = 'https://egithub.com/odpi/egeria-connector-hadoop-ecosystem'
+                    }
+                }
+                // Override the project name & description for the pom based on properties set in the child build.gradle (hard to default & required for maven central)
+                pom.withXml {
+                    //asNode().appendNode('name', "${project.name}")
+                    asNode().appendNode('description', "${project.description}")
+                }
+            }
+        }
+        // Release versions get pushed to staging area on maven central, snapshots to snapshot repo
+        // Secrets for credentials
+        if (System.getenv("CI")) {
+            repositories {
+                maven {
+                    name = 'OSSRH'
+                    def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+                    def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    // User token (under profile) on oss.sonatype.org
+                    credentials {
+                        username = System.getenv("OSSRH_USERNAME")
+                        password = System.getenv("OSSRH_TOKEN")
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * Additional useful tasks
+     */
+    task printAllDependencies(type: DependencyReportTask) {}
+    task printSubDependencies(type: DependencyReportTask) {}
+    task findDependency(type: DependencyInsightReportTask) {}
+
+} // end of allProjects
+
+
+/*
+ * Configuration for sub projects only
+ */
+subprojects {
+    // All tasks currently will run under allProjects - which includes root.
+}
+
+
+/*
+ * Additional aggregate tasks run only at parent
+ */
+
+// Jacoco reporting -- from gradle docs
+task codeCoverageReport(type: JacocoReport) {
+    // Gather execution data from all subprojects
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    // Add all relevant sourcesets from the subprojects
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    // enable the different report types (html, xml, csv)
+    reports {
+        // xml is usually used to integrate code coverage with
+        // other tools like SonarQube, Coveralls or Codecov
+        xml.required = true
+
+        // HTML reports can be used to see code coverage
+        // without any external tools
+        html.required = true
+        csv.required = true
+    }
+
+}
+// always run the tests before generating the report
+codeCoverageReport.dependsOn {
+    subprojects*.test
+}
+
+// Dependency checking - see https://github.com/autonomousapps/dependency-analysis-android-gradle-plugin
+dependencyAnalysis {
+    issues {
+        all {
+            onAny {
+                severity('fail')
+            }
+            onUnusedDependencies {
+                exclude("junit:junit", "org.junit.jupiter:junit-jupiter-api", "org.junit.jupiter:junit-jupiter-engine", "com.fasterxml.jackson.core:jackson-annotations")
+            }
+        }
+    }
+}
+
+// Always run dependency check for every regular build
+build.dependsOn("buildHealth")
+

@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright Contributors to the ODPi Egeria project.
+ */
+
+// This HAS to be the first block of the file
+pluginManagement {
+    plugins {
+
+        id 'gradle-aggregate-javadocs-plugin' version '3.0.1'
+        // For reference we use these, but they are internal so no version spec needed
+        //id 'java' version
+        //id 'maven-publish' version
+    }
+}
+rootProject.name = 'egeria-connector-hadoop-ecosystem'
+include(':egeria-connector-apache-atlas-adapter')
+project(":egeria-connector-apache-atlas-adapter").projectDir = file('apache-atlas-adapter')

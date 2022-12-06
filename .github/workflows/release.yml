@@ -1,45 +1,47 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright Contributors to the ODPi Egeria project.
+---
 name: "Release"
 
+# Trigger after code is merged. only on main repo
+# - does not run on modification (may be just text)
 on:
+  # No checks for branch or repo - assuming release creation is manual, controlled
   release:
-    types: [published]
+    types:
+      - created
+  # Also allow for manual invocation for testing
+  workflow_dispatch:
 
 jobs:
   build:
+    if: startsWith(github.repository,'odpi/')
     runs-on: ubuntu-latest
     name: "Release"
     steps:
       - uses: actions/checkout@v3
         name: Checkout source
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          # Java 1.11 is used for final released build
-          distribution: temurin
-          java-version: 11
-          # Publishing attributes for maven central (this step adds to setting.xml)
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          # Keys must be known to maven central - require broad publishing
-          gpg-private-key: ${{ secrets.OSSRH_GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-      # Normal build (in future may also run reports (site))
-      - name: Build with Maven
-        # See https://github.com/actions/toolkit/issues/231 requires parms using . to be quoted
-        run: 'mvn -B -DuseMavenCentral clean deploy'
-        # Needed for publishing -- note we push to a staging area, login to oss.sonatype.org to
-        # verify (close) the repository & release
+          distribution: 'temurin'
+          java-version: '11'
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Build with Gradle & Release artifacts
+        # TODO: Need to extend build to make use of release repo for publishing
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publish
+        # Import secrets needed for code signing and distribution
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_PASSPHRASE }}
-      # Mostly for verification - not published to the release itself for now
-      - name: Upload assemblies
+          OSSRH_GPG_KEYID: ${{ secrets.OSSRH_GPG_KEYID }}
+          OSSRH_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_PASSPHRASE }}
+          OSSRH_GPG_PRIVATE_KEY: ${{ secrets.OSSRH_GPG_PRIVATE_KEY }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      # Upload the library so that build results can be viewed
+      - name: Upload Connector
         uses: actions/upload-artifact@v3
         with:
-          name: Assemblies
-          path: |
-            distribution/target/*.jar
+          name: Hadoop Connectors
+          path: '**/build/libs/*.jar'

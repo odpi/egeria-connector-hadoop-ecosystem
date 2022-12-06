@@ -2,12 +2,10 @@
 # Copyright Contributors to the ODPi Egeria project.
 version: 2
 updates:
-- package-ecosystem: maven
+- package-ecosystem: gradle
   directory: "/"
   schedule:
     interval: monthly
-    time: "03:00"
-    timezone: "Etc/UTC"
   open-pull-requests-limit: 100
   reviewers:
   - planetf1
@@ -15,8 +13,6 @@ updates:
   directory: "/"
   schedule:
     interval: monthly
-    time: "03:00"
-    timezone: "Etc/UTC"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 25
   reviewers:
   - planetf1
