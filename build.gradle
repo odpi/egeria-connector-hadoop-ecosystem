@@ -59,7 +59,7 @@ allprojects {
         atlasversion='2.2.0'
         jacksonVersion = '2.14.0'
         jaxbversion = '2.3.1'
-        logbackversion='1.2.11'
+        logbackversion='1.4.5'
         testngversion='7.6.1'
         mockserverversion='5.14.0'
         springwebversion='5.3.23'
