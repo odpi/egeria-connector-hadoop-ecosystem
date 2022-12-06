@@ -64,7 +64,7 @@ allprojects {
         mockserverversion='5.14.0'
         springwebversion='5.3.23'
         slf4jversion='1.7.36'
-        kafkaversion='3.2.3'
+        kafkaversion='3.3.1'
         jacksonaslVersion = '1.9.14-atlassian-6'
     }
 
