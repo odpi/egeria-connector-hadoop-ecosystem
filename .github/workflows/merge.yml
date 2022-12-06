@@ -28,7 +28,9 @@ jobs:
         # TODO: Need to extend build to make use of snapshot repo for publishing
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publish
+          arguments: |
+            publish
+            --scan
               # Import secrets needed for code signing and distribution
         env:
           OSSRH_GPG_KEYID: ${{ secrets.OSSRH_GPG_KEYID }}
@@ -41,7 +43,9 @@ jobs:
         if: ${{ github.ref != 'refs/heads/main'}}
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: build
+          arguments: |
+            build
+            --scan
       # --
       - name: Upload Connector
         uses: actions/upload-artifact@v3

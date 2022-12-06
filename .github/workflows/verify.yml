@@ -22,7 +22,9 @@ jobs:
       - name: Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: build      # --
+          arguments: |
+            build
+            --scan    
       - name: Upload Connector
         uses: actions/upload-artifact@v3
         with:
