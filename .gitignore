@@ -10,17 +10,12 @@
 # Log file
 *.log
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
 # Package Files #
 *.jar
 *.war
 *.nar
 *.ear
+*.zip
 *.tar.gz
 *.rar
 
@@ -54,13 +49,6 @@ maven-eclipse.xml
 #Python
 *.pyc
 
-# review board
-.reviewboardrc
-
-# Scala-IDE specific
-.cache-main
-.cache-tests
-
 # emacs files
 *#
 *~
@@ -68,24 +56,52 @@ maven-eclipse.xml
 # Mac OS
 __MACOSX
 
+# specific Egeria config files
+omag.server.*.config
+omag.server.*.auditlog/**
+*.registrystore
+*.testlab.results
+keystore_*/**
+
 # other files
 .DS_Store
 *.swp
 .java-version
+*.graphml
 
-# Ignore private maven repo (jenkins)
-.repository
+# Ignore local graph repo
+*-graph-repository/**
 
 # exclude temporary lock files
 *.lock
 log
+
 # m2 repo used by linux foundation build
 **/m2repo*/**
-# ignore github pages file and site.
-_site/**
-_layouts/**
+
+# ignore github pages build file and site.
 Gemfile
 
-# ignore settings.xml used for automating packaging
-settings.xml
+# vscode editor
+**/.vscode*/**
+**/.factorypath
+**/**.code-workspace
 
+# Jupyter notebook temp/update files
+**/.ipynb_checkpoints
+
+# Java core files
+Snap*.trc
+javacore*.txt
+jitdump*dmp
+
+# License files (generated)
+THIRD_PARTY*.txt
+
+# gradle
+!gradle/**
+.gradle/
+build/
+
+# helm
+ **/charts/**/charts/**

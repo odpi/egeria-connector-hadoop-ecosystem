@@ -1,54 +1,54 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright Contributors to the ODPi Egeria project.
-name: "Build"
-
-# Trigger after code is merged. only on main repo
-# - does not run on modification (may be just text)
+name: "Merge"
 
 on:
   push:
-    branches: [main]
+    branches: [main, release-*, feature-*]
+  # Also allow for manual invocation for testing
   workflow_dispatch:
+
 
 jobs:
   build:
+    if: startsWith(github.repository,'odpi/')
     runs-on: ubuntu-latest
     name: "Merge"
     steps:
       - uses: actions/checkout@v3
-        name: Checkout source
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          # Java 11 is used for merge builds (PRs do check Java 11)
-          distribution: temurin
           java-version: 11
-          # Publishing attributes for maven central (this step adds to setting.xml)
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          # Keys must be known to maven central - require broad publishing
-          gpg-private-key: ${{ secrets.OSSRH_GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-      # Build and publish - but only for main
-      - name: Build with Maven (Publish snapshots to maven central)
-        if: ${{ github.repository == 'odpi/egeria-connector-hadoop-ecosystem' && github.ref == 'refs/heads/main'}}
-        # See https://github.com/actions/toolkit/issues/231 requires parms using . to be quoted
-        run: 'mvn -B -DuseMavenCentral clean deploy'
-        # Needed for publishing -- note we push to a staging area, login to oss.sonatype.org to
-        # verify (close) the repository & release
+          distribution: 'temurin'
+      - uses: gradle/wrapper-validation-action@v1
+      # Only for a merge into this repo - not a fork, and just for the main branch
+      - name: Build (Publish snapshots to maven central)
+        if: ${{ github.ref == 'refs/heads/main'}}
+        # TODO: Need to extend build to make use of snapshot repo for publishing
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            publish
+            --scan
+              # Import secrets needed for code signing and distribution
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_PASSPHRASE }}
-          # Build and publish - but only for main
-      - name: Build with Maven (no snapshots published)
-        if: ${{ github.repository != 'odpi/egeria-connector-hadoop-ecosystem' || github.ref != 'refs/heads/main'}}
-        run: mvn -B clean verify
-      # Mostly for verification - not published to the release itself for now
-      - name: Upload assemblies
+          OSSRH_GPG_KEYID: ${{ secrets.OSSRH_GPG_KEYID }}
+          OSSRH_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_PASSPHRASE }}
+          OSSRH_GPG_PRIVATE_KEY: ${{ secrets.OSSRH_GPG_PRIVATE_KEY }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      # In other cases just build but don't publish
+      - name: Build (no snapshots)
+        if: ${{ github.ref != 'refs/heads/main'}}
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            build
+            --scan
+      # --
+      - name: Upload Connector
         uses: actions/upload-artifact@v3
         with:
-          name: Assemblies
-          path: |
-            distribution/target/*.jar
+          name: Hadoop Connectors
+          path: '**/build/libs/*.jar'

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright Contributors to the ODPi Egeria project.
+name: "PR Verification"
+
+on:
+  pull_request:
+    branches: [main, release-*, feature-*]
+
+jobs:
+  build:
+    if: startsWith(github.repository,'odpi/')
+    runs-on: ubuntu-latest
+    name: "PR Verification"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: 'temurin'
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            build
+            --scan    
+      - name: Upload Connector
+        uses: actions/upload-artifact@v3
+        with:
+          name: Hadoop Connectors
+          path: '**/build/libs/*.jar'
+
