@@ -56,7 +56,7 @@ allprojects {
     ext {
         // add version variables here
         egeriaversion='3.13'
-        atlasversion='2.2.0'
+        atlasversion='2.3.0'
         jacksonVersion = '2.14.0'
         jaxbversion = '2.3.1'
         logbackversion='1.2.11'
