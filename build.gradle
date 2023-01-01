@@ -60,7 +60,7 @@ allprojects {
         jacksonVersion = '2.14.0'
         jaxbversion = '2.3.1'
         logbackversion='1.2.11'
-        testngversion='7.6.1'
+        testngversion='7.7.1'
         mockserverversion='5.14.0'
         springwebversion='5.3.23'
         slf4jversion='1.7.36'
