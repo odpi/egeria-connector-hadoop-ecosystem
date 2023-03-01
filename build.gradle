@@ -55,7 +55,7 @@ allprojects {
     // Assign variables for any constraints
     ext {
         // add version variables here
-        egeriaversion='3.13'
+        egeriaversion='3.15'
         atlasversion='2.2.0'
         jacksonVersion = '2.14.0'
         jaxbversion = '2.3.1'
