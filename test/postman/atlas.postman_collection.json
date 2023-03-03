@@ -221,16 +221,27 @@
 			"response": []
 		},
 		{
-			"name": "List supported types Copy",
+			"name": "Get entities matching {{searchQNRegex}}",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "{\n    \"class\": \"EntityPropertyFindRequest\",\n    \"offset\": 0,\n    \"pageSize\": 10,\n    \"matchProperties\": {\n        \"class\": \"InstanceProperties\",\n        \"instanceProperties\": {\n            \"qualifiedName\": {\n                \"class\": \"PrimitivePropertyValue\",\n                \"instancePropertyCategory\": \"PRIMITIVE\",\n                \"typeName\": \"string\",\n                \"primitiveDefCategory\": \"OM_PRIMITIVE_TYPE_STRING\",\n                \"primitiveValue\": \"{{searchQNRegex}}\"\n            }\n        },\n        \"propertyCount\": 1,\n        \"propertyNames\": [\n            \"qualifiedName\"\n        ]\n    },\n    \"matchCriteria\": \"ALL\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
 				},
 				"url": {
-					"raw": "{{baseURL}}/servers/{{atlasEgeriaServer}}/open-metadata/repository-services/users/{{adminUser}}/instances/entities",
+					"raw": "{{baseURL}}/servers/{{atlasEgeriaServer}}/open-metadata/repository-services/users/{{adminUser}}/instances/entities/by-property",
 					"host": [
 						"{{baseURL}}"
 					],
@@ -242,7 +253,8 @@
 						"users",
 						"{{adminUser}}",
 						"instances",
-						"entities"
+						"entities",
+						"by-property"
 					]
 				}
 			},
