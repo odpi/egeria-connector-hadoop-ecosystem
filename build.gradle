@@ -101,6 +101,11 @@ allprojects {
         }
     }
 
+    configurations {
+        all {
+            exclude module: 'commons-logging'
+        }
+    }
     /*
      * Java related configuration
      */
