@@ -12,9 +12,10 @@ plugins {
     // Checks for unnecessary dependencies
     id 'com.autonomousapps.dependency-analysis' version "1.19.0"
     // helps resolve log implementation clashes
-    id 'dev.jacomet.logging-capabilities' version "0.10.0"
+    id 'dev.jacomet.logging-capabilities' version "0.11.0"
     // This plugin helps resolve jakarta/javax dev.jacomet.logging-capabilities
     id 'org.gradlex.java-ecosystem-capabilities' version "1.1"
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 
@@ -34,6 +35,7 @@ allprojects {
     apply plugin: 'dev.jacomet.logging-capabilities'
     // As we've migrated from maven - we'll assume all submodules publish directly to maven
     apply plugin: 'maven-publish'
+    apply plugin: 'com.github.johnrengelman.shadow'
 
     // Only use maven central and snapshots
     repositories {
@@ -101,6 +103,12 @@ allprojects {
         }
     }
 
+    configurations {
+        all {
+            exclude module: 'commons-logging'
+            exclude group: 'org.slf4j', module: 'slf4j-reload4j'
+        }
+    }
     /*
      * Java related configuration
      */
@@ -215,6 +223,11 @@ allprojects {
     task printSubDependencies(type: DependencyReportTask) {}
     task findDependency(type: DependencyInsightReportTask) {}
 
+    shadowJar {
+        archiveClassifier = 'jar-with-dependencies'
+    }
+    build.dependsOn("shadowJar")
+
 } // end of allProjects
 
 
@@ -274,4 +287,6 @@ dependencyAnalysis {
 
 // Always run dependency check for every regular build
 build.dependsOn("buildHealth")
+
+
 
