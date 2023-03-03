@@ -8,9 +8,10 @@
 
 # Egeria - Apache Atlas Connector
   
-**As of June 2022, this repository is not being maintained.**
+**As of June 2022, this repository has been on a temporary hiatus.**
+**We are in the process of re-invigorating this connector.**
 
-This repository provided a connector for Apache Atlas
+This repository provides a connector for Apache Atlas
 
 More details can be found in the [original README](README-main.md)
 
