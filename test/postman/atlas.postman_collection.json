@@ -1,0 +1,252 @@
+{
+	"info": {
+		"_postman_id": "f4756445-7f84-4398-b303-9d4153c4466d",
+		"name": "atlas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3007549"
+	},
+	"item": [
+		{
+			"name": "Configure Event Bus for Atlas server",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"producer\":{\"bootstrap.servers\":\"{{kafkaBrokers}}\"},\"consumer\":{\"bootstrap.servers\":\"{{kafkaBrokers}}\"}}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{adminUser}}/servers/{{atlasEgeriaServer}}/event-bus?connectorProvider=org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider&topicURLRoot={{topicRoot}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"open-metadata",
+						"admin-services",
+						"users",
+						"{{adminUser}}",
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"event-bus"
+					],
+					"query": [
+						{
+							"key": "connectorProvider",
+							"value": "org.odpi.openmetadata.adapters.eventbus.topic.kafka.KafkaOpenMetadataTopicProvider"
+						},
+						{
+							"key": "topicURLRoot",
+							"value": "{{topicRoot}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Configure cohort membership",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{adminUser}}/servers/{{atlasEgeriaServer}}/cohorts/{{cohort}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"open-metadata",
+						"admin-services",
+						"users",
+						"{{adminUser}}",
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"cohorts",
+						"{{cohort}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Configure Atlas connection",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"class\": \"Connection\",\n    \"connectorType\": {\n        \"class\": \"ConnectorType\",\n        \"connectorProviderClassName\": \"org.odpi.egeria.connectors.apache.atlas.repositoryconnector.ApacheAtlasOMRSRepositoryConnectorProvider\"\n    },\n    \"endpoint\": {\n        \"class\": \"Endpoint\",\n        \"address\": \"{{atlasURL}}\",\n        \"protocol\": \"{{atlasProtocol}}\"\n    },\n    \"userId\": \"{{atlasUser}}\",\n    \"clearPassword\": \"{{atlasPassword}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{adminUser}}/servers/{{atlasEgeriaServer}}/local-repository/mode/repository-proxy/connection",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"open-metadata",
+						"admin-services",
+						"users",
+						"{{adminUser}}",
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"local-repository",
+						"mode",
+						"repository-proxy",
+						"connection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Configure Atlas Event Mapper",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{adminUser}}/servers/{{atlasEgeriaServer}}/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource={{atlasKafkaBrokers}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"open-metadata",
+						"admin-services",
+						"users",
+						"{{adminUser}}",
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"local-repository",
+						"event-mapper-details"
+					],
+					"query": [
+						{
+							"key": "connectorProvider",
+							"value": "org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider"
+						},
+						{
+							"key": "eventSource",
+							"value": "{{atlasKafkaBrokers}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Start Atlas proxy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/open-metadata/admin-services/users/{{adminUser}}/servers/{{atlasEgeriaServer}}/instance",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"open-metadata",
+						"admin-services",
+						"users",
+						"{{adminUser}}",
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"instance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get metadata collection id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/servers/{{atlasEgeriaServer}}/open-metadata/repository-services/users/{{adminUser}}/metadata-collection-id",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"open-metadata",
+						"repository-services",
+						"users",
+						"{{adminUser}}",
+						"metadata-collection-id"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List supported types",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseURL}}/servers/{{atlasEgeriaServer}}/open-metadata/repository-services/users/{{adminUser}}/types/all",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"open-metadata",
+						"repository-services",
+						"users",
+						"{{adminUser}}",
+						"types",
+						"all"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List supported types Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseURL}}/servers/{{atlasEgeriaServer}}/open-metadata/repository-services/users/{{adminUser}}/instances/entities",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"servers",
+						"{{atlasEgeriaServer}}",
+						"open-metadata",
+						"repository-services",
+						"users",
+						"{{adminUser}}",
+						"instances",
+						"entities"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
