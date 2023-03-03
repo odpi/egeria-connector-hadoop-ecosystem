@@ -59,6 +59,7 @@ The environment tested was
 We are still in the process of re-invigorating this connector.
 See https://github.com/odpi/egeria-connector-hadoop-ecosystem/issues/464 for further information.
 
+There has been no 'release' for a long time. If interested get in touch, as we now know the connector does still work with the current Egeria releases, but there are limitations (Mar 2023)
 
 [Go to the main Egeria site](https://egeria-project.org)
 
