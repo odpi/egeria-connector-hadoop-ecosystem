@@ -43,6 +43,45 @@ The quick version:
     $ curl -X POST "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/local-repository/event-mapper-details?connectorProvider=org.odpi.egeria.connectors.apache.atlas.eventmapper.ApacheAtlasOMRSRepositoryEventMapperProvider&eventSource=atlas:9027"
     $ curl -X POST "https://localhost:9443/open-metadata/admin-services/users/admin/servers/myserver/instance"
     ```
+###  How to run Apache Atlas
+
+If you do not have an Atlas environment and wish to test the connector, you can use the [Dockerfile](test/containers/atlas/Dockerfile) in this repository to build ie using:
+```shell
+docker build -t atlas .
+```
+which will:
+ - clone Apache Atlas source from github
+ - build all standard Atlas components
+ - Configure the distribution to run with embedded hbase storage & local Solr indexing
+ - ensure notifications are made active
+ - configure kafka so that it can be connected to from outside the container
+ - label the built container as **atlas**
+
+**NOTE**:
+ - This currently is tested on Linux (Ubuntu 22.10) only with docker
+ - There is a hardcoded architecture reference (amd64) which will need updating if building for another architecture such as arm64 ie for Apple m1 (untested)
+ - This is built for test only, and is not intended for production use
+ - The 'main' branch is built
+ - 
+This can be run locally using something like:
+```shell
+docker run -p 9026:9026 -p 9027:9027 -p 21000:21000 atlas
+```
+
+This will run docker and expose the Kafka & atlas ports. These can be forwarded/accessed as normal remotely subject to firewall rules
+
+To connect to the UI connect to `https://localhost:21000`
+
+Kafka can be connected to by any kafka application. As an example to monitor entites being created on the command line try the following -- but note the topic is only created once at least one entity has been created
+
+To check topics:
+```shell
+kafka-topics --list --bootstrap-server localhost:9027
+```
+To monitor entities (since startup)
+```shell
+kafka-console-consumer --bootstrap-server localhost:9027 --topic ATLAS_ENTITIES --from-beginning
+```
 
 ### Detailed steps for configuring the Apache Atlas connector
 
