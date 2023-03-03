@@ -177,6 +177,10 @@ automatically being communicated out to the rest of the cohort.
 (Note: there are still some limitations with Apache Atlas that prevent this being true for _all_ types, eg. see
 [Jira ATLAS-3312](https://issues.apache.org/jira/projects/ATLAS/issues/ATLAS-3312))
 
+## Postman collection
+
+A postman collection & environment is available under [test/postman](test/postman) to help with testing the connector. This can help setup a simple test environment to configure the connector, launch the server, and ensure entities can be retrieved.
+
 ## Loading samples
 
 If you have a completely empty Apache Atlas environment, you may want to load some sample metadata to further explore.
