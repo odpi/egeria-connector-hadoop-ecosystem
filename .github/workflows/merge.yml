@@ -31,7 +31,6 @@ jobs:
           arguments: |
             publish
             --scan
-              # Import secrets needed for code signing and distribution
         env:
           OSSRH_GPG_KEYID: ${{ secrets.OSSRH_GPG_KEYID }}
           OSSRH_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_PASSPHRASE }}
@@ -46,7 +45,6 @@ jobs:
           arguments: |
             build
             --scan
-      # --
       - name: Upload Connector
         uses: actions/upload-artifact@v3
         with:
