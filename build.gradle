@@ -63,7 +63,7 @@ subprojects {
         atlasversion = '2.3.0'
         jaxbversion = '2.3.1'
         mockserverversion = '5.15.0'
-        androidx.annotation.version = '1.6.0'
+        androidxannotationversion = '1.6.0'
     }
 
     dependencies {
@@ -96,7 +96,7 @@ subprojects {
             compileOnly "org.apache.kafka:kafka-clients"
             runtimeOnly("org.codehaus.jackson:jackson-mapper-asl")
             runtimeOnly("org.codehaus.jackson:jackson-core-asl")
-            testImplementation("androidx.annotation:annotation:{androidx.annotation.version}")
+            testImplementation("androidx.annotation:annotation:${androidxannotationversion}")
         }
     }
 
