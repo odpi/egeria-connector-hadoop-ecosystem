@@ -27,7 +27,9 @@ allprojects {
 
     group = 'org.odpi.egeria'
     version = '1.1-SNAPSHOT'
+}
 
+subprojects {
     // Mostly java, so default to this for now
     apply plugin: 'java'
     apply plugin: 'jacoco'
@@ -57,18 +59,11 @@ allprojects {
 
     // Assign variables for any constraints
     ext {
-        // add version variables here
-        egeriaversion='4.0-SNAPSHOT'
-        //jacksonVersion = '2.14.2'
-        atlasversion='2.3.0'
+        egeriaversion = '4.0-SNAPSHOT'
+        atlasversion = '2.3.0'
         jaxbversion = '2.3.1'
-        //logbackversion='1.2.11'
-        mockserverversion='5.15.0'
-        //testngversion='7.7.1'
-        //springwebversion='5.3.23'
-        //slf4jversion='1.7.36'
-        //kafkaversion='3.4.0'
-        //jacksonaslVersion = '1.9.14-atlassian-6'
+        mockserverversion = '5.15.0'
+        androidx.annotation.version = '1.6.0'
     }
 
     dependencies {
@@ -101,7 +96,7 @@ allprojects {
             compileOnly "org.apache.kafka:kafka-clients"
             runtimeOnly("org.codehaus.jackson:jackson-mapper-asl")
             runtimeOnly("org.codehaus.jackson:jackson-core-asl")
-            testImplementation("androidx.annotation:annotation:1.6.0")
+            testImplementation("androidx.annotation:annotation:{androidx.annotation.version}")
         }
     }
 
@@ -230,16 +225,9 @@ allprojects {
     }
     build.dependsOn("shadowJar")
 
-} // end of allProjects
+} // end of subProjects
 
-
-/*
- * Configuration for sub projects only
- */
-subprojects {
-    // All tasks currently will run under allProjects - which includes root.
-}
-
+apply plugin: 'java'
 
 /*
  * Additional aggregate tasks run only at parent
