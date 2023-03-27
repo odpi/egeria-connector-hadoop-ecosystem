@@ -19,6 +19,9 @@ dependencies {
     testImplementation 'org.odpi.egeria:admin-services-api'
     testImplementation 'org.odpi.egeria:connector-configuration-factory'
     testImplementation 'org.odpi.egeria:inmemory-open-metadata-topic-connector'
+    testImplementation 'org.odpi.egeria:open-connector-framework'
+    testImplementation 'org.odpi.egeria:repository-services-apis'
+    testImplementation 'org.odpi.egeria:audit-log-framework'
     compileOnly 'org.springframework:spring-core'
     implementation "com.fasterxml.jackson.core:jackson-annotations"
     implementation "com.fasterxml.jackson.core:jackson-core:"
@@ -28,6 +31,7 @@ dependencies {
     compileOnly 'org.odpi.egeria:open-connector-framework'
     compileOnly 'org.slf4j:slf4j-api'
     compileOnly 'org.apache.kafka:kafka-clients'
+    testImplementation 'androidx.annotation:annotation'
 }
 
 description = 'Apache Atlas Repository Connector'

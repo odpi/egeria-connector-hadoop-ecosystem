@@ -8,14 +8,14 @@
  * Plugins for this parent module only - so just high level project related
  */
 plugins {
-    id "io.freefair.aggregate-javadoc" version "6.6.3"
+    id "io.freefair.aggregate-javadoc"
     // Checks for unnecessary dependencies
-    id 'com.autonomousapps.dependency-analysis' version "1.19.0"
+    id 'com.autonomousapps.dependency-analysis'
     // helps resolve log implementation clashes
-    id 'dev.jacomet.logging-capabilities' version "0.11.0"
+    id 'dev.jacomet.logging-capabilities'
     // This plugin helps resolve jakarta/javax dev.jacomet.logging-capabilities
-    id 'org.gradlex.java-ecosystem-capabilities' version "1.1"
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'org.gradlex.java-ecosystem-capabilities'
+    id 'com.github.johnrengelman.shadow'
 }
 
 
@@ -26,7 +26,7 @@ plugins {
 allprojects {
 
     group = 'org.odpi.egeria'
-    version = '1.0-SNAPSHOT'
+    version = '1.1-SNAPSHOT'
 
     // Mostly java, so default to this for now
     apply plugin: 'java'
@@ -42,6 +42,7 @@ allprojects {
         mavenCentral()
         maven { url("https://oss.sonatype.org/content/repositories/snapshots") }
         maven { url("https://packages.atlassian.com/maven-3rdparty") }
+        google()
     }
 
     // ensures we pick up the very latest snapshots when built
@@ -57,49 +58,50 @@ allprojects {
     // Assign variables for any constraints
     ext {
         // add version variables here
-        egeriaversion='3.15'
-        jacksonVersion = '2.14.2'
+        egeriaversion='4.0-SNAPSHOT'
+        //jacksonVersion = '2.14.2'
         atlasversion='2.3.0'
         jaxbversion = '2.3.1'
-        logbackversion='1.2.11'
+        //logbackversion='1.2.11'
         mockserverversion='5.15.0'
-        testngversion='7.7.1'
-        springwebversion='5.3.23'
-        slf4jversion='1.7.36'
-        kafkaversion='3.4.0'
-        jacksonaslVersion = '1.9.14-atlassian-6'
+        //testngversion='7.7.1'
+        //springwebversion='5.3.23'
+        //slf4jversion='1.7.36'
+        //kafkaversion='3.4.0'
+        //jacksonaslVersion = '1.9.14-atlassian-6'
     }
 
     dependencies {
         implementation platform("org.odpi.egeria:egeria:${egeriaversion}")
         constraints {
-            implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
-            implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-            implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+            implementation "com.fasterxml.jackson.core:jackson-annotations"
+            implementation "com.fasterxml.jackson.core:jackson-core"
+            implementation "com.fasterxml.jackson.core:jackson-databind"
             implementation "org.apache.atlas:atlas-common:${atlasversion}"
             implementation "org.apache.atlas:atlas-client-v2:${atlasversion}"
             implementation "org.apache.atlas:atlas-intg:${atlasversion}"
             implementation "org.apache.atlas:atlas-client-common:${atlasversion}"
             implementation "org.apache.atlas:atlas-notification:${atlasversion}"
             implementation "javax.xml.bind:jaxb-api:${jaxbversion}"
-            testImplementation "ch.qos.logback:logback-classic:${logbackversion}"
-            testImplementation "org.testng:testng:${testngversion}"
+            testImplementation "ch.qos.logback:logback-classic"
+            testImplementation "org.testng:testng"
             testImplementation "org.mock-server:mockserver-client-java:${mockserverversion}"
             testImplementation "org.mock-server:mockserver-core:${mockserverversion}"
-            testImplementation "org.odpi.egeria:repository-services-implementation:${egeriaversion}"
-            testImplementation "org.odpi.egeria:open-metadata-types:${egeriaversion}"
-            testImplementation "org.odpi.egeria:admin-services-api:${egeriaversion}"
-            testImplementation "org.odpi.egeria:connector-configuration-factory:${egeriaversion}"
-            testImplementation "org.odpi.egeria:inmemory-open-metadata-topic-connector:${egeriaversion}"
-            compileOnly "org.springframework:spring-core:${springwebversion}"
+            testImplementation "org.odpi.egeria:repository-services-implementation"
+            testImplementation "org.odpi.egeria:open-metadata-types"
+            testImplementation "org.odpi.egeria:admin-services-api"
+            testImplementation "org.odpi.egeria:connector-configuration-factory"
+            testImplementation "org.odpi.egeria:inmemory-open-metadata-topic-connector"
+            compileOnly "org.springframework:spring-core"
 
-            compileOnly "org.odpi.egeria:audit-log-framework:${egeriaversion}"
-            compileOnly "org.odpi.egeria:repository-services-apis:${egeriaversion}"
-            compileOnly "org.odpi.egeria:open-connector-framework:${egeriaversion}"
-            compileOnly "org.slf4j:slf4j-api:${slf4jversion}"
-            compileOnly "org.apache.kafka:kafka-clients:${kafkaversion}"
-            runtimeOnly("org.codehaus.jackson:jackson-mapper-asl:${jacksonaslVersion}")
-            runtimeOnly("org.codehaus.jackson:jackson-core-asl:${jacksonaslVersion}")
+            compileOnly "org.odpi.egeria:audit-log-framework"
+            compileOnly "org.odpi.egeria:repository-services-apis"
+            compileOnly "org.odpi.egeria:open-connector-framework"
+            compileOnly "org.slf4j:slf4j-api"
+            compileOnly "org.apache.kafka:kafka-clients"
+            runtimeOnly("org.codehaus.jackson:jackson-mapper-asl")
+            runtimeOnly("org.codehaus.jackson:jackson-core-asl")
+            testImplementation("androidx.annotation:annotation:1.6.0")
         }
     }
 
@@ -117,7 +119,7 @@ allprojects {
         withJavadocJar()
     }
     tasks.withType(JavaCompile) {
-        options.release = 11
+        options.release = 17
         options.encoding = 'UTF-8'
         options.incremental = true
         options.failOnError = true
