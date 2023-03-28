@@ -41,6 +41,40 @@ jobs:
           OSSRH_GPG_PRIVATE_KEY: ${{ secrets.OSSRH_GPG_PRIVATE_KEY }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to container registry (Quay.io)
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_IO_USERNAME }}
+          password: ${{ secrets.QUAY_IO_ACCESS_TOKEN }}
+      - name: Login to container registry (Docker Hub)
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      # QEMU is needed for ARM64 build for egeria-configure
+      # egeria-configure needs to install utilities
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set Release version env variables
+        run: |
+          echo "CONNECTOR_VERSION=$(./gradlew properties --no-daemon --console=plain -q | grep '^version:' | awk '{printf $2}')" >> $GITHUB_ENV
+          echo "EGERIA_BASE_IMAGE=quay.io/odpi/egeria" >> $GITHUB_ENV
+          echo "EGERIA_VERSION=$(./gradlew :egeria-connector-apache-atlas-adapter:dependencies | grep org.odpi.egeria:open-connector-framework | awk -F':' '{if ($3) print $3}' | awk -F' ' '{print $1}' | uniq| head -1)" >> $GITHUB_ENV
+      - name: Build and push( to quay.io and docker.io
+        if: ${{ github.ref != 'refs/heads/main'}}
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: odpi/egeria-connector-atlas:${{ env.CONNECTOR_VERSION }}, quay.io/odpi/egeria-connector-atlas:${{ env.CONNECTOR_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            EGERIA_BASE_IMAGE=${{ env.EGERIA_BASE_IMAGE }}
+            CONNECTOR_VERSION=${{ env.CONNECTOR_VERSION }}
+            EGERIA_VERSION=${{ env.EGERIA_VERSION }}
       # Upload the library so that build results can be viewed
       - name: Upload Connector
         uses: actions/upload-artifact@v3
