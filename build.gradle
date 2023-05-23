@@ -59,7 +59,7 @@ subprojects {
 
     // Assign variables for any constraints
     ext {
-        egeriaversion = '4.0-SNAPSHOT'
+        egeriaversion = '4.0'
         atlasversion = '2.3.0'
         jaxbversion = '2.3.1'
         mockserverversion = '5.15.0'
@@ -69,9 +69,9 @@ subprojects {
     dependencies {
         implementation platform("org.odpi.egeria:egeria:${egeriaversion}")
         constraints {
-            implementation "com.fasterxml.jackson.core:jackson-annotations"
-            implementation "com.fasterxml.jackson.core:jackson-core"
-            implementation "com.fasterxml.jackson.core:jackson-databind"
+            compileOnly "com.fasterxml.jackson.core:jackson-annotations"
+            compileOnly "com.fasterxml.jackson.core:jackson-core"
+            compileOnly "com.fasterxml.jackson.core:jackson-databind"
             implementation "org.apache.atlas:atlas-common:${atlasversion}"
             implementation "org.apache.atlas:atlas-client-v2:${atlasversion}"
             implementation "org.apache.atlas:atlas-intg:${atlasversion}"
@@ -137,8 +137,8 @@ subprojects {
             includeEngines 'junit-jupiter'
         }
         dependencies {
-            testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
-            testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+            testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+            testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
         }
 
         testLogging {
