@@ -59,7 +59,7 @@ subprojects {
 
     // Assign variables for any constraints
     ext {
-        egeriaversion = '4.0'
+        egeriaversion = '4.2'
         atlasversion = '2.3.0'
         jaxbversion = '2.3.1'
         mockserverversion = '5.15.0'
