@@ -65,7 +65,7 @@ jobs:
           echo "EGERIA_VERSION=$(./gradlew :egeria-connector-apache-atlas-adapter:dependencies | grep org.odpi.egeria:open-connector-framework | awk -F':' '{if ($3) print $3}' | awk -F' ' '{print $1}' | uniq| head -1)" >> $GITHUB_ENV
       - name: Build and push( to quay.io and docker.io
         if: ${{ github.ref != 'refs/heads/main'}}
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
