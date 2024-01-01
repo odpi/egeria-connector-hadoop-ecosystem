@@ -77,7 +77,7 @@ jobs:
             EGERIA_VERSION=${{ env.EGERIA_VERSION }}
       # Upload the library so that build results can be viewed
       - name: Upload Connector
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Hadoop Connectors
           path: '**/build/libs/*.jar'
