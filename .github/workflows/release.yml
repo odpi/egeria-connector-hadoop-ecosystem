@@ -26,7 +26,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/wrapper-validation-action@v2
       - name: Build with Gradle & Release artifacts
         # TODO: Need to extend build to make use of release repo for publishing
         uses: gradle/gradle-build-action@v2

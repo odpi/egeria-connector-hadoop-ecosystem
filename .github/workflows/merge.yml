@@ -21,7 +21,7 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/wrapper-validation-action@v2
       # Only for a merge into this repo - not a fork, and just for the main branch
       - name: Build (Publish snapshots to maven central)
         if: ${{ github.ref == 'refs/heads/main'}}
