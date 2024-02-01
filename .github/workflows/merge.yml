@@ -26,7 +26,7 @@ jobs:
       - name: Build (Publish snapshots to maven central)
         if: ${{ github.ref == 'refs/heads/main'}}
         # TODO: Need to extend build to make use of snapshot repo for publishing
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v3
         with:
           arguments: |
             publish
@@ -40,7 +40,7 @@ jobs:
       # In other cases just build but don't publish
       - name: Build (no snapshots)
         if: ${{ github.ref != 'refs/heads/main'}}
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v3
         with:
           arguments: |
             build
