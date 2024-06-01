@@ -63,7 +63,7 @@ subprojects {
         atlasversion = '2.3.0'
         jaxbversion = '2.3.1'
         mockserverversion = '5.15.0'
-        androidxannotationversion = '1.6.0'
+        androidxannotationversion = '1.8.0'
     }
 
     dependencies {
